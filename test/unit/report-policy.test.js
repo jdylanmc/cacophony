@@ -69,6 +69,17 @@ test("policy maps severity thresholds and always fails framework errors", () => 
     shouldFail({ status: "error", verdict: "error", maxSeverity: "none" }, "never"),
     true,
   );
+  assert.equal(
+    shouldFail(
+      {
+        status: "inconclusive",
+        verdict: "inconclusive",
+        maxSeverity: "none",
+      },
+      "low",
+    ),
+    false,
+  );
 });
 
 test("renderMarkdown derives readable output from canonical data", () => {

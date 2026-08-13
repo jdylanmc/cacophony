@@ -149,6 +149,9 @@ them from framework failures:
 
 - supported finding: remediate the code and rerun;
 - prompt not on base: expected only on the reviewer's introduction pull request;
+- provider HTTP 429: treat the generated report as inconclusive, not approval or
+  a finding-based failure, and retry after quota is available when a completed
+  decision is required;
 - provider HTTP 5xx: rerun once;
 - no valid report within the budget: increase the reviewer budget in a separate
   prerequisite pull request rather than bypassing the gate.

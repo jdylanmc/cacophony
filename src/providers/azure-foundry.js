@@ -1,5 +1,14 @@
 const MAX_ERROR_BODY = 4_000;
 
+export class ProviderRateLimitError extends Error {
+  constructor(provider, status = 429) {
+    super(`${provider} rate limit exceeded (${status}); review is inconclusive`);
+    this.name = "ProviderRateLimitError";
+    this.provider = provider;
+    this.status = status;
+  }
+}
+
 export function responsesUrl(endpoint) {
   const normalized = endpoint.trim().replace(/\/+$/, "");
   let parsed;
@@ -86,6 +95,9 @@ export function createAzureFoundryProvider({
 
       if (!response.ok) {
         const detail = (await response.text()).slice(0, MAX_ERROR_BODY);
+        if (response.status === 429) {
+          throw new ProviderRateLimitError("Azure AI Foundry", response.status);
+        }
         throw new Error(
           `Azure AI Foundry request failed (${response.status}): ${detail || response.statusText}`,
         );

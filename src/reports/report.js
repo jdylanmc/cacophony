@@ -189,6 +189,29 @@ export function createErrorReport({ error, config, context, startedAt }) {
   };
 }
 
+export function createInconclusiveReport({ reason, config, context, startedAt }) {
+  return {
+    schemaVersion: "1.0",
+    status: "inconclusive",
+    agent: {
+      id: config?.agentId ?? "cacophony",
+      promptFile: config?.promptFile ?? null,
+    },
+    provider: {
+      name: config?.provider ?? "unknown",
+      deployment: config?.deployment ?? "unknown",
+    },
+    pullRequest: context?.pullRequest ?? null,
+    startedAt,
+    completedAt: new Date().toISOString(),
+    execution: { turns: 0, toolCalls: 0 },
+    verdict: "inconclusive",
+    maxSeverity: "none",
+    summary: reason instanceof Error ? reason.message : String(reason),
+    findings: [],
+  };
+}
+
 function escapeMarkdown(value) {
   return String(value).replaceAll("|", "\\|");
 }

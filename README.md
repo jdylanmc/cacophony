@@ -144,7 +144,7 @@ variable.
 
 | Output | Description |
 | --- | --- |
-| `verdict` | `pass`, `warn`, `fail`, or `error`. |
+| `verdict` | `pass`, `warn`, `fail`, `inconclusive`, or `error`. |
 | `max-severity` | `none`, `low`, `medium`, `high`, or `critical`. |
 | `report-json` | Repository-relative JSON report path. |
 | `report-markdown` | Repository-relative Markdown report path. |
@@ -157,6 +157,11 @@ Reports and outputs are written before findings-based failure is applied. Use
 `high` and `critical` findings. `never` prevents findings from failing the
 step. Framework errors such as authentication failure, timeout, invalid model
 output, or exhausted turn budget always fail.
+
+Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report and a
+workflow warning without failing the step. Inconclusive is not approval:
+repositories that require a completed reviewer decision should retry the run
+after quota is available.
 
 ## Report format
 
@@ -315,6 +320,9 @@ on subsequent pull requests and upload separate artifacts.
   `CACOPHONY_AZURE_API_KEY` and is mapped through `env`.
 - **Azure 404:** verify the project endpoint and deployment. Cacophony appends
   `/openai/v1/responses` unless the endpoint already ends in `/responses`.
+- **Azure 429:** the report is marked `inconclusive` and the step does not fail.
+  Retry after model quota is available if the repository requires a completed
+  review.
 - **Git diff failure:** use `actions/checkout` with `fetch-depth: 0`.
 - **No report submission:** make the prompt more explicit and increase
   `max-turns` within the allowed range.

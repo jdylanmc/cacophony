@@ -35,7 +35,7 @@ inputs:
 
 outputs:
   verdict:
-    description: "Agent verdict: pass, warn, fail, or error."
+    description: "Agent verdict: pass, warn, fail, inconclusive, or error."
   max-severity:
     description: Highest finding severity.
   report-json:

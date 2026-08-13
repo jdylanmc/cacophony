@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 
 import {
   createAzureFoundryProvider,
+  ProviderRateLimitError,
   responsesUrl,
 } from "../../src/providers/azure-foundry.js";
 
@@ -66,4 +67,30 @@ test("Azure provider sends Responses API tool turns", async (t) => {
   assert.equal(request.headers["api-key"], "test-secret");
   assert.equal(request.body.model, "review-model");
   assert.equal(result.calls[0].name, "list_changed_files");
+});
+
+test("Azure provider classifies HTTP 429 as rate limiting", async () => {
+  const provider = createAzureFoundryProvider({
+    endpoint: "https://example.invalid",
+    deployment: "review-model",
+    apiKey: "test-secret",
+    fetchImplementation: async () =>
+      new Response('{"error":{"code":"rate_limit_exceeded"}}', {
+        status: 429,
+        headers: { "content-type": "application/json" },
+      }),
+  });
+
+  await assert.rejects(
+    () =>
+      provider.turn({
+        instructions: "review",
+        input: "start",
+        tools: [],
+      }),
+    (error) =>
+      error instanceof ProviderRateLimitError &&
+      error.status === 429 &&
+      /inconclusive/.test(error.message),
+  );
 });

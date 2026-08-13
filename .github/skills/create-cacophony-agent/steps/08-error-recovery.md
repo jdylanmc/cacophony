@@ -19,6 +19,13 @@ disable or bypass the reviewer.
 Rerun once. If it persists, report the provider failure separately from
 reviewer findings.
 
+## Provider returns HTTP 429
+
+Treat Cacophony's report as inconclusive. It is neither approval nor a
+finding-based block, and the action should not fail solely because of
+throttling. Retry after quota is available when the repository requires a
+completed reviewer decision.
+
 ## Reviewer exhausts its turn budget
 
 Create a separate prerequisite pull request raising that established reviewer's

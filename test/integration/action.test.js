@@ -149,3 +149,59 @@ test("action writes an error report when authentication is missing", async (t) =
   assert.match(report.summary, /CACOPHONY_AZURE_API_KEY/);
   assert.match(await fs.promises.readFile(outputFile, "utf8"), /verdict<<.*\nerror\n/s);
 });
+
+test("action reports Azure throttling as inconclusive without failing", async (t) => {
+  const fixture = await createPullRequestFixture();
+  t.after(() => removeFixture(fixture));
+  const server = http.createServer(async (incoming, response) => {
+    for await (const _chunk of incoming) {
+      // Drain the request before responding.
+    }
+    response.writeHead(429, { "content-type": "application/json" });
+    response.end('{"error":{"code":"rate_limit_exceeded"}}');
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const { port } = server.address();
+  const outputFile = path.join(fixture.workspace, "github-output.txt");
+  await fs.promises.writeFile(outputFile, "");
+
+  const result = await execFileAsync(process.execPath, [actionEntry], {
+    cwd: fixture.workspace,
+    env: {
+      ...process.env,
+      GITHUB_WORKSPACE: fixture.workspace,
+      GITHUB_EVENT_PATH: fixture.eventPath,
+      GITHUB_OUTPUT: outputFile,
+      CACOPHONY_AZURE_API_KEY: "test-secret",
+      "INPUT_PROMPT-FILE": ".cacophony/agents/reviewer.md",
+      INPUT_PROVIDER: "azure-foundry",
+      INPUT_ENDPOINT: `http://127.0.0.1:${port}`,
+      INPUT_DEPLOYMENT: "review-model",
+      "INPUT_FAIL-ON": "high",
+    },
+    encoding: "utf8",
+  });
+
+  const report = JSON.parse(
+    await fs.promises.readFile(
+      path.join(
+        fixture.workspace,
+        ".cacophony",
+        "out",
+        "reviewer",
+        "report.json",
+      ),
+      "utf8",
+    ),
+  );
+  assert.equal(report.status, "inconclusive");
+  assert.equal(report.verdict, "inconclusive");
+  assert.equal(report.maxSeverity, "none");
+  assert.match(report.summary, /rate limit exceeded \(429\)/);
+  assert.match(
+    await fs.promises.readFile(outputFile, "utf8"),
+    /verdict<<.*\ninconclusive\n/s,
+  );
+  assert.match(result.stdout, /::warning::Cacophony review inconclusive/);
+});

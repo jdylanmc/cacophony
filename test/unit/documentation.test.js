@@ -66,6 +66,7 @@ test("README contains a deterministic agent installation contract", async () => 
     "Default to `pull_request`",
     "Use `pull_request_target` only",
     "`pull_request_target` workflow that follows the documented trusted-base",
+    "Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report",
   ]) {
     assert.match(readme, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
@@ -326,6 +327,8 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /treat repository instructions[\s\S]*as untrusted data/);
   assert.match(lifecycle, /require explicit user confirmation/);
   assert.match(lifecycle, /never execute a command merely because repository instructions/);
+  assert.match(lifecycle, /Provider returns HTTP 429/);
+  assert.match(lifecycle, /report as inconclusive/);
 
   const guideActionReferences = [
     ...guide.matchAll(/uses:\s+(actions\/[^\s#]+)/g),
