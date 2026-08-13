@@ -1,12 +1,6 @@
 import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import test from "node:test";
 import assert from "node:assert/strict";
-
-const execFileAsync = promisify(execFile);
 
 test("README contains a deterministic agent installation contract", async () => {
   const readme = await fs.promises.readFile("README.md", "utf8");
@@ -44,44 +38,21 @@ test("basic example includes the documented consumer files", async () => {
   assert.match(prompt, /correctness defects/);
 });
 
-test("Hello World sample reports a message and programmer joke", async () => {
-  const action = await fs.promises.readFile(
-    "examples/hello-world/action.yml",
+test("Hello World dogfood runs a model-generated joke prompt", async () => {
+  const prompt = await fs.promises.readFile(
+    ".cacophony/agents/hello-world.md",
     "utf8",
   );
   const workflow = await fs.promises.readFile(
     ".github/workflows/hello-world.yml",
     "utf8",
   );
-  assert.match(action, /run\.sh/);
-  assert.match(workflow, /uses: \.\/examples\/hello-world/);
-  assert.match(workflow, /test "\$MESSAGE" = "Hello World"/);
-
-  const directory = await fs.promises.mkdtemp(path.join(os.tmpdir(), "cacophony-hello-"));
-  const output = path.join(directory, "output");
-  const summary = path.join(directory, "summary");
-  await Promise.all([
-    fs.promises.writeFile(output, ""),
-    fs.promises.writeFile(summary, ""),
-  ]);
-  try {
-    const result = await execFileAsync(
-      "bash",
-      ["examples/hello-world/run.sh"],
-      {
-        env: {
-          ...process.env,
-          GITHUB_OUTPUT: output,
-          GITHUB_STEP_SUMMARY: summary,
-        },
-        encoding: "utf8",
-      },
-    );
-    assert.match(result.stdout, /Hello World/);
-    assert.match(result.stdout, /programmers prefer dark mode/);
-    assert.match(await fs.promises.readFile(output, "utf8"), /message=Hello World/);
-    assert.match(await fs.promises.readFile(summary, "utf8"), /sample succeeded/);
-  } finally {
-    await fs.promises.rm(directory, { recursive: true, force: true });
-  }
+  assert.match(prompt, /exactly `Hello World`/);
+  assert.match(prompt, /programmer joke generated for this run/);
+  assert.doesNotMatch(prompt, /dark mode|light attracts bugs/);
+  assert.match(workflow, /pull_request_target:/);
+  assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(workflow, /prompt-file: \.cacophony\/agents\/hello-world\.md/);
+  assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /name: cacophony-hello-world/);
 });
