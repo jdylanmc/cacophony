@@ -303,6 +303,42 @@ test("repository audit workflow runs all canonical adversaries sequentially", as
   assert.match(workflow, /cacophony-repository-audit-\$\{\{ matrix\.agent \}\}/);
 });
 
+test("documentation distinguishes pull-request review from repository audit", async () => {
+  const readme = await fs.promises.readFile("README.md", "utf8");
+  const guide = await fs.promises.readFile("docs/creating-agents.md", "utf8");
+  const repositorySkill = await fs.promises.readFile(
+    ".github/skills/create-cacophony-agent/steps/04-cacophony-repository.md",
+    "utf8",
+  );
+  const validationSkill = await fs.promises.readFile(
+    ".github/skills/create-cacophony-agent/steps/06-validate.md",
+    "utf8",
+  );
+
+  for (const content of [readme, guide, repositorySkill, validationSkill]) {
+    assert.match(content, /pull-request/);
+    assert.match(content, /repository-wide audit/);
+    assert.match(content, /separate/);
+    assert.match(content, /direct-action/);
+    assert.match(content, /pin(?:ning|ned)/);
+    assert.match(content, /checkout/);
+    assert.match(content, /secret scop(?:e|ing)/);
+    assert.match(content, /artifact/);
+  }
+
+  assert.match(
+    readme,
+    /Repository-wide audit does not use that pull-request worker or its thin persona\s+callers/,
+  );
+  assert.match(
+    guide,
+    /not a thin persona caller and not a\s+caller of `\.github\/workflows\/cacophony-review\.yml`/,
+  );
+  assert.match(
+    repositorySkill,
+    /pull-request worker as the owner of repository-wide audits/,
+  );
+});
 test("Gilfoyle canonical prompt configures the security reviewer", async () => {
   const activePrompt = await fs.promises.readFile(
     ".cacophony/agents/gilfoyle-security-architect.md",

@@ -38,16 +38,22 @@ The built-in dogfood workflows require `CACOPHONY_AZURE_API_KEY`,
 (GLaDOS and Delamain) and `gpt-5.6-sol` (Gilfoyle, Solid Snake, Master Chief,
 and Fletcher).
 
-This repository's dogfood persona workflows are thin `pull_request_target`
-callers of `.github/workflows/cacophony-review.yml`. That reusable workflow
-owns the pinned Cacophony invocation, authorization, trusted checkout,
-base-prompt check, secret scope, and artifact upload. Each caller owns its
-`pull_request_target` trigger, read-only permissions, and per-pull-request
-concurrency. The reusable worker reads authoritative pull-request metadata from
-the inherited GitHub event context. Before checkout, it rejects any other event,
-allows a same-repository pull request, and allows a fork only when GitHub's
-`author_association` is `OWNER`, `MEMBER`, or `COLLABORATOR`. It inspects pull
-request content without executing it.
+This repository's pull-request dogfood personas are thin
+`pull_request_target` callers of `.github/workflows/cacophony-review.yml`. For
+pull-request review, that reusable worker owns the pinned Cacophony invocation,
+authorization, trusted merge-ref checkout, base-prompt check, secret scope, and
+artifact upload. Each caller owns its `pull_request_target` trigger, read-only
+permissions, and per-pull-request concurrency. The reusable worker reads
+authoritative pull-request metadata from the inherited GitHub event context.
+Before checkout, it rejects any other event, allows a same-repository pull
+request, and allows a fork only when GitHub's `author_association` is `OWNER`,
+`MEMBER`, or `COLLABORATOR`. It inspects pull-request content without executing
+it.
+
+Repository-wide audit does not use that pull-request worker or its thin persona
+callers. `.github/workflows/repository-audit.yml` is a separate,
+repository-owned direct-action mode with its own action pin, default-branch
+checkout, secret mapping, and per-agent artifacts.
 
 ## Quick start
 
@@ -132,7 +138,8 @@ event trigger.
 
 ### Secret wiring by workflow mode
 
-These contracts are mutually exclusive:
+These pull-request contracts are mutually exclusive. Repository-wide audit has
+the separate direct-action contract documented below.
 
 | Mode | Caller wiring | Action environment |
 | --- | --- | --- |
@@ -199,24 +206,29 @@ code.
 
 ## Repository-wide ad-hoc audit
 
-`.github/workflows/repository-audit.yml` is a repository-owned reusable
-workflow with both `workflow_dispatch` and `workflow_call`. It audits the full
-checked-out commit rather than a pull request diff and runs the three canonical
-adversaries sequentially to reduce provider throttling:
+`.github/workflows/repository-audit.yml` is a separate repository-owned
+direct-action workflow with both `workflow_dispatch` and `workflow_call`. It
+does not call `.github/workflows/cacophony-review.yml` or use thin persona
+callers. It audits the full checked-out commit rather than a pull request diff
+and runs the three canonical adversaries sequentially to reduce provider
+throttling:
 
 1. Gilfoyle with `gpt-5.6-sol`;
 2. Solid Snake with `gpt-5.6-sol`;
 3. GLaDOS with `gpt-5.4-mini`.
 
-The workflow accepts only the default branch, checks it out as audit data, and
-runs an independently pinned Cacophony action implementation. Reviewer prompts
-come from that pinned action revision, not from the audited checkout. The Azure
-key is never exposed to code from the commit under audit. Each reviewer receives
-read and search tools for working-tree source files; Git metadata and generated
-dependency directories such as `node_modules` are excluded. Any finding
-severity fails its matrix job, while `fail-fast: false` ensures all three
-reports are uploaded as separate artifacts. Run it from the Actions tab with
-**Run workflow**, or call it from another workflow in this repository:
+The workflow owns its repository-scope security boundary directly: it accepts
+only the default branch, performs its own checkout into `audit-target`, maps its
+own declared or repository API-key secret only on the audit action step, runs an
+independently pinned Cacophony action implementation, and uploads its own
+per-agent artifacts. Reviewer prompts come from that pinned action revision,
+not from the audited checkout. The Azure key is never exposed to code from the
+commit under audit. Each reviewer receives read and search tools for
+working-tree source files; Git metadata and generated dependency directories
+such as `node_modules` are excluded. Any finding severity fails its matrix job,
+while `fail-fast: false` ensures all three reports are uploaded as separate
+artifacts. Run it from the Actions tab with **Run workflow**, or call it from
+another workflow in this repository:
 
 ```yaml
 jobs:
@@ -519,14 +531,18 @@ unrelated pull requests never reach the reusable workflow, model, or secret.
   behind a same-repository condition because GitHub treats a skipped required
   job as successful.
 - A `pull_request_target` persona caller may review forks only through a
-  trusted-base reusable workflow that owns the pinned action, base-commit
-  prompt, authorization, checkout, and secret scope. Each caller owns read-only
-  permissions and per-pull-request concurrency. The reusable workflow rejects
-  non-`pull_request_target` events, accepts same-repository pull requests, and
-  accepts forks only for `OWNER`, `MEMBER`, or `COLLABORATOR`
-  `author_association` values before checkout. It executes no head-controlled
-  code. Code-execution safety does not authorize strangers to spend provider
-  quota.
+  trusted-base reusable workflow that owns the pull-request action pin,
+  base-commit prompt, authorization, checkout, secret scope, and artifacts.
+  Each caller owns read-only permissions and per-pull-request concurrency. The
+  reusable workflow rejects non-`pull_request_target` events, accepts
+  same-repository pull requests, and accepts forks only for `OWNER`, `MEMBER`,
+  or `COLLABORATOR` `author_association` values before checkout. It executes no
+  head-controlled code. Code-execution safety does not authorize strangers to
+  spend provider quota.
+- Repository-wide audit is a distinct repository-owned direct-action mode. Its
+  workflow independently pins the action, checks out only the default branch,
+  scopes the API key to the audit action step, and uploads repository-audit
+  artifacts; it does not route through the pull-request reusable worker.
 - Repository secrets are unavailable to `pull_request` workflows from forks.
   The quick-start workflow fails those pull requests explicitly rather than
   silently passing a skipped gate.
@@ -597,10 +613,12 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    guard fails fork use before checkout or review. The guard is not a fork
    authorization path. Use `pull_request_target` only for the documented
    trusted-base pattern with one repository-owned reusable workflow holding
-   every pinned remote action, the base-commit prompt, read-only permissions,
-   authorization before checkout, no execution of head-controlled code, and
-   API-key mapping. Keep persona callers narrow and give each per-pull-request
-   concurrency.
+   every pull-request review action pin, the base-commit prompt, read-only
+   permissions, authorization before checkout, no execution of head-controlled
+   code, and API-key mapping. Keep persona callers narrow and give each
+   per-pull-request concurrency. Do not apply that caller/worker topology to
+   repository-wide audit, which is a separate repository-owned direct-action
+   workflow with independent pinning, checkout, secret scoping, and artifacts.
 10. Confirm the workflow passes `rate-limit-retries` explicitly or relies on
     the documented default of `2`, and that exhausted HTTP 429 retries produce
     an `inconclusive` report that fails closed.

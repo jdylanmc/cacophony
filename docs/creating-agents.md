@@ -89,14 +89,21 @@ a reviewed full commit SHA.
 
 ### Workflow pattern
 
-The repository owns the security-sensitive review sequence once in
-`.github/workflows/cacophony-review.yml`. It performs fork authorization,
-trusted merge-ref checkout, base-prompt availability checks, the pinned
-Cacophony invocation, secret scoping, and artifact upload. Each persona caller
-owns its `pull_request_target` trigger, read-only permissions, and concurrency.
-Before checkout, the reusable workflow rejects any other event, accepts
-same-repository pull requests, and accepts fork pull requests only when
+For pull-request review, the repository centralizes the security-sensitive
+sequence in `.github/workflows/cacophony-review.yml`. It performs fork
+authorization, trusted merge-ref checkout, base-prompt availability checks, the
+pinned Cacophony invocation, secret scoping, and artifact upload. Each persona
+caller owns its `pull_request_target` trigger, read-only permissions, and
+concurrency. Before checkout, the reusable workflow rejects any other event,
+accepts same-repository pull requests, and accepts fork pull requests only when
 `author_association` is `OWNER`, `MEMBER`, or `COLLABORATOR`.
+
+This ownership statement applies only to pull-request review. Repository-wide
+audit is intentionally separate: `.github/workflows/repository-audit.yml` is a
+repository-owned direct-action workflow, not a thin persona caller and not a
+caller of `.github/workflows/cacophony-review.yml`. It independently owns its
+action pin, default-branch checkout into `audit-target`, API-key mapping on the
+audit action step, and `cacophony-repository-audit-<agent>` artifacts.
 
 Each pull-request reviewer gets an independent thin caller so GitHub schedules
 all established reviewers in parallel. This template intentionally retains the
@@ -147,10 +154,12 @@ The three rows are separate ownership layers, not interchangeable alternatives.
 
 Do not copy the shared steps into persona callers. Update trust policy,
 checkout, action pins, provider-secret handling, and artifact behavior only in
-the reusable workflow. Never execute pull request scripts, local actions,
-package commands, or other head-controlled code there. The pinned Cacophony
-action may read the checked-out head, but it loads the prompt itself from the
-base commit.
+the reusable workflow for pull-request review. Never execute pull request
+scripts, local actions, package commands, or other head-controlled code there.
+The pinned Cacophony action may read the checked-out head, but it loads the
+prompt itself from the base commit. Do not move repository-audit pinning,
+checkout, secret scoping, or artifact behavior into this pull-request worker;
+those remain direct responsibilities of `repository-audit.yml`.
 
 ### Stacked rollout
 
