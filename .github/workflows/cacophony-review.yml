@@ -98,6 +98,8 @@ jobs:
           rate-limit-retries: ${{ inputs.rate-limit-retries }}
           fail-on: ${{ inputs.fail-on }}
         env:
+          # Trusted-base callers pass only the declared reusable-workflow
+          # secret. This worker alone maps it to the action environment.
           CACOPHONY_AZURE_API_KEY: ${{ secrets.azure-api-key }}
 
       - name: Upload Cacophony report

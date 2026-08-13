@@ -121,6 +121,14 @@ environment variable. This differs intentionally from the simple consumer
 quick start, where the workflow invokes the action directly and therefore maps
 the secret directly on that action step.
 
+| Mode | Required secret wiring |
+| --- | --- |
+| Simple `pull_request` | Direct action step `env`: `CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}`. Never use `secrets.azure-api-key`. |
+| Trusted-base caller | Caller `secrets`: `azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}`. Never add the action environment mapping to the caller. |
+| Reusable worker | The pinned action step alone maps `CACOPHONY_AZURE_API_KEY: ${{ secrets.azure-api-key }}`. |
+
+The three rows are separate ownership layers, not interchangeable alternatives.
+
 Do not copy the shared steps into persona callers. Update trust policy,
 checkout, action pins, provider-secret handling, and artifact behavior only in
 the reusable workflow. Never execute pull request scripts, local actions,
@@ -194,6 +202,8 @@ action invocation is intentional and must not be copied as a trusted-base fork
 review workflow. The simple workflow never calls the reusable worker. The
 reusable worker has only `workflow_call`, is never directly event-triggered,
 and is called only by a `pull_request_target` trusted-base persona workflow.
+Its direct `env` secret mapping is incompatible with a trusted-base caller,
+which must use the reusable workflow's `secrets.azure-api-key` handoff instead.
 
 An external repository does not need Cacophony's README catalog tests.
 

@@ -68,8 +68,8 @@ test("README contains a deterministic agent installation contract", async () => 
     "`pull_request_target` workflow that follows the documented trusted-base",
     "Both supported workflow modes load the prompt from the pull request's base",
     "This quick start is the simple mode for pull requests whose branches are in the",
-    "A trusted-base thin caller instead passes the",
     "\"status\": \"inconclusive\"",
+    "Secret wiring by workflow mode",
     "Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report",
   ]) {
     assert.match(readme, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -210,6 +210,7 @@ test("basic example includes the documented consumer files", async () => {
   assert.match(prompt, /correctness defects/);
   assert.match(documentation, /same-repository consumer example/);
   assert.match(documentation, /intentionally not the trusted-base/);
+  assert.match(documentation, /secret contracts are incompatible/);
 });
 
 test("action metadata defines the retry and inconclusive contract", async () => {

@@ -132,6 +132,18 @@ event trigger.
 6. Open or update a pull request from a branch in the same repository. The
    workflow produces the `cacophony-correctness` artifact.
 
+### Secret wiring by workflow mode
+
+These contracts are mutually exclusive:
+
+| Mode | Caller wiring | Action environment |
+| --- | --- | --- |
+| Simple same-repository `pull_request` | The job invokes `jdylanmc/cacophony` directly. Do not use `secrets.azure-api-key`. | That action step maps `CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}`. |
+| Trusted-base persona caller | The job calls `.github/workflows/cacophony-review.yml` and passes `azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}` under `secrets:`. Do not put an action `env` mapping in the caller. | Only the reusable workflow maps `secrets.azure-api-key` to `CACOPHONY_AZURE_API_KEY` on its pinned action step. |
+
+Do not combine the simple direct-action secret mapping with the trusted-base
+reusable-workflow secret handoff.
+
 ## Prompt contract
 
 A prompt is the review lens, not a workflow script. It should describe:
@@ -169,10 +181,8 @@ code.
 | `output-directory` | No | `.cacophony/out` | Repository-relative report root. |
 
 The action accepts the API key only through the `CACOPHONY_AZURE_API_KEY`
-environment variable. The simple quick start maps the repository secret
-directly onto that action step. A trusted-base thin caller instead passes the
-repository secret as `secrets.azure-api-key`; the reusable workflow alone maps
-it to the action environment.
+environment variable. Use the mode-specific table above to determine which
+workflow owns that mapping.
 
 ## Outputs and failure policy
 
@@ -407,10 +417,13 @@ declares `gpt-5.4-mini` directly.
 
 ## Troubleshooting
 
-- **Missing API key:** verify the secret is named exactly
-  `CACOPHONY_AZURE_API_KEY`. The simple workflow maps it through the action
-  step's `env`; a trusted-base caller passes it as `secrets.azure-api-key` and
-  the reusable workflow maps it to the action environment.
+- **Missing API key, simple mode:** verify the secret is named exactly
+  `CACOPHONY_AZURE_API_KEY` and the direct Cacophony action step maps it through
+  `env`. Do not use `secrets.azure-api-key`.
+- **Missing API key, trusted-base mode:** the persona caller must pass
+  `azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}` under `secrets:`.
+  Only the reusable workflow maps `secrets.azure-api-key` to the action's
+  `CACOPHONY_AZURE_API_KEY` environment variable.
 - **Azure 404:** verify the project endpoint and deployment. Cacophony appends
   `/openai/v1/responses` unless the endpoint already ends in `/responses`.
 - **Azure 429:** `rate-limit-retries: 2` means two retries after the initial
