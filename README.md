@@ -76,7 +76,7 @@ started manually with `workflow_dispatch`.
 
          - name: Run correctness review
            id: review
-           uses: jdylanmc/cacophony@v1
+           uses: jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503
            with:
              prompt-file: .cacophony/agents/reviewer.md
              endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
@@ -219,7 +219,7 @@ steps:
     with:
       fetch-depth: 0
   - id: review
-    uses: jdylanmc/cacophony@v1
+    uses: jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503
     with:
       prompt-file: .cacophony/agents/${{ matrix.agent }}.md
       endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
@@ -244,8 +244,8 @@ steps:
 - Tool outputs are bounded. There is no arbitrary command tool.
 - Keep prompts under review like any other code. They determine what is sent to
   the configured model endpoint.
-- Pin Cacophony to an immutable release tag or commit when your supply-chain
-  policy requires it. `v1` is a moving major tag.
+- Keep Cacophony pinned to a reviewed full commit SHA. Update the pin through a
+  normal dependency review when adopting a newer release.
 
 ## Troubleshooting
 
@@ -273,8 +273,9 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    workflow. Preserve unrelated existing workflow behavior.
 4. Keep `permissions: contents: read`, `actions/checkout@v5`, and
    `fetch-depth: 0`.
-5. Reference `jdylanmc/cacophony@v1`; do not copy Cacophony source into the
-   consumer repository.
+5. Reference
+   `jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503`;
+   do not copy Cacophony source into the consumer repository.
 6. Use repository variables named `CACOPHONY_AZURE_ENDPOINT` and
    `CACOPHONY_AZURE_DEPLOYMENT`.
 7. Map the repository secret `CACOPHONY_AZURE_API_KEY` into the review step's

@@ -12,7 +12,7 @@ test("README contains a deterministic agent installation contract", async () => 
   const readme = await fs.promises.readFile("README.md", "utf8");
   for (const required of [
     "## Instructions for Copilot or another coding agent",
-    "jdylanmc/cacophony@v1",
+    "jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503",
     "CACOPHONY_AZURE_API_KEY",
     "CACOPHONY_AZURE_ENDPOINT",
     "CACOPHONY_AZURE_DEPLOYMENT",
@@ -34,7 +34,11 @@ test("basic example includes the documented consumer files", async () => {
     "examples/basic/.cacophony/agents/reviewer.md",
     "utf8",
   );
-  assert.match(workflow, /uses: jdylanmc\/cacophony@v1/);
+  assert.match(
+    workflow,
+    /uses: jdylanmc\/cacophony@[a-f0-9]{40}/,
+  );
+  assert.doesNotMatch(workflow, /jdylanmc\/cacophony@v1/);
   assert.match(workflow, /if: always\(\)/);
   assert.match(workflow, /path: \.cacophony\/out\//);
   assert.match(prompt, /correctness defects/);
