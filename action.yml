@@ -14,6 +14,10 @@ inputs:
     description: Review target. Use pull-request for event-driven review or repository for a full checkout audit.
     required: false
     default: pull-request
+  workspace-directory:
+    description: Repository-relative checkout directory to inspect. Defaults to GITHUB_WORKSPACE.
+    required: false
+    default: "."
   endpoint:
     description: Azure AI Foundry project or OpenAI-compatible endpoint.
     required: true

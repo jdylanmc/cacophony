@@ -164,7 +164,7 @@ test("action audits a complete repository without pull request context", async (
     cwd: fixture.workspace,
     env: {
       ...process.env,
-      GITHUB_WORKSPACE: fixture.workspace,
+      GITHUB_WORKSPACE: path.dirname(fixture.workspace),
       GITHUB_OUTPUT: outputFile,
       GITHUB_REPOSITORY: "example/repository",
       GITHUB_SHA: fixture.headSha,
@@ -173,6 +173,7 @@ test("action audits a complete repository without pull request context", async (
       CACOPHONY_AZURE_API_KEY: "test-secret",
       "INPUT_PROMPT-FILE": ".cacophony/agents/reviewer.md",
       "INPUT_REVIEW-SCOPE": "repository",
+      "INPUT_WORKSPACE-DIRECTORY": path.basename(fixture.workspace),
       INPUT_ENDPOINT: `http://127.0.0.1:${port}`,
       INPUT_DEPLOYMENT: "review-model",
     },

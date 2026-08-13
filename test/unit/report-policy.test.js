@@ -105,7 +105,13 @@ test("terminal reports share one envelope with outcome-specific fields", () => {
       provider: "azure-foundry",
       deployment: "review-model",
     },
-    context: { pullRequest: { number: 7 } },
+    target: {
+      kind: "pull-request",
+      reportTarget: {
+        pullRequest: { number: 7 },
+        repository: null,
+      },
+    },
     startedAt: "2026-01-01T00:00:00.000Z",
   };
   const errorReport = createErrorReport({
@@ -132,13 +138,21 @@ test("terminal reports share one envelope with outcome-specific fields", () => {
 });
 
 test("repository audit reports identify the audited target", () => {
-  const context = {
-    repository: {
-      name: "example/repository",
-      sha: "a".repeat(40),
-      ref: "main",
-      actor: "octocat",
-      url: "https://github.com/example/repository",
+  const repository = {
+    name: "example/repository",
+    sha: "a".repeat(40),
+    ref: "main",
+    actor: "octocat",
+    url: "https://github.com/example/repository",
+  };
+  const target = {
+    kind: "repository",
+    reportTarget: {
+      pullRequest: null,
+      repository,
+    },
+    context: {
+      repository,
     },
   };
   const report = createInconclusiveReport({
@@ -150,12 +164,12 @@ test("repository audit reports identify the audited target", () => {
       deployment: "review-model",
       reviewScope: "repository",
     },
-    context,
+    target,
     startedAt: "2026-01-01T00:00:00.000Z",
   });
   assert.equal(report.reviewScope, "repository");
   assert.equal(report.pullRequest, null);
-  assert.deepEqual(report.repository, context.repository);
+  assert.deepEqual(report.repository, repository);
 });
 
 test("renderMarkdown derives readable output from canonical data", () => {

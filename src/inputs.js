@@ -95,6 +95,10 @@ export function readInputs(env = process.env) {
     rateLimitRetries: boundedInteger("rate-limit-retries", 2, 0, 10, env),
     failOn,
     reviewScope,
+    workspaceDirectory: relativePath(
+      "workspace-directory",
+      getInput("workspace-directory", env) || ".",
+    ),
     outputDirectory: relativePath(
       "output-directory",
       getInput("output-directory", env) || ".cacophony/out",

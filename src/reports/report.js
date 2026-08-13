@@ -149,7 +149,7 @@ export function validateSubmission(value) {
 export function createCompletedReport({
   submission,
   config,
-  context,
+  target,
   startedAt,
   turns,
   toolCalls,
@@ -165,9 +165,9 @@ export function createCompletedReport({
       name: config.provider,
       deployment: config.deployment,
     },
-    reviewScope: config.reviewScope ?? "pull-request",
-    pullRequest: context.pullRequest ?? null,
-    repository: context.repository ?? null,
+    reviewScope: target.kind,
+    pullRequest: target.reportTarget.pullRequest,
+    repository: target.reportTarget.repository,
     startedAt,
     completedAt: new Date().toISOString(),
     execution: { turns, toolCalls },
@@ -180,7 +180,7 @@ function createTerminalReport({
   verdict,
   cause,
   config,
-  context,
+  target,
   startedAt,
 }) {
   if (!TERMINAL_VERDICTS.includes(verdict)) {
@@ -198,9 +198,9 @@ function createTerminalReport({
       name: config?.provider ?? "unknown",
       deployment: config?.deployment ?? "unknown",
     },
-    reviewScope: config?.reviewScope ?? "pull-request",
-    pullRequest: context?.pullRequest ?? null,
-    repository: context?.repository ?? null,
+    reviewScope: target?.kind ?? config?.reviewScope ?? "pull-request",
+    pullRequest: target?.reportTarget.pullRequest ?? null,
+    repository: target?.reportTarget.repository ?? null,
     startedAt,
     completedAt: new Date().toISOString(),
     execution: { turns: 0, toolCalls: 0 },
@@ -211,24 +211,24 @@ function createTerminalReport({
   };
 }
 
-export function createErrorReport({ error, config, context, startedAt }) {
+export function createErrorReport({ error, config, target, startedAt }) {
   return createTerminalReport({
     status: "error",
     verdict: "error",
     cause: error,
     config,
-    context,
+    target,
     startedAt,
   });
 }
 
-export function createInconclusiveReport({ reason, config, context, startedAt }) {
+export function createInconclusiveReport({ reason, config, target, startedAt }) {
   return createTerminalReport({
     status: "inconclusive",
     verdict: "inconclusive",
     cause: reason,
     config,
-    context,
+    target,
     startedAt,
   });
 }

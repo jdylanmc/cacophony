@@ -21,6 +21,7 @@ test("readInputs applies simple defaults", () => {
   assert.equal(result.rateLimitRetries, 2);
   assert.equal(result.failOn, "high");
   assert.equal(result.reviewScope, "pull-request");
+  assert.equal(result.workspaceDirectory, ".");
   assert.equal(result.outputDirectory, ".cacophony/out");
 });
 
@@ -58,6 +59,10 @@ test("readInputs rejects traversal and invalid bounds", () => {
   assert.throws(
     () => readInputs(validEnv({ "INPUT_REVIEW-SCOPE": "workspace" })),
     /review-scope must be/,
+  );
+  assert.throws(
+    () => readInputs(validEnv({ "INPUT_WORKSPACE-DIRECTORY": "../outside" })),
+    /cannot leave/,
   );
 });
 

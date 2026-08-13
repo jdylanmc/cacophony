@@ -1,7 +1,5 @@
 import path from "node:path";
 
-import { loadPullRequestContext } from "./context/pull-request.js";
-import { loadRepositoryContext } from "./context/repository.js";
 import {
   appendStepSummary,
   error as logError,
@@ -22,6 +20,7 @@ import {
   writeReports,
 } from "./reports/report.js";
 import { runReview } from "./runner/review.js";
+import { createReviewTarget } from "./scopes/review-target.js";
 
 function sanitize(message, secrets) {
   let value = String(message);
@@ -35,18 +34,25 @@ function sanitize(message, secrets) {
 
 async function main() {
   const startedAt = new Date().toISOString();
-  const workspace = path.resolve(process.env.GITHUB_WORKSPACE || process.cwd());
+  const workspaceRoot = path.resolve(
+    process.env.GITHUB_WORKSPACE || process.cwd(),
+  );
   const apiKey = process.env.CACOPHONY_AZURE_API_KEY || "";
   let config;
-  let context;
+  let target;
   let report;
 
   try {
     config = readInputs();
-    context =
-      config.reviewScope === "repository"
-        ? loadRepositoryContext()
-        : await loadPullRequestContext(process.env.GITHUB_EVENT_PATH);
+    const workspace = path.resolve(workspaceRoot, config.workspaceDirectory);
+    const workspacePrefix = `${workspaceRoot}${path.sep}`;
+    if (workspace !== workspaceRoot && !workspace.startsWith(workspacePrefix)) {
+      throw new Error("workspace-directory cannot leave GITHUB_WORKSPACE");
+    }
+    target = await createReviewTarget({
+      reviewScope: config.reviewScope,
+      eventPath: process.env.GITHUB_EVENT_PATH,
+    });
     const provider = createAzureFoundryProvider({
       endpoint: config.endpoint,
       deployment: config.deployment,
@@ -61,7 +67,7 @@ async function main() {
     try {
       report = await runReview({
         config,
-        context,
+        target,
         workspace,
         provider,
         signal: controller.signal,
@@ -84,17 +90,21 @@ async function main() {
                 : `${message}; review is inconclusive`,
             ),
             config,
-            context,
+            target,
             startedAt,
           })
         : createErrorReport({
             error: new Error(message),
             config,
-            context,
+            target,
             startedAt,
           });
   }
 
+  const workspace = path.resolve(
+    workspaceRoot,
+    config?.workspaceDirectory ?? ".",
+  );
   const outputDirectory = config?.outputDirectory ?? ".cacophony/out";
   const paths = await writeReports(report, workspace, outputDirectory);
   await appendStepSummary(renderMarkdown(report));

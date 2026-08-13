@@ -237,31 +237,27 @@ export const TOOL_DEFINITIONS = [
   },
 ];
 
-export async function createRepositoryTools({ workspace, context }) {
+export async function createRepositoryTools({ workspace, target }) {
   const root = await fs.promises.realpath(workspace);
-  const pullRequest = context.pullRequest;
+  const { context } = target;
+  const pullRequest = target.reportTarget.pullRequest;
   const baseSha = pullRequest?.baseSha;
   const headSha = pullRequest?.headSha;
   if (pullRequest) {
     assertSha(baseSha, "pull_request.base.sha");
     assertSha(headSha, "pull_request.head.sha");
   } else {
-    assertSha(context.repository?.sha, "repository.sha");
+    assertSha(target.reportTarget.repository?.sha, "repository.sha");
     const checkedOut = await git(root, ["rev-parse", "HEAD"], 100);
-    if (checkedOut.content.trim() !== context.repository.sha) {
+    if (checkedOut.content.trim() !== target.reportTarget.repository.sha) {
       throw new Error("repository audit checkout does not match GITHUB_SHA");
     }
   }
 
   return {
-    definitions: pullRequest
-      ? TOOL_DEFINITIONS
-      : TOOL_DEFINITIONS.filter(
-          (tool) =>
-            !["get_pull_request", "list_changed_files", "get_diff"].includes(
-              tool.name,
-            ),
-        ),
+    definitions: TOOL_DEFINITIONS.filter((tool) =>
+      target.allowedToolNames.includes(tool.name),
+    ),
 
     async execute(name, args = {}) {
       switch (name) {
