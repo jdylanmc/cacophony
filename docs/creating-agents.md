@@ -23,7 +23,7 @@ Before editing files, decide:
 - **Remediation format:** the concrete numbered steps every finding requires;
 - **Model deployment:** the Azure deployment name to declare directly in this
   reviewer's workflow;
-- **Budget:** start complex reviewers at 16 turns and 600 seconds.
+- **Budget:** start complex reviewers at 20 turns and 600 seconds.
 
 One reviewer should own one lens. More persona does not compensate for an
 ambiguous responsibility.
@@ -138,7 +138,7 @@ jobs:
           prompt-file: .cacophony/agents/<slug>.md
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
           deployment: <azure-deployment-name>
-          max-turns: 16
+          max-turns: 20
           timeout-seconds: 600
           rate-limit-retries: 2
           fail-on: high

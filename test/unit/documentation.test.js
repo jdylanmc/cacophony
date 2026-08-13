@@ -232,7 +232,7 @@ test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
   );
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.match(workflow, /deployment: gpt-5\.6-sol/);
-  assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /name: Authorize Azure-backed review/);
@@ -287,7 +287,7 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
   );
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.match(workflow, /deployment: gpt-5\.6-sol/);
-  assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /name: cacophony-solid-snake-architecture/);
@@ -331,7 +331,7 @@ test("GLaDOS sample matches its independent documentation reviewer", async () =>
     workflow,
     /prompt-file: \.cacophony\/agents\/glados-documentation-sentinel\.md/,
   );
-  assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /name: cacophony-glados-documentation-sentinel/);
 });
@@ -377,7 +377,7 @@ test("agent creation guide and shared skill capture the stacked workflow", async
     assert.match(content, /\.cacophony\/agents\/<slug>\.md/);
     assert.match(content, /examples\/reviewers\/<slug>\.md/);
     assert.match(content, /pull_request_target/);
-    assert.match(content, /max-turns: 16/);
+    assert.match(content, /max-turns: 20/);
     assert.match(content, /rate-limit-retries: 2/);
     assert.match(content, /CACOPHONY_AZURE_API_KEY/);
     assert.match(content, /one (?:persona|reviewer) per/i);

@@ -17,5 +17,5 @@ One reviewer owns one lens.
 
 If the user says they will provide the prompt, stop rather than inventing it.
 
-Use 16 turns, 600 seconds, and 2 rate-limit retries as the default budget for a
+Use 20 turns, 600 seconds, and 2 rate-limit retries as the default budget for a
 nontrivial persona.

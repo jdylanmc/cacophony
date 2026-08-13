@@ -21,7 +21,7 @@ Copy an established persona workflow and preserve:
 - base-prompt availability check;
 - pinned full Cacophony commit SHA;
 - the selected model deployment hardcoded in the workflow;
-- `max-turns: 16`;
+- `max-turns: 20`;
 - `timeout-seconds: 600`;
 - `rate-limit-retries: 2`;
 - API key only on the pinned Cacophony step;

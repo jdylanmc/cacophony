@@ -64,7 +64,7 @@ jobs:
           prompt-file: .cacophony/agents/glados-documentation-sentinel.md
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
           deployment: gpt-5.4-mini
-          max-turns: 16
+          max-turns: 20
           timeout-seconds: 600
           rate-limit-retries: 2
           fail-on: high

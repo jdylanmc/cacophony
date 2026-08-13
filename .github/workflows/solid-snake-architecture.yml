@@ -64,7 +64,7 @@ jobs:
           prompt-file: .cacophony/agents/solid-snake-architecture.md
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
           deployment: gpt-5.6-sol
-          max-turns: 16
+          max-turns: 20
           timeout-seconds: 600
           rate-limit-retries: 2
           fail-on: high
