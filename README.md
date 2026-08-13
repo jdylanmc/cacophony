@@ -133,7 +133,8 @@ prompt begins running after the setup change is merged.
 | `deployment` | Yes | | Model deployment name. |
 | `provider` | No | `azure-foundry` | Provider adapter. |
 | `max-turns` | No | `8` | Model turns, from 1 through 20. |
-| `timeout-seconds` | No | `300` | Total deadline, from 30 through 1800 seconds. |
+| `timeout-seconds` | No | `300` | Total deadline, including retry waits, from 30 through 1800 seconds. |
+| `rate-limit-retries` | No | `2` | Additional HTTP 429 attempts, from 0 through 10. |
 | `fail-on` | No | `high` | `low`, `medium`, `high`, `critical`, or `never`. |
 | `output-directory` | No | `.cacophony/out` | Repository-relative report root. |
 
@@ -159,9 +160,13 @@ step. Framework errors such as authentication failure, timeout, invalid model
 output, or exhausted turn budget always fail.
 
 Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report and a
-workflow warning without failing the step. Inconclusive is not approval:
-repositories that require a completed reviewer decision should retry the run
-after quota is available.
+workflow warning without failing the step after `rate-limit-retries` is
+exhausted. Retry delays use Azure's `retry-after-ms`,
+`x-ms-retry-after-ms`, or `Retry-After` value as the base and multiply it by
+`2^retryIndex`. If Azure provides no delay, the base is one second. The total
+`timeout-seconds` deadline remains the hard ceiling. Inconclusive is not
+approval: repositories that require a completed reviewer decision should retry
+the run after quota is available.
 
 ## Report format
 
@@ -321,8 +326,9 @@ on subsequent pull requests and upload separate artifacts.
 - **Azure 404:** verify the project endpoint and deployment. Cacophony appends
   `/openai/v1/responses` unless the endpoint already ends in `/responses`.
 - **Azure 429:** the report is marked `inconclusive` and the step does not fail.
-  Retry after model quota is available if the repository requires a completed
-  review.
+  Before that result, Cacophony retries with header-based exponential backoff
+  within `timeout-seconds`. Retry after model quota is available if the
+  repository requires a completed review.
 - **Git diff failure:** use `actions/checkout` with `fetch-depth: 0`.
 - **No report submission:** make the prompt more explicit and increase
   `max-turns` within the allowed range.

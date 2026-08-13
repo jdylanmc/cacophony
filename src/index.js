@@ -40,6 +40,7 @@ async function main() {
       endpoint: config.endpoint,
       deployment: config.deployment,
       apiKey,
+      rateLimitRetries: config.rateLimitRetries,
     });
     const controller = new AbortController();
     const timeout = setTimeout(

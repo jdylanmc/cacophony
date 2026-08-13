@@ -115,6 +115,7 @@ jobs:
           deployment: ${{ env.CACOPHONY_AZURE_DEPLOYMENT }}
           max-turns: 16
           timeout-seconds: 600
+          rate-limit-retries: 2
           fail-on: high
         env:
           CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}

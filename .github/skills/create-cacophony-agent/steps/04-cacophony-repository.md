@@ -22,6 +22,7 @@ Copy an established persona workflow and preserve:
 - pinned full Cacophony commit SHA;
 - `max-turns: 16`;
 - `timeout-seconds: 600`;
+- `rate-limit-retries: 2`;
 - API key only on the pinned Cacophony step;
 - artifact upload skipped when the reviewer did not run.
 

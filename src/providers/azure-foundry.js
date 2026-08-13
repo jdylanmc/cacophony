@@ -9,6 +9,52 @@ export class ProviderRateLimitError extends Error {
   }
 }
 
+function retryDelayMs(response, retryIndex) {
+  let baseDelayMs;
+  for (const name of ["retry-after-ms", "x-ms-retry-after-ms"]) {
+    const raw = response.headers.get(name);
+    if (raw && /^\d+$/.test(raw.trim())) {
+      baseDelayMs = Number(raw.trim());
+      break;
+    }
+  }
+
+  if (baseDelayMs === undefined) {
+    const retryAfter = response.headers.get("retry-after")?.trim();
+    if (retryAfter) {
+      if (/^\d+(?:\.\d+)?$/.test(retryAfter)) {
+        baseDelayMs = Math.ceil(Number(retryAfter) * 1_000);
+      } else {
+        const retryAt = Date.parse(retryAfter);
+        if (Number.isFinite(retryAt)) {
+          baseDelayMs = Math.max(0, retryAt - Date.now());
+        }
+      }
+    }
+  }
+
+  return Math.min((baseDelayMs ?? 1_000) * 2 ** retryIndex, 1_800_000);
+}
+
+function waitForRetry(delayMs, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new ProviderRateLimitError("Azure AI Foundry"));
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, delayMs);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new ProviderRateLimitError("Azure AI Foundry"));
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
 export function responsesUrl(endpoint) {
   const normalized = endpoint.trim().replace(/\/+$/, "");
   let parsed;
@@ -59,7 +105,9 @@ export function createAzureFoundryProvider({
   endpoint,
   deployment,
   apiKey,
+  rateLimitRetries = 0,
   fetchImplementation = globalThis.fetch,
+  sleepImplementation = waitForRetry,
 }) {
   if (!apiKey) {
     throw new Error("CACOPHONY_AZURE_API_KEY is required");
@@ -83,21 +131,30 @@ export function createAzureFoundryProvider({
         body.previous_response_id = previousResponseId;
       }
 
-      const response = await fetchImplementation(url, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "api-key": apiKey,
-        },
-        body: JSON.stringify(body),
-        signal,
-      });
+      let response;
+      for (let attempt = 0; attempt <= rateLimitRetries; attempt += 1) {
+        response = await fetchImplementation(url, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "api-key": apiKey,
+          },
+          body: JSON.stringify(body),
+          signal,
+        });
+
+        if (response.status !== 429) {
+          break;
+        }
+        if (attempt === rateLimitRetries) {
+          throw new ProviderRateLimitError("Azure AI Foundry", response.status);
+        }
+        await response.body?.cancel();
+        await sleepImplementation(retryDelayMs(response, attempt), signal);
+      }
 
       if (!response.ok) {
         const detail = (await response.text()).slice(0, MAX_ERROR_BODY);
-        if (response.status === 429) {
-          throw new ProviderRateLimitError("Azure AI Foundry", response.status);
-        }
         throw new Error(
           `Azure AI Foundry request failed (${response.status}): ${detail || response.statusText}`,
         );

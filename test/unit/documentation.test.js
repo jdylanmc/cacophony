@@ -316,6 +316,7 @@ test("agent creation guide and shared skill capture the stacked workflow", async
     assert.match(content, /examples\/reviewers\/<slug>\.md/);
     assert.match(content, /pull_request_target/);
     assert.match(content, /max-turns: 16/);
+    assert.match(content, /rate-limit-retries: 2/);
     assert.match(content, /CACOPHONY_AZURE_API_KEY/);
     assert.match(content, /one (?:persona|reviewer) per/i);
   }

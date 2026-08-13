@@ -21,9 +21,13 @@ inputs:
     required: false
     default: "8"
   timeout-seconds:
-    description: Total review timeout, from 30 through 1800 seconds.
+    description: Total review deadline, including rate-limit waits, from 30 through 1800 seconds.
     required: false
     default: "300"
+  rate-limit-retries:
+    description: Additional HTTP 429 attempts, from 0 through 10. Azure retry delays receive exponential backoff.
+    required: false
+    default: "2"
   fail-on:
     description: Minimum finding severity that fails the step, or never.
     required: false

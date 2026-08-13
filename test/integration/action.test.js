@@ -179,6 +179,7 @@ test("action reports Azure throttling as inconclusive without failing", async (t
       INPUT_ENDPOINT: `http://127.0.0.1:${port}`,
       INPUT_DEPLOYMENT: "review-model",
       "INPUT_FAIL-ON": "high",
+      "INPUT_RATE-LIMIT-RETRIES": "0",
     },
     encoding: "utf8",
   });

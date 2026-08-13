@@ -23,8 +23,10 @@ reviewer findings.
 
 Treat Cacophony's report as inconclusive. It is neither approval nor a
 finding-based block, and the action should not fail solely because of
-throttling. Retry after quota is available when the repository requires a
-completed reviewer decision.
+throttling. Before that result, Cacophony retries the configured number of
+times using Azure's retry header as the base for exponential backoff, bounded
+by the total action timeout. Retry after quota is available when the repository
+requires a completed reviewer decision.
 
 ## Reviewer exhausts its turn budget
 

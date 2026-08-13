@@ -94,3 +94,41 @@ test("Azure provider classifies HTTP 429 as rate limiting", async () => {
       /inconclusive/.test(error.message),
   );
 });
+
+test("Azure provider retries HTTP 429 using header-based exponential backoff", async () => {
+  const delays = [];
+  let attempts = 0;
+
+  const provider = createAzureFoundryProvider({
+    endpoint: "https://example.invalid",
+    deployment: "review-model",
+    apiKey: "test-secret",
+    rateLimitRetries: 2,
+    fetchImplementation: async () => {
+      attempts += 1;
+      if (attempts < 3) {
+        return new Response(null, {
+          status: 429,
+          headers: { "retry-after-ms": "25" },
+        });
+      }
+      return new Response(JSON.stringify({ id: "response-3", output: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    },
+    sleepImplementation: async (delay) => {
+      delays.push(delay);
+    },
+  });
+
+  const result = await provider.turn({
+    instructions: "review",
+    input: "start",
+    tools: [],
+  });
+
+  assert.equal(result.id, "response-3");
+  assert.equal(attempts, 3);
+  assert.deepEqual(delays, [25, 50]);
+});
