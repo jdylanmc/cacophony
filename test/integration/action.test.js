@@ -18,6 +18,16 @@ const actionEntry = path.resolve("src/index.js");
 test("action writes reports and outputs before applying policy", async (t) => {
   const fixture = await createPullRequestFixture();
   t.after(() => removeFixture(fixture));
+  const evidenceDirectory = path.join(
+    fixture.workspace,
+    ".cacophony",
+    "evidence",
+  );
+  await fs.promises.mkdir(evidenceDirectory, { recursive: true });
+  await fs.promises.writeFile(
+    path.join(evidenceDirectory, "analyzer.json"),
+    '{"results":[{"level":"error","message":"Incorrect arithmetic"}]}\n',
+  );
   let requestCount = 0;
   const secret = "action-test-secret";
   const server = http.createServer(async (incoming, response) => {
@@ -31,8 +41,10 @@ test("action writes reports and outputs before applying policy", async (t) => {
             {
               type: "function_call",
               call_id: "call-1",
-              name: "get_diff",
-              arguments: JSON.stringify({ path: "app.js" }),
+              name: "read_evidence",
+              arguments: JSON.stringify({
+                path: ".cacophony/evidence/analyzer.json",
+              }),
             },
           ]
         : [
@@ -81,6 +93,7 @@ test("action writes reports and outputs before applying policy", async (t) => {
         GITHUB_STEP_SUMMARY: summaryFile,
         CACOPHONY_AZURE_API_KEY: secret,
         "INPUT_PROMPT-FILE": ".cacophony/agents/reviewer.md",
+        "INPUT_EVIDENCE-FILES": ".cacophony/evidence/analyzer.json",
         INPUT_PROVIDER: "azure-foundry",
         INPUT_ENDPOINT: `http://127.0.0.1:${port}`,
         INPUT_DEPLOYMENT: "review-model",

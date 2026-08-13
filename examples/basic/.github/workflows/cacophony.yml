@@ -22,7 +22,7 @@ jobs:
 
       - name: Run correctness review
         id: review
-        uses: jdylanmc/cacophony@7f31d99597e908372592dec996720749b476889c
+        uses: jdylanmc/cacophony@410a839794a585f234e43e444881c09533425bcb
         with:
           prompt-file: .cacophony/agents/reviewer.md
           endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
