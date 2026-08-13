@@ -130,6 +130,8 @@ test("trusted-base persona workflows are narrow reusable callers", async () => {
   const callers = [
     ".github/workflows/hello-world.yml",
     ".github/workflows/solid-snake-architecture.yml",
+    ".github/workflows/master-chief-domain-commander.yml",
+    ".github/workflows/fletcher-prompt-conductor.yml",
   ];
 
   for (const file of callers) {
@@ -451,6 +453,48 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /fail-on: high/);
+});
+
+test("Fletcher runs only for changed Cacophony agent prompts", async () => {
+  const prompt = await fs.promises.readFile(
+    ".cacophony/agents/fletcher-prompt-conductor.md",
+    "utf8",
+  );
+  const workflow = await fs.promises.readFile(
+    ".github/workflows/fletcher-prompt-conductor.yml",
+    "utf8",
+  );
+
+  assert.match(
+    workflow,
+    /on:\n  pull_request_target:\n    paths:\n      - "\.cacophony\/agents\/\*\*"/,
+  );
+  assert.doesNotMatch(workflow, /paths-ignore:|^\s+- ["']?\*\*["']?$/m);
+  assert.match(workflow, /permissions:\n  contents: read/);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
+  assert.match(workflow, /agent-slug: fletcher-prompt-conductor/);
+  assert.match(workflow, /deployment: gpt-5\.6-sol/);
+  assert.match(workflow, /max-turns: 20/);
+  assert.match(workflow, /timeout-seconds: 600/);
+  assert.match(workflow, /rate-limit-retries: 2/);
+  assert.match(workflow, /fail-on: high/);
+  assert.doesNotMatch(workflow, /actions\/checkout@|jdylanmc\/cacophony@/);
+
+  assert.match(prompt, /volatile, hyper-demanding, brilliantly ruthless/);
+  assert.match(prompt, /tempo, score, rehearsal, and\s+perfection metaphors/);
+  assert.match(prompt, /Audit only Cacophony agent prompts changed by this pull request/);
+  assert.match(prompt, /addition, modification, rename, or\s+deletion/);
+  assert.match(prompt, /Ignore every other changed file except a workflow or configuration file/);
+  assert.match(prompt, /Never review\s+application source, tests, or unrelated documentation/);
+  assert.match(prompt, /list_changed_files/);
+  assert.match(prompt, /get_diff/);
+  assert.match(prompt, /submit_report/);
+  assert.match(prompt, /\[BLOCK: PROMPT\] - /);
+  assert.match(prompt, /set the summary exactly to `\[APPROVED\]`/);
+  assert.match(prompt, /submit an empty `findings` array/);
+  assert.match(prompt, /complete copy-pasteable optimized prompt/);
+  assert.match(prompt, /exact\s+numbered mechanical edits/);
+  assert.doesNotMatch(prompt, /\{\{TARGET_PROMPT\}\}/);
 });
 
 test("agent creation guide and shared skill capture the stacked workflow", async () => {
