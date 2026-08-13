@@ -415,6 +415,42 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   assert.match(workflow, /evidence-artifact: cacophony-evidence-glados/);
 });
 
+test("Master Chief canonical prompt configures its domain reviewer", async () => {
+  const activePrompt = await fs.promises.readFile(
+    ".cacophony/agents/master-chief-domain-commander.md",
+    "utf8",
+  );
+  const workflow = await fs.promises.readFile(
+    ".github/workflows/master-chief-domain-commander.yml",
+    "utf8",
+  );
+
+  assert.match(activePrompt, /Domain-Driven Design \(DDD\)/);
+  assert.match(activePrompt, /You\s+Aren't Gonna Need It \(YAGNI\)/);
+  assert.match(activePrompt, /Keep It Simple, Stupid \(KISS\)/);
+  assert.match(activePrompt, /Code Complete/);
+  assert.match(activePrompt, /Ubiquitous Language/);
+  assert.match(activePrompt, /Cacophony's supplied read-only tools/);
+  assert.match(activePrompt, /exact file and line\s+evidence/);
+  assert.match(activePrompt, /exact numbered steps/);
+  assert.match(activePrompt, /\[BLOCK: OVERENGINEERED\]/);
+  assert.match(activePrompt, /set the proposed `verdict` to `fail`/);
+  assert.match(activePrompt, /set the summary exactly to `\[APPROVED\]`/);
+  assert.match(activePrompt, /set the proposed `verdict` to `pass`/);
+  assert.match(activePrompt, /empty `findings` array/);
+  assert.match(activePrompt, /Finish only by calling `submit_report`/);
+  assert.doesNotMatch(activePrompt, /\{\{[A-Z0-9_]+\}\}/);
+  assert.match(workflow, /pull_request_target:/);
+  assert.match(workflow, /cancel-in-progress: true/);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
+  assert.match(workflow, /agent-slug: master-chief-domain-commander/);
+  assert.match(workflow, /deployment: gpt-5\.6-sol/);
+  assert.match(workflow, /max-turns: 20/);
+  assert.match(workflow, /timeout-seconds: 600/);
+  assert.match(workflow, /rate-limit-retries: 2/);
+  assert.match(workflow, /fail-on: high/);
+});
+
 test("agent creation guide and shared skill capture the stacked workflow", async () => {
   const guide = await fs.promises.readFile("docs/creating-agents.md", "utf8");
   const skill = await fs.promises.readFile(
