@@ -109,6 +109,10 @@ Cacophony adds trusted framework instructions requiring tool-based inspection,
 evidence, and a final structured `submit_report` call. Pull request text and
 repository content are explicitly treated as untrusted data.
 
+For pull request runs, Cacophony loads the prompt from the pull request's base
+commit. A pull request cannot weaken its own review instructions. A newly added
+prompt begins running after the setup change is merged.
+
 ## Action inputs
 
 | Input | Required | Default | Description |
@@ -187,6 +191,10 @@ The JSON report is the canonical artifact. Markdown is rendered from it.
   ]
 }
 ```
+
+The agent proposes a verdict, but Cacophony derives the canonical report
+verdict from validated findings: no findings is `pass`, low or medium findings
+is `warn`, and high or critical findings is `fail`.
 
 The agent can use `get_pull_request`, `list_changed_files`, `get_diff`,
 `read_file`, `list_files`, and `search_text`. It cannot execute commands or

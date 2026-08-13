@@ -121,8 +121,15 @@ export function validateSubmission(value) {
     "none",
   );
 
+  const canonicalVerdict =
+    maxSeverity === "none"
+      ? "pass"
+      : severityRank(maxSeverity) >= severityRank("high")
+        ? "fail"
+        : "warn";
+
   return {
-    verdict,
+    verdict: canonicalVerdict,
     maxSeverity,
     summary: requireString(value.summary, "summary", { max: 20_000 }),
     ...(optionalString(value.limitations, "limitations", 20_000)

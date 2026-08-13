@@ -256,8 +256,7 @@ export async function createRepositoryTools({ workspace, context }) {
             "diff",
             "--name-status",
             "--find-renames",
-            baseSha,
-            headSha,
+            `${baseSha}...${headSha}`,
             "--",
           ]);
           return result;
@@ -269,8 +268,7 @@ export async function createRepositoryTools({ workspace, context }) {
             "--no-ext-diff",
             "--find-renames",
             "--unified=3",
-            baseSha,
-            headSha,
+            `${baseSha}...${headSha}`,
             "--",
           ];
           if (args.path !== undefined) {
@@ -373,12 +371,13 @@ export async function createRepositoryTools({ workspace, context }) {
   };
 }
 
-export async function readPrompt(workspace, promptFile) {
+export async function readPrompt(workspace, promptFile, baseSha) {
   const root = await fs.promises.realpath(workspace);
-  const file = await ensureInside(root, promptFile);
-  const stat = await fs.promises.stat(file);
-  if (!stat.isFile() || stat.size > MAX_FILE_BYTES) {
-    throw new Error(`Prompt must be a file no larger than ${MAX_FILE_BYTES} bytes`);
+  assertSha(baseSha, "pull_request.base.sha");
+  const normalized = assertRelativePath(promptFile).split(path.sep).join("/");
+  const result = await git(root, ["show", `${baseSha}:${normalized}`], MAX_FILE_BYTES);
+  if (result.truncated) {
+    throw new Error(`Prompt must be no larger than ${MAX_FILE_BYTES} bytes`);
   }
-  return fs.promises.readFile(file, "utf8");
+  return result.content;
 }

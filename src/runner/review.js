@@ -68,7 +68,11 @@ export async function runReview({
   signal,
   startedAt,
 }) {
-  const prompt = await readPrompt(workspace, config.promptFile);
+  const prompt = await readPrompt(
+    workspace,
+    config.promptFile,
+    context.pullRequest.baseSha,
+  );
   if (!prompt.trim()) {
     throw new Error("prompt-file cannot be empty");
   }

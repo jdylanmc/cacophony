@@ -28,7 +28,24 @@ const validSubmission = {
 test("validateSubmission normalizes findings and computes severity", () => {
   const result = validateSubmission(validSubmission);
   assert.equal(result.maxSeverity, "high");
+  assert.equal(result.verdict, "fail");
   assert.equal(result.findings[0].id, "finding-1");
+});
+
+test("validateSubmission derives a verdict consistent with findings", () => {
+  assert.equal(
+    validateSubmission({ verdict: "fail", summary: "No findings.", findings: [] })
+      .verdict,
+    "pass",
+  );
+  assert.equal(
+    validateSubmission({
+      ...validSubmission,
+      verdict: "pass",
+      findings: [{ ...validSubmission.findings[0], severity: "medium" }],
+    }).verdict,
+    "warn",
+  );
 });
 
 test("validateSubmission rejects unsupported severity and missing fields", () => {
