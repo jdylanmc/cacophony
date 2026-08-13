@@ -19,7 +19,7 @@ jobs:
 
       - name: Run Hello World review
         id: hello
-        uses: jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2
+        uses: jdylanmc/cacophony@84f8b820ca4e4c068a872c31f92844f74e873221
         with:
           prompt-file: .cacophony/agents/hello-world.md
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
