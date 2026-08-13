@@ -136,3 +136,32 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
   assert.match(workflow, /if: steps\.prompt\.outputs\.ready == 'true'/);
   assert.notEqual(workflow, gilfoyleWorkflow);
 });
+
+test("GLaDOS sample matches its independent documentation reviewer", async () => {
+  const activePrompt = await fs.promises.readFile(
+    ".cacophony/agents/glados-documentation-sentinel.md",
+    "utf8",
+  );
+  const samplePrompt = await fs.promises.readFile(
+    "examples/reviewers/glados-documentation-sentinel.md",
+    "utf8",
+  );
+  const workflow = await fs.promises.readFile(
+    ".github/workflows/glados-documentation-sentinel.yml",
+    "utf8",
+  );
+
+  assert.equal(samplePrompt, activePrompt);
+  assert.match(activePrompt, /\[BLOCK: TESTING_ANOMALY\]/);
+  assert.match(activePrompt, /\[APPROVED\]/);
+  assert.match(activePrompt, /Documentation symmetry and deep impact/);
+  assert.match(activePrompt, /Self-documenting clarity/);
+  assert.match(activePrompt, /Stale and mismatched comments/);
+  assert.match(workflow, /pull_request_target:/);
+  assert.match(
+    workflow,
+    /prompt-file: \.cacophony\/agents\/glados-documentation-sentinel\.md/,
+  );
+  assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /name: cacophony-glados-documentation-sentinel/);
+});
