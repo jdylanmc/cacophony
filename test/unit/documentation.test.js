@@ -157,6 +157,9 @@ test("GLaDOS sample matches its independent documentation reviewer", async () =>
   assert.match(activePrompt, /Documentation symmetry and deep impact/);
   assert.match(activePrompt, /Self-documenting clarity/);
   assert.match(activePrompt, /Stale and mismatched comments/);
+  assert.match(activePrompt, /perform this contradiction check/);
+  assert.match(activePrompt, /first quote already states the distinction/);
+  assert.match(activePrompt, /Do not infer GitHub Actions, provider, or platform behavior/);
   assert.match(workflow, /pull_request_target:/);
   assert.match(
     workflow,
