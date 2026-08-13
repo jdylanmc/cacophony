@@ -1,0 +1,37 @@
+name: Cacophony dogfood
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  correctness:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
+      CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
+      CACOPHONY_AZURE_DEPLOYMENT: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Run Cacophony against itself
+        id: review
+        if: env.CACOPHONY_AZURE_API_KEY != '' && env.CACOPHONY_AZURE_ENDPOINT != '' && env.CACOPHONY_AZURE_DEPLOYMENT != ''
+        uses: ./
+        with:
+          prompt-file: .cacophony/agents/correctness.md
+          endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
+          deployment: ${{ env.CACOPHONY_AZURE_DEPLOYMENT }}
+          fail-on: high
+
+      - name: Upload Cacophony report
+        if: always() && steps.review.outcome != 'skipped'
+        uses: actions/upload-artifact@v5
+        with:
+          name: cacophony-self-review
+          path: .cacophony/out/

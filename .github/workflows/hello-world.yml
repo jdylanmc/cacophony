@@ -1,0 +1,28 @@
+name: Hello World sample
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run sample action
+        id: hello
+        uses: ./examples/hello-world
+
+      - name: Verify sample outputs
+        shell: bash
+        env:
+          MESSAGE: ${{ steps.hello.outputs.message }}
+          JOKE: ${{ steps.hello.outputs.joke }}
+        run: |
+          test "$MESSAGE" = "Hello World"
+          test -n "$JOKE"
+          echo "Sample action reported success."

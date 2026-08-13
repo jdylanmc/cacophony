@@ -1,0 +1,317 @@
+# Cacophony
+
+Cacophony runs adversarial pull request reviews from prompt-defined agent lenses.
+One action invocation runs one Markdown prompt, inspects the checked-out pull
+request with bounded read-only tools, and writes:
+
+- a canonical JSON report;
+- a human-readable Markdown report;
+- action outputs for verdict, severity, report paths, and agent ID.
+
+The consuming repository owns orchestration. Run multiple prompts as sequential
+steps, matrix jobs, or separate workflows.
+
+## Requirements
+
+- A GitHub Actions workflow triggered by `pull_request`.
+- An Azure AI Foundry model deployment that supports the Responses API and
+  function tools.
+- The project endpoint, such as
+  `https://<resource>.services.ai.azure.com/api/projects/<project>`, or an
+  OpenAI-compatible endpoint ending in `/openai/v1`.
+- An API key stored as the repository secret `CACOPHONY_AZURE_API_KEY`.
+
+Cacophony itself has no runtime package dependencies, install step, build step,
+or generated distribution bundle.
+
+## Hello World sample
+
+The repository includes a credential-free sample action at
+`examples/hello-world/action.yml`. It reports success, emits `Hello World` as
+the `message` output, emits a programmer joke as the `joke` output, and writes
+both values to the GitHub Actions step summary.
+
+The `Hello World sample` workflow runs it on every pull request and can also be
+started manually with `workflow_dispatch`.
+
+## Quick start
+
+1. In the target repository, open **Settings > Secrets and variables > Actions**.
+2. Create the secret `CACOPHONY_AZURE_API_KEY`.
+3. Create repository variables:
+   - `CACOPHONY_AZURE_ENDPOINT`: the Azure AI Foundry project or
+     OpenAI-compatible endpoint.
+   - `CACOPHONY_AZURE_DEPLOYMENT`: the model deployment name.
+4. Create `.cacophony/agents/reviewer.md`:
+
+   ```markdown
+   Review this pull request for correctness defects.
+
+   Focus on behavior changed by the pull request. Report only actionable defects
+   introduced by the change. Cite exact files and lines, explain the impact, and
+   recommend the smallest safe correction. If no defect is supported by evidence,
+   return a passing report with no findings.
+   ```
+
+5. Create `.github/workflows/cacophony.yml`:
+
+   ```yaml
+   name: Cacophony
+
+   on:
+     pull_request:
+
+   permissions:
+     contents: read
+
+   jobs:
+     correctness:
+       # Fork pull requests do not receive repository secrets.
+       if: github.event.pull_request.head.repo.full_name == github.repository
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v5
+           with:
+             fetch-depth: 0
+
+         - name: Run correctness review
+           id: review
+           uses: jdylanmc/cacophony@v1
+           with:
+             prompt-file: .cacophony/agents/reviewer.md
+             endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
+             deployment: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+             fail-on: high
+           env:
+             CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
+
+         - name: Upload Cacophony report
+           if: always()
+           uses: actions/upload-artifact@v5
+           with:
+             name: cacophony-correctness
+             path: .cacophony/out/
+   ```
+
+6. Open or update a pull request from a branch in the same repository. The
+   workflow produces the `cacophony-correctness` artifact.
+
+## Prompt contract
+
+A prompt is the review lens, not a workflow script. It should describe:
+
+- the risks or quality dimension to examine;
+- what evidence is required;
+- what should not be reported;
+- any repository-specific invariants.
+
+Cacophony adds trusted framework instructions requiring tool-based inspection,
+evidence, and a final structured `submit_report` call. Pull request text and
+repository content are explicitly treated as untrusted data.
+
+## Action inputs
+
+| Input | Required | Default | Description |
+| --- | --- | --- | --- |
+| `prompt-file` | Yes | | Markdown prompt under `.cacophony/`. |
+| `endpoint` | Yes | | Azure AI Foundry project or OpenAI-compatible endpoint. |
+| `deployment` | Yes | | Model deployment name. |
+| `provider` | No | `azure-foundry` | Provider adapter. |
+| `max-turns` | No | `8` | Model turns, from 1 through 20. |
+| `timeout-seconds` | No | `300` | Total deadline, from 30 through 1800 seconds. |
+| `fail-on` | No | `high` | `low`, `medium`, `high`, `critical`, or `never`. |
+| `output-directory` | No | `.cacophony/out` | Repository-relative report root. |
+
+The API key is accepted only through the `CACOPHONY_AZURE_API_KEY` environment
+variable.
+
+## Outputs and failure policy
+
+| Output | Description |
+| --- | --- |
+| `verdict` | `pass`, `warn`, `fail`, or `error`. |
+| `max-severity` | `none`, `low`, `medium`, `high`, or `critical`. |
+| `report-json` | Repository-relative JSON report path. |
+| `report-markdown` | Repository-relative Markdown report path. |
+| `agent-id` | ID derived from the prompt filename. |
+
+Reports and outputs are written before findings-based failure is applied. Use
+`if: always()` on artifact upload steps.
+
+`fail-on` is an inclusive severity threshold. For example, `high` fails on
+`high` and `critical` findings. `never` prevents findings from failing the
+step. Framework errors such as authentication failure, timeout, invalid model
+output, or exhausted turn budget always fail.
+
+## Report format
+
+The JSON report is the canonical artifact. Markdown is rendered from it.
+
+```json
+{
+  "schemaVersion": "1.0",
+  "status": "completed",
+  "agent": {
+    "id": "reviewer",
+    "promptFile": ".cacophony/agents/reviewer.md"
+  },
+  "provider": {
+    "name": "azure-foundry",
+    "deployment": "review-model"
+  },
+  "pullRequest": {},
+  "startedAt": "2026-08-13T14:00:00.000Z",
+  "completedAt": "2026-08-13T14:01:00.000Z",
+  "execution": {
+    "turns": 2,
+    "toolCalls": 4
+  },
+  "verdict": "fail",
+  "maxSeverity": "high",
+  "summary": "One correctness defect was found.",
+  "findings": [
+    {
+      "id": "finding-1",
+      "severity": "high",
+      "title": "Incorrect arithmetic",
+      "explanation": "The changed implementation subtracts instead of adding.",
+      "recommendation": "Restore addition.",
+      "evidence": [
+        {
+          "path": "src/math.js",
+          "line": 12,
+          "detail": "The function returns a - b."
+        }
+      ]
+    }
+  ]
+}
+```
+
+The agent can use `get_pull_request`, `list_changed_files`, `get_diff`,
+`read_file`, `list_files`, and `search_text`. It cannot execute commands or
+write repository files.
+
+## Multiple agents
+
+For a small sequential workflow, repeat the action step with a different
+`prompt-file` and step ID. For parallel reviews, use a matrix:
+
+```yaml
+strategy:
+  fail-fast: false
+  matrix:
+    agent:
+      - correctness
+      - security
+      - maintainability
+
+steps:
+  - uses: actions/checkout@v5
+    with:
+      fetch-depth: 0
+  - id: review
+    uses: jdylanmc/cacophony@v1
+    with:
+      prompt-file: .cacophony/agents/${{ matrix.agent }}.md
+      endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
+      deployment: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+    env:
+      CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
+  - if: always()
+    uses: actions/upload-artifact@v5
+    with:
+      name: cacophony-${{ matrix.agent }}
+      path: .cacophony/out/
+```
+
+## Security
+
+- Use `pull_request`, not `pull_request_target`, when checking out and reviewing
+  pull request code with an API key.
+- Repository secrets are unavailable to workflows from forks. The quick-start
+  workflow explicitly skips those pull requests rather than silently passing.
+- Cacophony rejects absolute paths, traversal, `.git` access, and symlinks that
+  resolve outside the workspace.
+- Tool outputs are bounded. There is no arbitrary command tool.
+- Keep prompts under review like any other code. They determine what is sent to
+  the configured model endpoint.
+- Pin Cacophony to an immutable release tag or commit when your supply-chain
+  policy requires it. `v1` is a moving major tag.
+
+## Troubleshooting
+
+- **Missing API key:** verify the secret is named exactly
+  `CACOPHONY_AZURE_API_KEY` and is mapped through `env`.
+- **Azure 404:** verify the project endpoint and deployment. Cacophony appends
+  `/openai/v1/responses` unless the endpoint already ends in `/responses`.
+- **Git diff failure:** use `actions/checkout` with `fetch-depth: 0`.
+- **No report submission:** make the prompt more explicit and increase
+  `max-turns` within the allowed range.
+- **Fork pull request skipped:** this is expected because GitHub does not expose
+  repository secrets to fork workflows.
+- **Report exists but step failed:** inspect the artifact. Reports are written
+  before severity policy is applied.
+
+## Instructions for Copilot or another coding agent
+
+When asked to install Cacophony in a repository, perform these steps exactly:
+
+1. Confirm the repository uses GitHub Actions and identify whether it already
+   has a pull request workflow that should be extended.
+2. Create `.cacophony/agents/reviewer.md` using the starter prompt from Quick
+   start unless the user supplied a specific review lens.
+3. Create or update `.github/workflows/cacophony.yml` using the Quick start
+   workflow. Preserve unrelated existing workflow behavior.
+4. Keep `permissions: contents: read`, `actions/checkout@v5`, and
+   `fetch-depth: 0`.
+5. Reference `jdylanmc/cacophony@v1`; do not copy Cacophony source into the
+   consumer repository.
+6. Use repository variables named `CACOPHONY_AZURE_ENDPOINT` and
+   `CACOPHONY_AZURE_DEPLOYMENT`.
+7. Map the repository secret `CACOPHONY_AZURE_API_KEY` into the review step's
+   environment. Never place the key in a committed file.
+8. Add `actions/upload-artifact@v5` with `if: always()` and path
+   `.cacophony/out/`.
+9. Do not use `pull_request_target`.
+10. Validate the resulting YAML syntax and report this expected tree:
+
+    ```text
+    .cacophony/
+      agents/
+        reviewer.md
+    .github/
+      workflows/
+        cacophony.yml
+    ```
+
+11. Tell the user to create the secret and variables in repository settings if
+    the current tooling cannot create them securely.
+
+Copy-paste request for a new chat:
+
+> Set up Cacophony in this repository. Follow the installation contract at
+> https://github.com/jdylanmc/cacophony#instructions-for-copilot-or-another-coding-agent
+> and use the correctness starter prompt unless this repository already
+> documents a more appropriate review lens.
+
+## Development
+
+Node.js 24 is the only prerequisite:
+
+```bash
+node --test
+node --check src/index.js
+```
+
+No `npm install` is required.
+
+Use the small report helper to validate model-style submission JSON or render a
+complete report:
+
+```bash
+node scripts/report.js validate submission.json
+node scripts/report.js render report.json report.md
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for release expectations.
