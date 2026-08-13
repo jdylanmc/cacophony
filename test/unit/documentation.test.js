@@ -407,7 +407,11 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /workflow this skill creates/);
   assert.match(lifecycle, /shared reusable workflow/);
   assert.match(lifecycle, /three total attempts/);
-  assert.match(lifecycle, /caller passes `secrets\.azure-api-key`/);
+  assert.match(
+    lifecycle,
+    /caller declares `azure-api-key: \$\{\{ secrets\.CACOPHONY_AZURE_API_KEY \}\}`/,
+  );
+  assert.match(lifecycle, /receives that declared input as[\s\S]*`secrets\.azure-api-key`/);
   assert.match(lifecycle, /rejects other events/);
   assert.match(lifecycle, /sole reviewer-contract source/);
   assert.doesNotMatch(

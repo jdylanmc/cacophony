@@ -45,7 +45,10 @@ Use `pull_request_target` only for a trusted-base workflow where:
 - the reusable workflow rejects other events, accepts same-repository pull
   requests, and accepts a fork only for an `OWNER`, `MEMBER`, or `COLLABORATOR`
   author before checkout;
-- the caller passes `secrets.azure-api-key` to the reusable workflow;
+- the caller declares `azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}`
+  under the reusable-workflow job's `secrets:` mapping;
+- the reusable workflow receives that declared input as
+  `secrets.azure-api-key`;
 - only the reusable workflow maps that secret to the Cacophony step's
   `CACOPHONY_AZURE_API_KEY` environment variable.
 
