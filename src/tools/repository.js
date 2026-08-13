@@ -8,6 +8,7 @@ const MAX_FILE_BYTES = 200_000;
 const MAX_DIFF_BYTES = 500_000;
 const MAX_SEARCH_BYTES = 5_000_000;
 const MAX_EVIDENCE_FILE_BYTES = 10_000_000;
+const MAX_TOTAL_EVIDENCE_BYTES = 20_000_000;
 const MAX_EVIDENCE_READ_BYTES = 200_000;
 const MAX_LIST_ENTRIES = 1_000;
 const MAX_SEARCH_RESULTS = 100;
@@ -288,6 +289,7 @@ export async function createRepositoryTools({
   const root = await fs.promises.realpath(workspace);
   const { pullRequest, expectedRepositorySha } = toolScope;
   const evidence = new Map();
+  let totalEvidenceBytes = 0;
   for (const declaredPath of evidenceFiles) {
     const file = await ensureInside(root, declaredPath);
     const stat = await fs.promises.stat(file);
@@ -297,6 +299,12 @@ export async function createRepositoryTools({
     if (stat.size > MAX_EVIDENCE_FILE_BYTES) {
       throw new Error(
         `evidence file exceeds ${MAX_EVIDENCE_FILE_BYTES} bytes: ${declaredPath}`,
+      );
+    }
+    totalEvidenceBytes += stat.size;
+    if (totalEvidenceBytes > MAX_TOTAL_EVIDENCE_BYTES) {
+      throw new Error(
+        `declared evidence exceeds ${MAX_TOTAL_EVIDENCE_BYTES} total bytes`,
       );
     }
     evidence.set(path.relative(root, file), { file, bytes: stat.size });
