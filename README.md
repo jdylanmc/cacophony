@@ -51,7 +51,9 @@ never executes that content.
 1. In the target repository, open **Settings > Secrets and variables > Actions**.
 2. Create the secret `CACOPHONY_AZURE_API_KEY`.
 3. Create the repository variable `CACOPHONY_AZURE_ENDPOINT` with the Azure AI
-   Foundry project or OpenAI-compatible endpoint.
+   Foundry project or OpenAI-compatible endpoint. The workflow below declares
+   `deployment: gpt-5.4-mini` directly; edit that literal to select a different
+   deployment.
 4. Create `.cacophony/agents/reviewer.md`:
 
    ```markdown
