@@ -1,0 +1,54 @@
+name: Cacophony Review
+description: Run one adversarial pull request review prompt and produce structured reports.
+author: jdylanmc
+
+inputs:
+  prompt-file:
+    description: Repository-relative Markdown prompt under .cacophony/.
+    required: true
+  provider:
+    description: Agent provider. Only azure-foundry is currently supported.
+    required: false
+    default: azure-foundry
+  endpoint:
+    description: Azure AI Foundry project or OpenAI-compatible endpoint.
+    required: true
+  deployment:
+    description: Azure AI Foundry model deployment name.
+    required: true
+  max-turns:
+    description: Maximum model turns, from 1 through 20.
+    required: false
+    default: "8"
+  timeout-seconds:
+    description: Total review timeout, from 30 through 1800 seconds.
+    required: false
+    default: "300"
+  fail-on:
+    description: Minimum finding severity that fails the step, or never.
+    required: false
+    default: high
+  output-directory:
+    description: Repository-relative directory for JSON and Markdown reports.
+    required: false
+    default: .cacophony/out
+
+outputs:
+  verdict:
+    description: "Agent verdict: pass, warn, fail, or error."
+  max-severity:
+    description: Highest finding severity.
+  report-json:
+    description: Repository-relative path to the JSON report.
+  report-markdown:
+    description: Repository-relative path to the Markdown report.
+  agent-id:
+    description: Normalized identifier derived from the prompt filename.
+
+runs:
+  using: node24
+  main: src/index.js
+
+branding:
+  icon: volume-2
+  color: purple
