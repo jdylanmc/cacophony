@@ -20,7 +20,7 @@ The caller preserves:
 - `contents: read`;
 - local `uses: ./.github/workflows/cacophony-review.yml`;
 - the selected model deployment hardcoded in the workflow;
-- `max-turns: 20`;
+- `max-turns: 20` for this pull-request persona caller;
 - `timeout-seconds: 600`;
 - `rate-limit-retries: 2`, meaning two retries after the initial request, for
   three total attempts;
