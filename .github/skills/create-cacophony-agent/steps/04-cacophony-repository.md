@@ -13,10 +13,10 @@ The active and sample prompts must be byte-for-byte identical.
 Copy an established persona workflow and preserve:
 
 - trusted `pull_request_target` trigger;
-- same-repository guard;
 - `contents: read`;
 - every remote `uses:` dependency pinned to a reviewed full commit SHA;
-- Checkout head checkout for read-only inspection;
+- Checkout of the base repository's pull request merge ref for read-only
+  inspection with persisted credentials disabled;
 - trust-boundary comment stating prompts load from `pull_request.base.sha`;
 - base-prompt availability check;
 - pinned full Cacophony commit SHA;
@@ -26,6 +26,9 @@ Copy an established persona workflow and preserve:
 - `rate-limit-retries: 2`;
 - API key only on the pinned Cacophony step;
 - artifact upload skipped when the reviewer did not run.
+
+The trusted-base pattern may review fork pull requests because it never executes
+head-controlled code.
 
 Add:
 

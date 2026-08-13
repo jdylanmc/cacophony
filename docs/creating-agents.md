@@ -87,17 +87,17 @@ permissions:
 
 jobs:
   review:
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     env:
       CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          # The workflow and action are trusted. Head content is inspected only;
+          # The workflow and action are trusted. PR content is inspected only;
           # Cacophony loads prompt-file from pull_request.base.sha via git show.
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Check trusted prompt availability
         id: prompt
@@ -181,8 +181,10 @@ Configure:
 - repository variable `CACOPHONY_AZURE_ENDPOINT`;
 - a reviewed Azure deployment name hardcoded in this agent's workflow.
 
-For a simple same-repository workflow, use `pull_request` plus a fork guard as
-shown in the README quick start. For a trusted-base workflow, use the
+For the simple workflow, use `pull_request` with an always-running job that
+explicitly fails fork pull requests before checkout or review, as shown in the
+README quick start. Do not guard the entire job with a same-repository
+condition. For a trusted-base workflow that reviews forks, use the
 `pull_request_target` pattern above and obey every trust-boundary restriction:
 every remote action pinned to a full commit SHA, read-only permissions,
 base-commit prompt, no execution of head-controlled code, and the secret scoped

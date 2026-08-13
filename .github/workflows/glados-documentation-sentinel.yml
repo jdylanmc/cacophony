@@ -8,17 +8,17 @@ permissions:
 
 jobs:
   documentation-review:
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     env:
       CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          # The workflow and action are trusted. Head content is inspected only;
+          # The workflow and action are trusted. PR content is inspected only;
           # Cacophony loads prompt-file from pull_request.base.sha via git show.
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Check trusted prompt availability
         id: prompt

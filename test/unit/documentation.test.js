@@ -143,6 +143,15 @@ test("basic example includes the documented consumer files", async () => {
   assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.doesNotMatch(workflow, /jdylanmc\/cacophony@v1/);
   assert.match(workflow, /if: always\(\)/);
+  assert.doesNotMatch(
+    workflow,
+    /^\s{4}if: github\.event\.pull_request\.head\.repo\.full_name/m,
+  );
+  assert.match(
+    workflow,
+    /if: github\.event\.pull_request\.head\.repo\.full_name != github\.repository/,
+  );
+  assert.match(workflow, /exit 1/);
   assert.match(workflow, /path: \.cacophony\/out\//);
   assert.match(prompt, /correctness defects/);
 });
@@ -160,7 +169,11 @@ test("Hello World dogfood runs a model-generated joke prompt", async () => {
   assert.match(prompt, /programmer joke generated for this run/);
   assert.doesNotMatch(prompt, /dark mode|light attracts bugs/);
   assert.match(workflow, /pull_request_target:/);
-  assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(
+    workflow,
+    /ref: refs\/pull\/\$\{\{ github\.event\.pull_request\.number \}\}\/merge/,
+  );
+  assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /prompt-file: \.cacophony\/agents\/hello-world\.md/);
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.match(workflow, /deployment: gpt-5\.4-mini/);
@@ -228,11 +241,12 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
   assert.match(activePrompt, /MockTestDatabase/);
   assert.match(activePrompt, /IEmailNotifier/);
   assert.match(workflow, /pull_request_target:/);
+  assert.doesNotMatch(workflow, /head\.repo\.full_name == github\.repository/);
   assert.match(
     workflow,
-    /if: github\.event\.pull_request\.head\.repo\.full_name == github\.repository/,
+    /ref: refs\/pull\/\$\{\{ github\.event\.pull_request\.number \}\}\/merge/,
   );
-  assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /loads prompt-file from pull_request\.base\.sha via git show/);
   assert.match(
     workflow,

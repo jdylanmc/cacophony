@@ -8,9 +8,14 @@ permissions:
 
 jobs:
   correctness:
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - name: Reject unreviewable fork pull requests
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::Cacophony requires the documented trusted-base workflow to review fork pull requests."
+          exit 1
+
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
@@ -28,7 +33,7 @@ jobs:
           CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
 
       - name: Upload Cacophony report
-        if: always()
+        if: always() && steps.review.outcome != 'skipped'
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: cacophony-correctness

@@ -53,7 +53,8 @@ never executes that content.
 3. Create the repository variable `CACOPHONY_AZURE_ENDPOINT` with the Azure AI
    Foundry project or OpenAI-compatible endpoint. The workflow below declares
    `deployment: gpt-5.4-mini` directly; edit that literal to select a different
-   deployment.
+   deployment. It also sets `rate-limit-retries: 2`, meaning two retries after
+   the initial HTTP 429 response.
 4. Create `.cacophony/agents/reviewer.md`:
 
    ```markdown
@@ -78,10 +79,14 @@ never executes that content.
 
    jobs:
      correctness:
-       # Fork pull requests do not receive repository secrets.
-       if: github.event.pull_request.head.repo.full_name == github.repository
        runs-on: ubuntu-latest
        steps:
+         - name: Reject unreviewable fork pull requests
+           if: github.event.pull_request.head.repo.full_name != github.repository
+           run: |
+             echo "::error::Cacophony requires the documented trusted-base workflow to review fork pull requests."
+             exit 1
+
          - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
            with:
              fetch-depth: 0
@@ -99,7 +104,7 @@ never executes that content.
              CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
 
          - name: Upload Cacophony report
-           if: always()
+           if: always() && steps.review.outcome != 'skipped'
            uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
            with:
              name: cacophony-correctness
@@ -287,7 +292,8 @@ This repository dogfoods the reviewer through
 `.github/workflows/gilfoyle-security-architect.yml`. The workflow uses the same
 trusted-base pattern as the Hello World check: the workflow, prompt, and pinned
 Cacophony implementation are trusted while pull request content is checked out
-only for read-only inspection. Its workflow declares `gpt-5.6-sol` directly.
+from the base repository's merge ref only for read-only inspection. Its
+workflow declares `gpt-5.6-sol` directly.
 
 ### Solid Snake, SOLID Architecture Operative
 
@@ -300,10 +306,10 @@ numbered code-comms extraction steps; clean changes use `[APPROVED]`.
 `.github/workflows/solid-snake-architecture.yml` runs independently from
 Gilfoyle on the same pull request event, so GitHub schedules both reviews in
 parallel and uploads separate artifacts. Snake uses a trusted
-`pull_request_target` workflow, a pinned Cacophony action, and the same-repository
-guard. Pull request content is checked out only for read-only inspection;
-Cacophony loads Snake's prompt from the base commit. Its workflow declares
-`gpt-5.6-sol` directly.
+`pull_request_target` workflow and a pinned Cacophony action. Pull request
+content is checked out from the base repository's merge ref only for read-only
+inspection; Cacophony loads Snake's prompt from the base commit. Its workflow
+declares `gpt-5.6-sol` directly.
 
 ### GLaDOS, Documentation Synchronization Sentinel
 
@@ -320,13 +326,17 @@ declares `gpt-5.4-mini` directly.
 
 ## Security
 
-- Use `pull_request` with a same-repository guard for the simple consumer
-  pattern. A `pull_request_target` workflow is acceptable only when the workflow
-  comes from trusted base history, the action is pinned, the prompt comes from
-  the base commit, permissions are read-only, and no head-controlled code is
+- The simple `pull_request` consumer pattern must use an always-running job that
+  explicitly fails fork pull requests before any secret-bearing step. Never put
+  the only review job behind a same-repository condition because GitHub treats a
+  skipped required job as successful.
+- A `pull_request_target` workflow may review forks only when the workflow comes
+  from trusted base history, the action is pinned, the prompt comes from the
+  base commit, permissions are read-only, and no head-controlled code is
   executed.
-- Repository secrets are unavailable to workflows from forks. The quick-start
-  workflow explicitly skips those pull requests rather than silently passing.
+- Repository secrets are unavailable to `pull_request` workflows from forks.
+  The quick-start workflow fails those pull requests explicitly rather than
+  silently passing a skipped gate.
 - Cacophony rejects absolute paths, traversal, `.git` access, and symlinks that
   resolve outside the workspace.
 - Tool outputs are bounded. There is no arbitrary command tool.
@@ -348,8 +358,9 @@ declares `gpt-5.4-mini` directly.
 - **Git diff failure:** use `actions/checkout` with `fetch-depth: 0`.
 - **No report submission:** make the prompt more explicit and increase
   `max-turns` within the allowed range.
-- **Fork pull request skipped:** this is expected because GitHub does not expose
-  repository secrets to fork workflows.
+- **Fork pull request rejected:** the simple workflow fails closed because
+  GitHub does not expose repository secrets to fork workflows. Use the
+  documented trusted-base pattern when fork reviews are required.
 - **Report exists but step failed:** inspect the artifact. Reports are written
   before severity policy is applied.
 
@@ -376,11 +387,11 @@ When asked to install Cacophony in a repository, perform these steps exactly:
 8. Add Upload Artifact pinned to the documented full commit SHA with
    `if: always()` and path
    `.cacophony/out/`.
-9. Default to `pull_request`. Use `pull_request_target` only for the documented
-   trusted-base pattern with a same-repository guard, every remote action
-   pinned to a full commit SHA, a base-commit prompt, read-only permissions, no
-   execution of head-controlled code, and the API key scoped only to the
-   Cacophony step.
+9. Default to `pull_request` with an always-running job that explicitly fails
+   fork pull requests before checkout or review. Use `pull_request_target` only
+   for the documented trusted-base pattern with every remote action pinned to a
+   full commit SHA, a base-commit prompt, read-only permissions, no execution of
+   head-controlled code, and the API key scoped only to the Cacophony step.
 10. Validate the resulting YAML syntax and report this expected tree:
 
     ```text

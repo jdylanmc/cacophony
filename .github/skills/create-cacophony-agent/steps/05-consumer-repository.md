@@ -18,8 +18,9 @@ Required repository settings:
 Hardcode the selected Azure deployment name in this agent's workflow so the
 reviewer carries its model choice to another repository.
 
-Default to the README quick-start `pull_request` workflow with a same-repository
-fork guard.
+Default to the README quick-start `pull_request` workflow with an always-running
+job that explicitly fails fork pull requests before checkout or review. Never
+put the only review job behind a same-repository condition.
 
 Use `pull_request_target` only for a trusted-base workflow where:
 
