@@ -242,6 +242,21 @@ steps:
       path: .cacophony/out/
 ```
 
+## Sample reviewers
+
+### Gilfoyle the Security Architect
+
+[`examples/reviewers/gilfoyle-security-architect.md`](examples/reviewers/gilfoyle-security-architect.md)
+is a persona-driven application security reviewer. It reports only concrete
+exploitation paths, requires exact evidence and numbered remediation, and uses
+`[BLOCK: SECURITY]` or `[APPROVED]` summaries.
+
+This repository dogfoods the reviewer through
+`.github/workflows/gilfoyle-security-architect.yml`. The workflow uses the same
+trusted-base pattern as the Hello World check: the workflow, prompt, and pinned
+Cacophony implementation are trusted while pull request content is checked out
+only for read-only inspection.
+
 ## Security
 
 - Use `pull_request`, not `pull_request_target`, when checking out and reviewing

@@ -56,3 +56,29 @@ test("Hello World dogfood runs a model-generated joke prompt", async () => {
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.match(workflow, /name: cacophony-hello-world/);
 });
+
+test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
+  const activePrompt = await fs.promises.readFile(
+    ".cacophony/agents/gilfoyle-security-architect.md",
+    "utf8",
+  );
+  const samplePrompt = await fs.promises.readFile(
+    "examples/reviewers/gilfoyle-security-architect.md",
+    "utf8",
+  );
+  const workflow = await fs.promises.readFile(
+    ".github/workflows/gilfoyle-security-architect.yml",
+    "utf8",
+  );
+
+  assert.equal(samplePrompt, activePrompt);
+  assert.match(activePrompt, /\[BLOCK: SECURITY\]/);
+  assert.match(activePrompt, /\[APPROVED\]/);
+  assert.match(workflow, /pull_request_target:/);
+  assert.match(
+    workflow,
+    /prompt-file: \.cacophony\/agents\/gilfoyle-security-architect\.md/,
+  );
+  assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /name: cacophony-gilfoyle-security-architect/);
+});
