@@ -8,27 +8,33 @@ permissions:
 
 jobs:
   correctness:
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Reject fork use of simple mode
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::This same-repository-only workflow does not review forks. Install the documented trusted-base workflow."
+          exit 1
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
       - name: Run correctness review
         id: review
-        uses: jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503
+        uses: jdylanmc/cacophony@7f31d99597e908372592dec996720749b476889c
         with:
           prompt-file: .cacophony/agents/reviewer.md
           endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-          deployment: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+          deployment: gpt-5.4-mini
+          rate-limit-retries: 2
           fail-on: high
         env:
           CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
 
       - name: Upload Cacophony report
-        if: always()
-        uses: actions/upload-artifact@v5
+        if: always() && steps.review.outcome != 'skipped'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: cacophony-correctness
           path: .cacophony/out/

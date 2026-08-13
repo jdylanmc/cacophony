@@ -18,6 +18,7 @@ test("readInputs applies simple defaults", () => {
   assert.equal(result.provider, "azure-foundry");
   assert.equal(result.maxTurns, 8);
   assert.equal(result.timeoutSeconds, 300);
+  assert.equal(result.rateLimitRetries, 2);
   assert.equal(result.failOn, "high");
   assert.equal(result.outputDirectory, ".cacophony/out");
 });
@@ -41,6 +42,10 @@ test("readInputs rejects traversal and invalid bounds", () => {
   assert.throws(
     () => readInputs(validEnv({ "INPUT_FAIL-ON": "none" })),
     /fail-on must be one of/,
+  );
+  assert.throws(
+    () => readInputs(validEnv({ "INPUT_RATE-LIMIT-RETRIES": "11" })),
+    /between 0 and 10/,
   );
 });
 

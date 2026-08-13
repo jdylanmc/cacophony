@@ -6,51 +6,19 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   architecture-review:
-    if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    env:
-      CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          # The workflow and action are trusted. Head content is inspected only;
-          # Cacophony loads prompt-file from pull_request.base.sha via git show.
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
-      - name: Check trusted prompt availability
-        id: prompt
-        shell: bash
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          if git cat-file -e "$BASE_SHA:.cacophony/agents/solid-snake-architecture.md"; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Solid Snake starts reviewing after his prompt is merged to the base branch."
-          fi
-
-      - name: Run Solid Snake architecture review
-        id: solid-snake
-        if: steps.prompt.outputs.ready == 'true'
-        uses: jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2
-        with:
-          prompt-file: .cacophony/agents/solid-snake-architecture.md
-          endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
-          deployment: gpt-5.6-sol
-          max-turns: 20
-          timeout-seconds: 600
-          rate-limit-retries: 2
-          fail-on: high
-        env:
-          CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
-
-      - name: Upload Solid Snake report
-        if: always() && steps.solid-snake.outcome != 'skipped'
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-        with:
-          name: cacophony-solid-snake-architecture
-          path: .cacophony/out/solid-snake-architecture/
+    uses: ./.github/workflows/cacophony-review.yml
+    with:
+      agent-slug: solid-snake-architecture
+      deployment: gpt-5.6-sol
+      max-turns: 20
+      timeout-seconds: 600
+      rate-limit-retries: 2
+      fail-on: high
+    secrets:
+      azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}

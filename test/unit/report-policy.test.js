@@ -6,10 +6,25 @@ import path from "node:path";
 
 import { shouldFail } from "../../src/policy/policy.js";
 import {
+  REVIEWER_SUBMISSION_VERDICTS,
+  TERMINAL_VERDICTS,
+  createErrorReport,
+  createInconclusiveReport,
   renderMarkdown,
   validateSubmission,
   writeReports,
 } from "../../src/reports/report.js";
+
+test("reviewer submissions and terminal reports have distinct verdict sets", () => {
+  assert.deepEqual(REVIEWER_SUBMISSION_VERDICTS, ["pass", "warn", "fail"]);
+  assert.deepEqual(TERMINAL_VERDICTS, [
+    "pass",
+    "warn",
+    "fail",
+    "inconclusive",
+    "error",
+  ]);
+});
 
 const validSubmission = {
   verdict: "fail",
@@ -69,6 +84,50 @@ test("policy maps severity thresholds and always fails framework errors", () => 
     shouldFail({ status: "error", verdict: "error", maxSeverity: "none" }, "never"),
     true,
   );
+  assert.equal(
+    shouldFail(
+      {
+        status: "inconclusive",
+        verdict: "inconclusive",
+        maxSeverity: "none",
+      },
+      "low",
+    ),
+    true,
+  );
+});
+
+test("terminal reports share one envelope with outcome-specific fields", () => {
+  const input = {
+    config: {
+      agentId: "reviewer",
+      promptFile: ".cacophony/agents/reviewer.md",
+      provider: "azure-foundry",
+      deployment: "review-model",
+    },
+    context: { pullRequest: { number: 7 } },
+    startedAt: "2026-01-01T00:00:00.000Z",
+  };
+  const errorReport = createErrorReport({
+    ...input,
+    error: new Error("framework failed"),
+  });
+  const inconclusiveReport = createInconclusiveReport({
+    ...input,
+    reason: new Error("provider unavailable"),
+  });
+
+  assert.deepEqual(Object.keys(errorReport), Object.keys(inconclusiveReport));
+  assert.deepEqual(errorReport.agent, inconclusiveReport.agent);
+  assert.deepEqual(errorReport.provider, inconclusiveReport.provider);
+  assert.deepEqual(errorReport.pullRequest, inconclusiveReport.pullRequest);
+  assert.deepEqual(errorReport.execution, inconclusiveReport.execution);
+  assert.equal(errorReport.status, "error");
+  assert.equal(errorReport.verdict, "error");
+  assert.equal(errorReport.summary, "framework failed");
+  assert.equal(inconclusiveReport.status, "inconclusive");
+  assert.equal(inconclusiveReport.verdict, "inconclusive");
+  assert.equal(inconclusiveReport.summary, "provider unavailable");
 });
 
 test("renderMarkdown derives readable output from canonical data", () => {

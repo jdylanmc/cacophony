@@ -6,6 +6,7 @@ import {
   createAzureFoundryProvider,
   responsesUrl,
 } from "../../src/providers/azure-foundry.js";
+import { ProviderUnavailableError } from "../../src/providers/errors.js";
 
 test("responsesUrl accepts project and versioned endpoints", () => {
   assert.equal(
@@ -66,4 +67,102 @@ test("Azure provider sends Responses API tool turns", async (t) => {
   assert.equal(request.headers["api-key"], "test-secret");
   assert.equal(request.body.model, "review-model");
   assert.equal(result.calls[0].name, "list_changed_files");
+});
+
+test("Azure provider classifies HTTP 429 as rate limiting", async () => {
+  const provider = createAzureFoundryProvider({
+    endpoint: "https://example.invalid",
+    deployment: "review-model",
+    apiKey: "test-secret",
+    fetchImplementation: async () =>
+      new Response('{"error":{"code":"rate_limit_exceeded"}}', {
+        status: 429,
+        headers: { "content-type": "application/json" },
+      }),
+  });
+
+  await assert.rejects(
+    () =>
+      provider.turn({
+        instructions: "review",
+        input: "start",
+        tools: [],
+      }),
+    (error) =>
+      error instanceof ProviderUnavailableError &&
+      error.provider === "Azure AI Foundry" &&
+      error.reason === "rate_limit" &&
+      error.status === 429 &&
+      !/inconclusive/.test(error.message),
+  );
+});
+
+test("Azure provider retries HTTP 429 using header-based exponential backoff", async () => {
+  const delays = [];
+  let attempts = 0;
+
+  const provider = createAzureFoundryProvider({
+    endpoint: "https://example.invalid",
+    deployment: "review-model",
+    apiKey: "test-secret",
+    rateLimitRetries: 2,
+    fetchImplementation: async () => {
+      attempts += 1;
+      if (attempts < 3) {
+        return new Response(null, {
+          status: 429,
+          headers: { "retry-after-ms": "25" },
+        });
+      }
+      return new Response(JSON.stringify({ id: "response-3", output: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    },
+    sleepImplementation: async (delay) => {
+      delays.push(delay);
+    },
+  });
+
+  const result = await provider.turn({
+    instructions: "review",
+    input: "start",
+    tools: [],
+  });
+
+  assert.equal(result.id, "response-3");
+  assert.equal(attempts, 3);
+  assert.deepEqual(delays, [25, 50]);
+});
+
+test("Azure provider preserves timeout cancellation during retry backoff", async () => {
+  const controller = new AbortController();
+  const provider = createAzureFoundryProvider({
+    endpoint: "https://example.invalid",
+    deployment: "review-model",
+    apiKey: "test-secret",
+    rateLimitRetries: 1,
+    fetchImplementation: async () =>
+      new Response(null, {
+        status: 429,
+        headers: { "retry-after-ms": "10000" },
+      }),
+  });
+
+  setTimeout(
+    () => controller.abort(new Error("Cacophony review timed out")),
+    5,
+  );
+  await assert.rejects(
+    () =>
+      provider.turn({
+        instructions: "review",
+        input: "start",
+        tools: [],
+        signal: controller.signal,
+      }),
+    (error) =>
+      !(error instanceof ProviderUnavailableError) &&
+      error.message === "Cacophony review timed out",
+  );
 });

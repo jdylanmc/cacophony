@@ -20,6 +20,16 @@ export function error(message) {
   command("error", message);
 }
 
+export async function appendStepSummary(
+  markdown,
+  summaryFile = process.env.GITHUB_STEP_SUMMARY,
+) {
+  if (!summaryFile) {
+    return;
+  }
+  await fs.promises.appendFile(summaryFile, `${markdown}\n`, "utf8");
+}
+
 export async function setOutputs(outputs, outputFile = process.env.GITHUB_OUTPUT) {
   if (!outputFile) {
     for (const [name, value] of Object.entries(outputs)) {

@@ -1,11 +1,25 @@
 import path from "node:path";
 
 import { loadPullRequestContext } from "./context/pull-request.js";
-import { error as logError, info, setOutputs } from "./github.js";
+import {
+  appendStepSummary,
+  error as logError,
+  info,
+  setOutputs,
+  warning,
+} from "./github.js";
 import { readInputs } from "./inputs.js";
 import { shouldFail } from "./policy/policy.js";
-import { createAzureFoundryProvider } from "./providers/azure-foundry.js";
-import { createErrorReport, writeReports } from "./reports/report.js";
+import {
+  createAzureFoundryProvider,
+} from "./providers/azure-foundry.js";
+import { ProviderUnavailableError } from "./providers/errors.js";
+import {
+  createErrorReport,
+  createInconclusiveReport,
+  renderMarkdown,
+  writeReports,
+} from "./reports/report.js";
 import { runReview } from "./runner/review.js";
 
 function sanitize(message, secrets) {
@@ -33,6 +47,7 @@ async function main() {
       endpoint: config.endpoint,
       deployment: config.deployment,
       apiKey,
+      rateLimitRetries: config.rateLimitRetries,
     });
     const controller = new AbortController();
     const timeout = setTimeout(
@@ -56,16 +71,29 @@ async function main() {
       caught instanceof Error ? caught.message : String(caught),
       [apiKey],
     );
-    report = createErrorReport({
-      error: new Error(message),
-      config,
-      context,
-      startedAt,
-    });
+    report =
+      caught instanceof ProviderUnavailableError
+        ? createInconclusiveReport({
+            reason: new Error(
+              caught.reason === "rate_limit"
+                ? `${caught.provider} rate limit exceeded (${caught.status}); review is inconclusive`
+                : `${message}; review is inconclusive`,
+            ),
+            config,
+            context,
+            startedAt,
+          })
+        : createErrorReport({
+            error: new Error(message),
+            config,
+            context,
+            startedAt,
+          });
   }
 
   const outputDirectory = config?.outputDirectory ?? ".cacophony/out";
   const paths = await writeReports(report, workspace, outputDirectory);
+  await appendStepSummary(renderMarkdown(report));
   await setOutputs({
     verdict: report.verdict,
     "max-severity": report.maxSeverity,
@@ -75,11 +103,16 @@ async function main() {
   });
 
   info(`Cacophony wrote ${paths.jsonRelative} and ${paths.markdownRelative}`);
+  if (report.status === "inconclusive") {
+    warning(`Cacophony review inconclusive: ${report.summary}`);
+  }
   if (shouldFail(report, config?.failOn ?? "high")) {
     logError(
       report.status === "error"
         ? `Cacophony failed: ${report.summary}`
-        : `Cacophony found ${report.maxSeverity} severity issues`,
+        : report.status === "inconclusive"
+          ? `Cacophony review inconclusive: ${report.summary}`
+          : `Cacophony found ${report.maxSeverity} severity issues: ${report.summary}`,
     );
     process.exitCode = 1;
   }

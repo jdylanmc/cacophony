@@ -6,32 +6,19 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   hello-world:
-    runs-on: ubuntu-latest
-    env:
-      CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
-      - name: Run Hello World review
-        id: hello
-        uses: jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2
-        with:
-          prompt-file: .cacophony/agents/hello-world.md
-          endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
-          deployment: gpt-5.4-mini
-          rate-limit-retries: 2
-          fail-on: high
-        env:
-          CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
-
-      - name: Upload Hello World report
-        if: always()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-        with:
-          name: cacophony-hello-world
-          path: .cacophony/out/hello-world/
+    uses: ./.github/workflows/cacophony-review.yml
+    with:
+      agent-slug: hello-world
+      deployment: gpt-5.4-mini
+      max-turns: 20
+      timeout-seconds: 600
+      rate-limit-retries: 2
+      fail-on: high
+    secrets:
+      azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
