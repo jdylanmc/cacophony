@@ -1,13 +1,6 @@
-const MAX_ERROR_BODY = 4_000;
+import { ProviderUnavailableError } from "./errors.js";
 
-export class ProviderRateLimitError extends Error {
-  constructor(provider, status = 429) {
-    super(`${provider} rate limit exceeded (${status}); review is inconclusive`);
-    this.name = "ProviderRateLimitError";
-    this.provider = provider;
-    this.status = status;
-  }
-}
+const MAX_ERROR_BODY = 4_000;
 
 function retryDelayMs(response, retryIndex) {
   let baseDelayMs;
@@ -147,7 +140,11 @@ export function createAzureFoundryProvider({
           break;
         }
         if (attempt === rateLimitRetries) {
-          throw new ProviderRateLimitError("Azure AI Foundry", response.status);
+          throw new ProviderUnavailableError({
+            provider: "Azure AI Foundry",
+            reason: "rate_limit",
+            status: response.status,
+          });
         }
         await response.body?.cancel();
         await sleepImplementation(retryDelayMs(response, attempt), signal);

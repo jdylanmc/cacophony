@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 
 import {
   createAzureFoundryProvider,
-  ProviderRateLimitError,
   responsesUrl,
 } from "../../src/providers/azure-foundry.js";
+import { ProviderUnavailableError } from "../../src/providers/errors.js";
 
 test("responsesUrl accepts project and versioned endpoints", () => {
   assert.equal(
@@ -89,9 +89,11 @@ test("Azure provider classifies HTTP 429 as rate limiting", async () => {
         tools: [],
       }),
     (error) =>
-      error instanceof ProviderRateLimitError &&
+      error instanceof ProviderUnavailableError &&
+      error.provider === "Azure AI Foundry" &&
+      error.reason === "rate_limit" &&
       error.status === 429 &&
-      /inconclusive/.test(error.message),
+      !/inconclusive/.test(error.message),
   );
 });
 
@@ -160,7 +162,7 @@ test("Azure provider preserves timeout cancellation during retry backoff", async
         signal: controller.signal,
       }),
     (error) =>
-      !(error instanceof ProviderRateLimitError) &&
+      !(error instanceof ProviderUnavailableError) &&
       error.message === "Cacophony review timed out",
   );
 });

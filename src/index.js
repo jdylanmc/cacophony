@@ -12,8 +12,8 @@ import { readInputs } from "./inputs.js";
 import { shouldFail } from "./policy/policy.js";
 import {
   createAzureFoundryProvider,
-  ProviderRateLimitError,
 } from "./providers/azure-foundry.js";
+import { ProviderUnavailableError } from "./providers/errors.js";
 import {
   createErrorReport,
   createInconclusiveReport,
@@ -72,9 +72,13 @@ async function main() {
       [apiKey],
     );
     report =
-      caught instanceof ProviderRateLimitError
+      caught instanceof ProviderUnavailableError
         ? createInconclusiveReport({
-            reason: new Error(message),
+            reason: new Error(
+              caught.reason === "rate_limit"
+                ? `${caught.provider} rate limit exceeded (${caught.status}); review is inconclusive`
+                : `${message}; review is inconclusive`,
+            ),
             config,
             context,
             startedAt,
