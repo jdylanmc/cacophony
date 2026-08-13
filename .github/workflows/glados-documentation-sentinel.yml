@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-      CACOPHONY_AZURE_DEPLOYMENT: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+      CACOPHONY_AZURE_DEPLOYMENT: ${{ vars.GLADOS_AZURE_DEPLOYMENT }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:

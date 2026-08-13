@@ -271,6 +271,10 @@ test("GLaDOS sample matches its independent documentation reviewer", async () =>
   assert.match(workflow, /pull_request_target:/);
   assert.match(
     workflow,
+    /CACOPHONY_AZURE_DEPLOYMENT: \$\{\{ vars\.GLADOS_AZURE_DEPLOYMENT \}\}/,
+  );
+  assert.match(
+    workflow,
     /prompt-file: \.cacophony\/agents\/glados-documentation-sentinel\.md/,
   );
   assert.match(workflow, /max-turns: 16/);
