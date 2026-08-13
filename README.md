@@ -267,7 +267,9 @@ numbered code-comms extraction steps; clean changes use `[APPROVED]`.
 
 `.github/workflows/solid-snake-architecture.yml` runs independently from
 Gilfoyle on the same pull request event, so GitHub schedules both reviews in
-parallel and uploads separate artifacts.
+parallel and uploads separate artifacts. Snake uses the same-repository
+`pull_request` pattern from the basic example, so fork pull requests do not
+receive the Azure secret.
 
 ## Security
 

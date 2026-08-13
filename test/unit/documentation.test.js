@@ -112,7 +112,12 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
   assert.match(activePrompt, /PaymentProcessor/);
   assert.match(activePrompt, /MockTestDatabase/);
   assert.match(activePrompt, /IEmailNotifier/);
-  assert.match(workflow, /pull_request_target:/);
+  assert.match(workflow, /\n  pull_request:\n/);
+  assert.doesNotMatch(workflow, /pull_request_target:/);
+  assert.match(
+    workflow,
+    /if: github\.event\.pull_request\.head\.repo\.full_name == github\.repository/,
+  );
   assert.match(
     workflow,
     /prompt-file: \.cacophony\/agents\/solid-snake-architecture\.md/,
