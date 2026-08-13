@@ -124,5 +124,10 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
   );
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.match(workflow, /name: cacophony-solid-snake-architecture/);
+  assert.match(
+    workflow,
+    /git cat-file -e "\$BASE_SHA:\.cacophony\/agents\/solid-snake-architecture\.md"/,
+  );
+  assert.match(workflow, /if: steps\.prompt\.outputs\.ready == 'true'/);
   assert.notEqual(workflow, gilfoyleWorkflow);
 });
