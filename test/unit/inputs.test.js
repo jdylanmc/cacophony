@@ -59,8 +59,8 @@ test("readInputs rejects traversal and invalid bounds", () => {
     /under \.cacophony/,
   );
   assert.throws(
-    () => readInputs(validEnv({ "INPUT_MAX-TURNS": "51" })),
-    /between 1 and 50/,
+    () => readInputs(validEnv({ "INPUT_MAX-TURNS": "21" })),
+    /between 1 and 20/,
   );
   assert.throws(
     () => readInputs(validEnv({ "INPUT_FAIL-ON": "none" })),
