@@ -7,7 +7,7 @@ on:
       max-turns:
         required: false
         type: number
-        default: 40
+        default: 20
       timeout-seconds:
         required: false
         type: number
@@ -63,14 +63,14 @@ jobs:
 
       - name: Run ${{ matrix.name }}
         id: audit
-        uses: jdylanmc/cacophony@2ab5ef5d3556d52ffddef891305ab1ddfe8b7412
+        uses: jdylanmc/cacophony@2c282f4a5edd216b99e7a81bca02692fc2cc5c5d
         with:
           prompt-file: .cacophony/agents/${{ matrix.agent }}.md
           review-scope: repository
           workspace-directory: audit-target
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
           deployment: ${{ matrix.deployment }}
-          max-turns: ${{ inputs.max-turns || 40 }}
+          max-turns: ${{ inputs.max-turns || 20 }}
           timeout-seconds: ${{ inputs.timeout-seconds || 1800 }}
           rate-limit-retries: ${{ inputs.rate-limit-retries || 2 }}
           fail-on: low
