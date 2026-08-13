@@ -477,6 +477,75 @@ test("Fletcher runs only for changed Cacophony agent prompts", async () => {
   assert.doesNotMatch(prompt, /\{\{TARGET_PROMPT\}\}/);
 });
 
+test("Delamain canonical prompt configures its documentation custodian", async () => {
+  const activePrompt = await fs.promises.readFile(
+    ".cacophony/agents/delamain-documentation-custodian.md",
+    "utf8",
+  );
+  const readme = await fs.promises.readFile("README.md", "utf8");
+  const workflow = await fs.promises.readFile(
+    ".github/workflows/delamain-documentation-custodian.yml",
+    "utf8",
+  );
+
+  assert.match(activePrompt, /Lead Repository Custodian and Onboarding Assistant/);
+  assert.match(activePrompt, /Passenger Cabin Baseline/);
+  assert.match(activePrompt, /Isolated Engine Blocks/);
+  assert.match(activePrompt, /Total Fleet Symmetry/);
+  assert.match(activePrompt, /progressive disclosure/);
+  assert.match(activePrompt, /Do not mechanically require a `<details>` block/);
+  assert.match(activePrompt, /actual mixed human\/machine context/);
+  assert.match(activePrompt, /Corroborate every contract claim against repository source/);
+  assert.match(activePrompt, /Avoid duplicating GLaDOS's general contradiction remit/);
+  assert.match(activePrompt, /Do not review source\s+code design, security, or implementation correctness/);
+  assert.match(activePrompt, /precise matrix\s+coordinates/);
+  assert.match(activePrompt, /exact numbered navigation steps/);
+  assert.match(activePrompt, /Cacophony's supplied read-only tools/);
+  assert.match(activePrompt, /Finish only by calling `submit_report`/);
+  assert.match(activePrompt, /begin the summary exactly with `\[BLOCK: SERVICE_DISRUPTION\]`/);
+  assert.match(activePrompt, /set the summary exactly to `\[APPROVED\]`/);
+  assert.match(activePrompt, /set the proposed `verdict` to `fail`/);
+  assert.match(activePrompt, /set the proposed `verdict` to `pass`/);
+  assert.match(activePrompt, /empty `findings` array/);
+  assert.match(activePrompt, /valued passenger/);
+  assert.match(activePrompt, /optimal trajectory/);
+  assert.match(activePrompt, /road hazards/);
+  assert.match(activePrompt, /spatial clutter/);
+  assert.match(activePrompt, /Dispatch remediation protocol/);
+  assert.match(activePrompt, /Excelsior-level/);
+  assert.doesNotMatch(
+    activePrompt,
+    /\{\{(?:EXISTING_DOCUMENTATION|GIT_DIFF|[A-Z0-9_]+)\}\}/,
+  );
+
+  assert.match(workflow, /pull_request_target:/);
+  assert.match(workflow, /permissions:\s*\n\s+contents: read/);
+  assert.match(workflow, /cancel-in-progress: true/);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
+  assert.match(workflow, /agent-slug: delamain-documentation-custodian/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
+  assert.match(workflow, /max-turns: 20/);
+  assert.match(workflow, /timeout-seconds: 600/);
+  assert.match(workflow, /rate-limit-retries: 2/);
+  assert.match(workflow, /fail-on: high/);
+  assert.match(
+    workflow,
+    /azure-api-key: \$\{\{ secrets\.CACOPHONY_AZURE_API_KEY \}\}/,
+  );
+  assert.doesNotMatch(workflow, /actions\/checkout@/);
+  assert.doesNotMatch(workflow, /jdylanmc\/cacophony@/);
+  assert.doesNotMatch(workflow, /CACOPHONY_AZURE_API_KEY:/);
+  assert.match(readme, /### Delamain, Documentation Custodian/);
+  assert.match(
+    readme,
+    /\.cacophony\/agents\/delamain-documentation-custodian\.md/,
+  );
+  assert.match(
+    readme,
+    /\.github\/workflows\/delamain-documentation-custodian\.yml/,
+  );
+});
+
 test("agent creation guide and shared skill capture the stacked workflow", async () => {
   const guide = await fs.promises.readFile("docs/creating-agents.md", "utf8");
   const skill = await fs.promises.readFile(

@@ -28,14 +28,15 @@ or generated distribution bundle.
 
 ## Repository dogfood
 
-The repository dogfoods Cacophony through its five canonical adversarial
-reviewers: Gilfoyle, Solid Snake, GLaDOS, Master Chief, and Fletcher. Their
-prompts live under `.cacophony/agents/`, and their workflows run independently
-on pull requests.
+The repository dogfoods Cacophony through its six canonical adversarial
+reviewers: Gilfoyle, Solid Snake, GLaDOS, Master Chief, Fletcher, and Delamain.
+Their prompts live under `.cacophony/agents/`, and their workflows run
+independently on pull requests.
 
 The built-in dogfood workflows require `CACOPHONY_AZURE_API_KEY`,
 `CACOPHONY_AZURE_ENDPOINT`, and endpoint deployments named `gpt-5.4-mini`
-(GLaDOS) and `gpt-5.6-sol` (Gilfoyle, Solid Snake, Master Chief, and Fletcher).
+(GLaDOS and Delamain) and `gpt-5.6-sol` (Gilfoyle, Solid Snake, Master Chief,
+and Fletcher).
 
 This repository's dogfood persona workflows are thin `pull_request_target`
 callers of `.github/workflows/cacophony-review.yml`. That reusable workflow
@@ -459,6 +460,21 @@ Gilfoyle and Solid Snake. Once merged, all three reviewers execute in parallel
 on subsequent pull requests and upload separate artifacts. Her thin caller
 declares `gpt-5.4-mini` directly.
 
+### Delamain, Documentation Custodian
+
+[`.cacophony/agents/delamain-documentation-custodian.md`](.cacophony/agents/delamain-documentation-custodian.md)
+reviews documentation information architecture, progressive disclosure,
+links and path casing, Markdown structure, and documented configuration
+contracts. It requires evidence of a real onboarding or rendering hazard
+before proposing a collapsed machine-facing compartment. Findings use
+`[BLOCK: SERVICE_DISRUPTION]`; an unobstructed route uses `[APPROVED]`.
+
+`.github/workflows/delamain-documentation-custodian.yml` is an independent thin
+trusted-base caller. It uses `gpt-5.4-mini` with the standard 20-turn,
+600-second budget and delegates authorization, trusted checkout, retry policy,
+prompt loading, secret scope, and artifact upload to the shared reusable
+workflow.
+
 ### Master Chief, Domain Commander
 
 [`.cacophony/agents/master-chief-domain-commander.md`](.cacophony/agents/master-chief-domain-commander.md)
@@ -469,9 +485,9 @@ rules. Findings use `[BLOCK: OVERENGINEERED]` with numbered mechanical
 remediation orders; mission-essential changes use `[APPROVED]`.
 
 `.github/workflows/master-chief-domain-commander.yml` is an independent thin
-caller, so after its introduction merges all four persona reviewers run in
-parallel and upload separate artifacts. Master Chief declares `gpt-5.6-sol`
-with the established 20-turn, 600-second pull-request budget.
+caller, so the persona reviewers run in parallel and upload separate artifacts.
+Master Chief declares `gpt-5.6-sol` with the established 20-turn, 600-second
+pull-request budget.
 
 ### Fletcher, Prompt Conductor
 
