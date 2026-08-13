@@ -13,7 +13,9 @@ steps, matrix jobs, or separate workflows.
 
 ## Requirements
 
-- A GitHub Actions workflow triggered by `pull_request`.
+- A GitHub Actions workflow triggered by `pull_request` by default, or a
+  `pull_request_target` workflow that follows the documented trusted-base
+  pattern.
 - An Azure AI Foundry model deployment that supports the Responses API and
   function tools.
 - The project endpoint, such as

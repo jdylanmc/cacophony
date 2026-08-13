@@ -65,6 +65,7 @@ test("README contains a deterministic agent installation contract", async () => 
     "fetch-depth: 0",
     "Default to `pull_request`",
     "Use `pull_request_target` only",
+    "`pull_request_target` workflow that follows the documented trusted-base",
   ]) {
     assert.match(readme, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
@@ -300,6 +301,7 @@ test("agent creation guide and shared skill capture the stacked workflow", async
 
   assert.match(skill, /^---\n/);
   assert.match(skill, /name: create-cacophony-agent/);
+  assert.match(skill, /gate in Step 5 \(Validate\)/);
   for (const file of stepFiles) {
     assert.match(skill, new RegExp(`steps/${file.replace(".", "\\.")}`));
   }
