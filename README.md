@@ -272,6 +272,18 @@ parallel and uploads separate artifacts. Snake uses a trusted
 guard. Pull request content is checked out only for read-only inspection;
 Cacophony loads Snake's prompt from the base commit.
 
+### GLaDOS, Documentation Synchronization Sentinel
+
+[`examples/reviewers/glados-documentation-sentinel.md`](examples/reviewers/glados-documentation-sentinel.md)
+cross-references changed behavior with untouched documentation, examples,
+configuration references, names, and inline comments. Supported mismatches use
+`[BLOCK: TESTING_ANOMALY]` with numbered synchronization steps; globally
+consistent changes use `[APPROVED]`.
+
+`.github/workflows/glados-documentation-sentinel.yml` runs independently from
+Gilfoyle and Solid Snake. Once merged, all three reviewers execute in parallel
+on subsequent pull requests and upload separate artifacts.
+
 ## Security
 
 - Use `pull_request`, not `pull_request_target`, when checking out and reviewing

@@ -1,0 +1,56 @@
+name: GLaDOS Documentation Synchronization Review
+
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+
+jobs:
+  documentation-review:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
+      CACOPHONY_AZURE_DEPLOYMENT: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The workflow and action are trusted. Head content is inspected only;
+          # Cacophony loads prompt-file from pull_request.base.sha via git show.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Check trusted prompt availability
+        id: prompt
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git cat-file -e "$BASE_SHA:.cacophony/agents/glados-documentation-sentinel.md"; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "GLaDOS starts reviewing after her prompt is merged to the base branch."
+          fi
+
+      - name: Run GLaDOS documentation review
+        id: glados
+        if: steps.prompt.outputs.ready == 'true'
+        uses: jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503
+        with:
+          prompt-file: .cacophony/agents/glados-documentation-sentinel.md
+          endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
+          deployment: ${{ env.CACOPHONY_AZURE_DEPLOYMENT }}
+          max-turns: 16
+          timeout-seconds: 600
+          fail-on: high
+        env:
+          CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
+
+      - name: Upload GLaDOS report
+        if: always() && steps.glados.outcome != 'skipped'
+        uses: actions/upload-artifact@v5
+        with:
+          name: cacophony-glados-documentation-sentinel
+          path: .cacophony/out/glados-documentation-sentinel/
