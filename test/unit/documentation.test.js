@@ -80,7 +80,7 @@ test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
     /prompt-file: \.cacophony\/agents\/gilfoyle-security-architect\.md/,
   );
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
-  assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /name: cacophony-gilfoyle-security-architect/);
 });
@@ -126,7 +126,7 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
     /prompt-file: \.cacophony\/agents\/solid-snake-architecture\.md/,
   );
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
-  assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /name: cacophony-solid-snake-architecture/);
   assert.match(
@@ -162,6 +162,6 @@ test("GLaDOS sample matches its independent documentation reviewer", async () =>
     workflow,
     /prompt-file: \.cacophony\/agents\/glados-documentation-sentinel\.md/,
   );
-  assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /name: cacophony-glados-documentation-sentinel/);
 });
