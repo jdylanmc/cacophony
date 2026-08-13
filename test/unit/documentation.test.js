@@ -80,5 +80,7 @@ test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
     /prompt-file: \.cacophony\/agents\/gilfoyle-security-architect\.md/,
   );
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /name: cacophony-gilfoyle-security-architect/);
 });
