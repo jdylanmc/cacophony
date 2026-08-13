@@ -6,12 +6,25 @@ import path from "node:path";
 
 import { shouldFail } from "../../src/policy/policy.js";
 import {
+  REVIEWER_SUBMISSION_VERDICTS,
+  TERMINAL_VERDICTS,
   createErrorReport,
   createInconclusiveReport,
   renderMarkdown,
   validateSubmission,
   writeReports,
 } from "../../src/reports/report.js";
+
+test("reviewer submissions and terminal reports have distinct verdict sets", () => {
+  assert.deepEqual(REVIEWER_SUBMISSION_VERDICTS, ["pass", "warn", "fail"]);
+  assert.deepEqual(TERMINAL_VERDICTS, [
+    "pass",
+    "warn",
+    "fail",
+    "inconclusive",
+    "error",
+  ]);
+});
 
 const validSubmission = {
   verdict: "fail",

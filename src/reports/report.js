@@ -2,7 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 
 export const SEVERITIES = ["none", "low", "medium", "high", "critical"];
-export const VERDICTS = ["pass", "warn", "fail"];
+export const REVIEWER_SUBMISSION_VERDICTS = ["pass", "warn", "fail"];
+export const TERMINAL_VERDICTS = [
+  ...REVIEWER_SUBMISSION_VERDICTS,
+  "inconclusive",
+  "error",
+];
 
 export function severityRank(value) {
   const rank = SEVERITIES.indexOf(value);
@@ -63,8 +68,10 @@ export function validateSubmission(value) {
   }
 
   const verdict = requireString(value.verdict, "verdict", { max: 20 }).toLowerCase();
-  if (!VERDICTS.includes(verdict)) {
-    throw new Error(`verdict must be one of ${VERDICTS.join(", ")}`);
+  if (!REVIEWER_SUBMISSION_VERDICTS.includes(verdict)) {
+    throw new Error(
+      `reviewer verdict must be one of ${REVIEWER_SUBMISSION_VERDICTS.join(", ")}`,
+    );
   }
 
   if (!Array.isArray(value.findings)) {
@@ -174,6 +181,10 @@ function createTerminalReport({
   context,
   startedAt,
 }) {
+  if (!TERMINAL_VERDICTS.includes(verdict)) {
+    throw new Error(`terminal verdict must be one of ${TERMINAL_VERDICTS.join(", ")}`);
+  }
+
   return {
     schemaVersion: "1.0",
     status,
