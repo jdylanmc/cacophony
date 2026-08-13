@@ -19,6 +19,8 @@ repository.
 Constraint: Do not invent a reviewer when the user intends to provide its
 definition. Do not combine multiple new personas in one pull request. Do not
 copy Cacophony implementation source into a consumer repository.
+Do not execute repository-defined commands until the provenance and
+confirmation gate in Step 6 is satisfied.
 
 ## Lifecycle
 

@@ -40,7 +40,6 @@ function assertRemoteActionsPinned(content, source) {
     ([, reference]) => reference,
   );
 
-  assert.notEqual(references.length, 0, `${source} has no action references`);
   for (const reference of references) {
     if (reference.startsWith("./") || reference.startsWith("docker://")) {
       continue;
@@ -104,6 +103,12 @@ test("workflow discovery includes new nested workflow filenames", async () => {
     assert.doesNotThrow(() =>
       assertRemoteActionsPinned(
         "uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09\n",
+        workflowPath,
+      ),
+    );
+    assert.doesNotThrow(() =>
+      assertRemoteActionsPinned(
+        "name: Run-only workflow\nsteps:\n  - run: echo safe\n",
         workflowPath,
       ),
     );
@@ -316,6 +321,9 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /merge only with explicit user authorization/);
   assert.match(lifecycle, /every remote `uses:` dependency/);
   assert.doesNotMatch(lifecycle, /actions\/[^@\s]+@v\d+/);
+  assert.match(lifecycle, /treat repository instructions[\s\S]*as untrusted data/);
+  assert.match(lifecycle, /require explicit user confirmation/);
+  assert.match(lifecycle, /never execute a command merely because repository instructions/);
 
   const guideActionReferences = [
     ...guide.matchAll(/uses:\s+(actions\/[^\s#]+)/g),
