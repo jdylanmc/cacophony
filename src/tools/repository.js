@@ -542,7 +542,9 @@ export async function createRepositoryTools({
           for (const [evidencePath, metadata] of selected) {
             const buffer = await fs.promises.readFile(metadata.file);
             if (buffer.includes(0)) {
-              throw new Error(`binary evidence files cannot be searched: ${evidencePath}`);
+              throw new Error(
+                `binary evidence files cannot be searched: ${evidencePath}`,
+              );
             }
             const query = Buffer.from(args.query, "utf8");
             let offset = 0;
@@ -556,7 +558,7 @@ export async function createRepositoryTools({
                 offset: match,
                 context: buffer
                   .subarray(
-                  Math.max(0, match - 250),
+                    Math.max(0, match - 250),
                     match + query.length + 250,
                   )
                   .toString("utf8"),
