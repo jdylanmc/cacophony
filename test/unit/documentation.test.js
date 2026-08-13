@@ -409,7 +409,7 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
     workflow,
     /deployment: gpt-5\.4-mini/,
   );
-  assert.match(workflow, /max-turns: 20/);
+  assert.match(workflow, /max-turns: 40/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /unit-test-evidence:/);
   assert.match(workflow, /evidence-artifact: cacophony-evidence-glados/);

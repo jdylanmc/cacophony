@@ -81,7 +81,7 @@ jobs:
         .cacophony/evidence/unit-tests.verbose.log
         .cacophony/evidence/unit-tests.status.json
       deployment: gpt-5.4-mini
-      max-turns: 20
+      max-turns: 40
       timeout-seconds: 600
       rate-limit-retries: 2
       fail-on: high
