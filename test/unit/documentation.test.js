@@ -495,9 +495,23 @@ test("Delamain canonical prompt configures its documentation custodian", async (
   assert.match(activePrompt, /progressive disclosure/);
   assert.match(activePrompt, /Do not mechanically require a `<details>` block/);
   assert.match(activePrompt, /actual mixed human\/machine context/);
-  assert.match(activePrompt, /Corroborate every contract claim against repository source/);
-  assert.match(activePrompt, /Avoid duplicating GLaDOS's general contradiction remit/);
-  assert.match(activePrompt, /Do not review source\s+code design, security, or implementation correctness/);
+  assert.match(activePrompt, /GLaDOS exclusively owns factual synchronization/);
+  assert.match(activePrompt, /Delegate stale environment variables, action/);
+  assert.match(activePrompt, /inputs or outputs, schemas, workflows, public contracts/);
+  assert.match(activePrompt, /every implementation-to-documentation factual comparison to\s+GLaDOS/);
+  assert.match(activePrompt, /Do not report those defects/);
+  assert.match(activePrompt, /onboarding discoverability/);
+  assert.match(activePrompt, /heading hierarchy/);
+  assert.match(activePrompt, /list and table structure/);
+  assert.match(activePrompt, /Markdown rendering/);
+  assert.match(activePrompt, /links and anchors/);
+  assert.match(activePrompt, /path casing/);
+  assert.match(activePrompt, /Do not review source-code design, security, implementation correctness/);
+  assert.doesNotMatch(activePrompt, /documented public or configuration contract changed/);
+  assert.doesNotMatch(activePrompt, /Corroborate every contract claim/);
+  assert.doesNotMatch(activePrompt, /code\/configuration contracts whose documentation is now stale/);
+  assert.doesNotMatch(activePrompt, /synchronized contract text/);
+  assert.doesNotMatch(activePrompt, /contract comparison/);
   assert.match(activePrompt, /precise matrix\s+coordinates/);
   assert.match(activePrompt, /exact numbered navigation steps/);
   assert.match(activePrompt, /Cacophony's supplied read-only tools/);
@@ -544,6 +558,13 @@ test("Delamain canonical prompt configures its documentation custodian", async (
     readme,
     /\.github\/workflows\/delamain-documentation-custodian\.yml/,
   );
+  assert.match(readme, /navigation and discoverability/);
+  assert.match(readme, /Factual implementation and configuration synchronization remains GLaDOS's/);
+  const delamainCatalog = readme.slice(
+    readme.indexOf("### Delamain, Documentation Custodian"),
+    readme.indexOf("### Master Chief, Domain Commander"),
+  );
+  assert.doesNotMatch(delamainCatalog, /documented configuration contracts/);
 });
 
 test("agent creation guide and shared skill capture the stacked workflow", async () => {

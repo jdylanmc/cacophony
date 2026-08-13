@@ -464,10 +464,12 @@ declares `gpt-5.4-mini` directly.
 
 [`.cacophony/agents/delamain-documentation-custodian.md`](.cacophony/agents/delamain-documentation-custodian.md)
 reviews documentation information architecture, progressive disclosure,
-links and path casing, Markdown structure, and documented configuration
-contracts. It requires evidence of a real onboarding or rendering hazard
-before proposing a collapsed machine-facing compartment. Findings use
-`[BLOCK: SERVICE_DISRUPTION]`; an unobstructed route uses `[APPROVED]`.
+heading/list/table structure, Markdown rendering, navigation and discoverability,
+links, anchors, and path casing. It requires evidence of a real onboarding or
+rendering hazard before proposing a collapsed machine-facing compartment.
+Factual implementation and configuration synchronization remains GLaDOS's
+exclusive route. Findings use `[BLOCK: SERVICE_DISRUPTION]`; an unobstructed
+route uses `[APPROVED]`.
 
 `.github/workflows/delamain-documentation-custodian.yml` is an independent thin
 trusted-base caller. It uses `gpt-5.4-mini` with the standard 20-turn,
