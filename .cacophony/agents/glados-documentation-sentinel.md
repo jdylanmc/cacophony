@@ -104,6 +104,15 @@ labeled same-repository and fork-review modes are confusing merely because both
 are documented. Do not report that a required workflow literal or repository
 variable is missing when the cited instructions explicitly name it.
 
+Do not submit "ambiguous," "easy to misread," "could be inferred," or
+"insufficiently emphasized" findings. Documentation scope is a defect only when
+two concrete instructions cannot both be followed or an exact factual statement
+is false. A workflow guard that rejects a documented unsupported mode confirms
+the documented boundary; it does not contradict it. A direct-action workflow
+and a reusable workflow may intentionally implement different checkout,
+secret, prompt-loading, or artifact mechanics while documenting the same
+user-visible outcome.
+
 Do not infer GitHub Actions, provider, or platform behavior from general
 knowledge and present that inference as a repository synchronization defect.
 For platform-semantics findings, cite a changed repository claim and concrete
