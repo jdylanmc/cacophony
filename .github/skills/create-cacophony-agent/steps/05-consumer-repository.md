@@ -22,7 +22,8 @@ reviewer carries its model choice to another repository.
 The canonical simple consumer workflow is the README quick-start
 `pull_request` workflow: use an always-running job that explicitly fails fork
 pull requests before checkout or review. Never put the only review job behind a
-same-repository condition.
+same-repository condition. Because this mode invokes the action directly, map
+`CACOPHONY_AZURE_API_KEY` through the action step's `env`.
 
 Use `pull_request_target` only for a trusted-base workflow where:
 
@@ -35,6 +36,8 @@ Use `pull_request_target` only for a trusted-base workflow where:
 - no head-controlled code is executed;
 - unauthorized fork authors are rejected before checkout;
 - per-pull-request concurrency cancels superseded reviews;
-- the API key exists only on the Cacophony step.
+- the caller passes `secrets.azure-api-key` to the reusable workflow;
+- only the reusable workflow maps that secret to the Cacophony step's
+  `CACOPHONY_AZURE_API_KEY` environment variable.
 
 Do not add a sample catalog copy unless requested.

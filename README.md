@@ -160,14 +160,17 @@ code.
 | `fail-on` | No | `high` | `low`, `medium`, `high`, `critical`, or `never`. |
 | `output-directory` | No | `.cacophony/out` | Repository-relative report root. |
 
-The API key is accepted only through the `CACOPHONY_AZURE_API_KEY` environment
-variable.
+The action accepts the API key only through the `CACOPHONY_AZURE_API_KEY`
+environment variable. The simple quick start maps the repository secret
+directly onto that action step. A trusted-base thin caller instead passes the
+repository secret as `secrets.azure-api-key`; the reusable workflow alone maps
+it to the action environment.
 
 ## Outputs and failure policy
 
 | Output | Description |
 | --- | --- |
-| `verdict` | `pass`, `warn`, and `fail` are findings-derived; `inconclusive` means no review decision completed; `error` means framework failure. |
+| `verdict` | `pass`, `warn`, and `fail` are findings-derived. `inconclusive` means no review decision completed, always exits nonzero, and should be retried when quota is available. `error` means framework failure. |
 | `max-severity` | `none`, `low`, `medium`, `high`, or `critical`. |
 | `report-json` | Repository-relative JSON report path. |
 | `report-markdown` | Repository-relative Markdown report path. |
@@ -368,7 +371,9 @@ declares `gpt-5.4-mini` directly.
 ## Troubleshooting
 
 - **Missing API key:** verify the secret is named exactly
-  `CACOPHONY_AZURE_API_KEY` and is mapped through `env`.
+  `CACOPHONY_AZURE_API_KEY`. The simple workflow maps it through the action
+  step's `env`; a trusted-base caller passes it as `secrets.azure-api-key` and
+  the reusable workflow maps it to the action environment.
 - **Azure 404:** verify the project endpoint and deployment. Cacophony appends
   `/openai/v1/responses` unless the endpoint already ends in `/responses`.
 - **Azure 429:** `rate-limit-retries: 2` means two retries after the initial
@@ -402,18 +407,21 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    do not copy Cacophony source into the consumer repository.
 6. Use the repository variable `CACOPHONY_AZURE_ENDPOINT` and declare the
    reviewer's model deployment directly in its workflow.
-7. Map the repository secret `CACOPHONY_AZURE_API_KEY` into the review step's
-   environment. Never place the key in a committed file.
+7. In the default simple workflow, map the repository secret
+   `CACOPHONY_AZURE_API_KEY` into the review step's environment. In a
+   trusted-base thin caller, pass it as `secrets.azure-api-key` and let the
+   reusable workflow map it to the action environment. Never place the key in a
+   committed file.
 8. Add Upload Artifact pinned to the documented full commit SHA with
    `if: always()` and path
    `.cacophony/out/`.
 9. Default to `pull_request` with an always-running job that explicitly fails
    fork pull requests before checkout or review. Use `pull_request_target` only
-   for the documented trusted-base pattern with every remote action in the
-   generated workflow pinned to a full commit SHA, a base-commit prompt,
-   read-only permissions, no execution of head-controlled code, an authorization
-   step that rejects untrusted fork authors before checkout, per-pull-request
-   concurrency, and the API key scoped only to the Cacophony step.
+   for the documented trusted-base pattern with one repository-owned reusable
+   workflow holding every pinned remote action, the base-commit prompt,
+   read-only permissions, authorization before checkout, no execution of
+   head-controlled code, and API-key mapping. Keep persona callers narrow and
+   give each per-pull-request concurrency.
 10. Validate the resulting YAML syntax and report this expected tree:
 
     ```text
