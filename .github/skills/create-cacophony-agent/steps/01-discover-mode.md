@@ -11,7 +11,7 @@ Locate without executing:
 
 - `.cacophony/agents`;
 - reviewer workflows under `.github/workflows`;
-- existing sample prompts;
+- existing canonical prompts;
 - repository test and validation definitions.
 
 Choose one mode:

@@ -61,7 +61,10 @@ pattern in
 [`docs/creating-agents.md`](docs/creating-agents.md), including its author
 authorization and concurrency controls. The checked-in
 [`examples/basic`](examples/basic/) directory mirrors this simple mode; it is
-not a trusted-base fork-review template.
+not a trusted-base fork-review template. The simple workflow never calls
+`.github/workflows/cacophony-review.yml`; that reusable worker is callable only
+from a `pull_request_target` trusted-base persona workflow and is never a direct
+event trigger.
 
 1. In the target repository, open **Settings > Secrets and variables > Actions**.
 2. Create the secret `CACOPHONY_AZURE_API_KEY`.
@@ -336,7 +339,7 @@ reviewer in another repository.
 
 ### Gilfoyle the Security Architect
 
-[`examples/reviewers/gilfoyle-security-architect.md`](examples/reviewers/gilfoyle-security-architect.md)
+[`.cacophony/agents/gilfoyle-security-architect.md`](.cacophony/agents/gilfoyle-security-architect.md)
 is a persona-driven application security reviewer. It reports only concrete
 exploitation paths, requires exact evidence and numbered remediation, and uses
 `[BLOCK: SECURITY]` or `[APPROVED]` summaries.
@@ -348,7 +351,7 @@ This repository dogfoods the reviewer through
 
 ### Solid Snake, SOLID Architecture Operative
 
-[`examples/reviewers/solid-snake-architecture.md`](examples/reviewers/solid-snake-architecture.md)
+[`.cacophony/agents/solid-snake-architecture.md`](.cacophony/agents/solid-snake-architecture.md)
 reviews Single Responsibility Principle (SRP), dependency boundaries,
 interface segregation, and open/closed extension points without demanding
 abstractions for their own sake. Findings use `[BLOCK: ARCHITECTURE]` and
@@ -362,7 +365,7 @@ action, and base-commit prompt loading.
 
 ### GLaDOS, Documentation Synchronization Sentinel
 
-[`examples/reviewers/glados-documentation-sentinel.md`](examples/reviewers/glados-documentation-sentinel.md)
+[`.cacophony/agents/glados-documentation-sentinel.md`](.cacophony/agents/glados-documentation-sentinel.md)
 cross-references changed behavior with untouched documentation, examples,
 configuration references, names, and inline comments. Supported mismatches use
 `[BLOCK: TESTING_ANOMALY]` with numbered synchronization steps; globally

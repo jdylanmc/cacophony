@@ -24,11 +24,14 @@ The canonical simple consumer workflow is the README quick-start
 fails fork use before checkout or review. That guard does not authorize or
 review forks. Never put the only review job behind a same-repository condition.
 Because this mode invokes the action directly, map `CACOPHONY_AZURE_API_KEY`
-through the action step's `env`.
+through the action step's `env`. It never calls the reusable worker.
 
 Use `pull_request_target` only for a trusted-base workflow where:
 
 - one repository-owned reusable workflow contains the shared trust boundary;
+- the reusable worker has only `workflow_call`, is never directly
+  event-triggered, and is called only by a `pull_request_target` persona
+  workflow;
 - persona workflows are thin callers that provide only agent settings;
 - each caller owns its `pull_request_target` trigger, read-only permissions, and
   per-pull-request concurrency;

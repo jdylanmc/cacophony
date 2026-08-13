@@ -4,11 +4,11 @@ Create:
 
 ```text
 .cacophony/agents/<slug>.md
-examples/reviewers/<slug>.md
 .github/workflows/<slug>.yml
 ```
 
-The active and sample prompts must be byte-for-byte identical.
+The active prompt is the sole reviewer-contract source. Link the README catalog
+entry to `.cacophony/agents/<slug>.md`; do not create a second prompt copy.
 
 Create a thin caller of `.github/workflows/cacophony-review.yml`. Keep shared
 authorization, checkout, prompt availability, action invocation, secret
@@ -39,7 +39,7 @@ checkout.
 Add:
 
 - a README catalog entry;
-- a test asserting active/sample equality;
+- a test asserting the catalog entry resolves to the canonical prompt;
 - tests for block marker, approval marker, prompt path, action pin, budget, and
   artifact name.
 

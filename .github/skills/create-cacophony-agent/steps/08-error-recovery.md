@@ -35,11 +35,6 @@ Create a separate prerequisite pull request raising that established reviewer's
 budget. Require the existing stack to approve it, merge it, update the blocked
 persona branch, and rerun.
 
-## Active and sample prompts drift
-
-Choose the user's canonical prompt, copy it exactly to the other location, and
-retain the equality test.
-
 ## Repository configuration is missing
 
 Never request a key in chat. Restore the missing item according to the canonical

@@ -237,13 +237,9 @@ test("Hello World dogfood runs a model-generated joke prompt", async () => {
   assert.match(workflow, /rate-limit-retries: 2/);
 });
 
-test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
+test("Gilfoyle canonical prompt configures the security reviewer", async () => {
   const activePrompt = await fs.promises.readFile(
     ".cacophony/agents/gilfoyle-security-architect.md",
-    "utf8",
-  );
-  const samplePrompt = await fs.promises.readFile(
-    "examples/reviewers/gilfoyle-security-architect.md",
     "utf8",
   );
   const workflow = await fs.promises.readFile(
@@ -251,7 +247,6 @@ test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
     "utf8",
   );
 
-  assert.equal(samplePrompt, activePrompt);
   assert.match(activePrompt, /\[BLOCK: SECURITY\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
   assert.match(workflow, /pull_request_target:/);
@@ -264,13 +259,9 @@ test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
   assert.match(workflow, /cancel-in-progress: true/);
 });
 
-test("Solid Snake sample matches its independent architecture reviewer", async () => {
+test("Solid Snake canonical prompt configures its architecture reviewer", async () => {
   const activePrompt = await fs.promises.readFile(
     ".cacophony/agents/solid-snake-architecture.md",
-    "utf8",
-  );
-  const samplePrompt = await fs.promises.readFile(
-    "examples/reviewers/solid-snake-architecture.md",
     "utf8",
   );
   const workflow = await fs.promises.readFile(
@@ -282,7 +273,6 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
     "utf8",
   );
 
-  assert.equal(samplePrompt, activePrompt);
   assert.match(activePrompt, /\[BLOCK: ARCHITECTURE\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
   assert.match(activePrompt, /Single Responsibility Principle/);
@@ -304,13 +294,9 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
   assert.notEqual(workflow, gilfoyleWorkflow);
 });
 
-test("GLaDOS sample matches its independent documentation reviewer", async () => {
+test("GLaDOS canonical prompt configures its documentation reviewer", async () => {
   const activePrompt = await fs.promises.readFile(
     ".cacophony/agents/glados-documentation-sentinel.md",
-    "utf8",
-  );
-  const samplePrompt = await fs.promises.readFile(
-    "examples/reviewers/glados-documentation-sentinel.md",
     "utf8",
   );
   const workflow = await fs.promises.readFile(
@@ -318,7 +304,6 @@ test("GLaDOS sample matches its independent documentation reviewer", async () =>
     "utf8",
   );
 
-  assert.equal(samplePrompt, activePrompt);
   assert.match(activePrompt, /\[BLOCK: TESTING_ANOMALY\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
   assert.match(activePrompt, /Documentation symmetry and deep impact/);
@@ -375,7 +360,6 @@ test("agent creation guide and shared skill capture the stacked workflow", async
 
   for (const content of [guide, lifecycle]) {
     assert.match(content, /\.cacophony\/agents\/<slug>\.md/);
-    assert.match(content, /examples\/reviewers\/<slug>\.md/);
     assert.match(content, /pull_request_target/);
     assert.match(content, /max-turns: 20/);
     assert.match(content, /rate-limit-retries: 2/);
@@ -400,6 +384,7 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /three total attempts/);
   assert.match(lifecycle, /caller passes `secrets\.azure-api-key`/);
   assert.match(lifecycle, /rejects other events/);
+  assert.match(lifecycle, /sole reviewer-contract source/);
   assert.doesNotMatch(
     lifecycle,
     /deployment identifiers belong in repository variables/,

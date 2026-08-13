@@ -10,3 +10,6 @@ forks, create a repository-owned reusable workflow modeled on
 `.github/workflows/cacophony-review.yml` and thin `pull_request_target` callers.
 The reusable workflow owns authorization, trusted checkout, base-commit prompt
 loading, secret-to-environment mapping, action invocation, and artifact upload.
+This simple workflow never calls that reusable worker. The worker has only
+`workflow_call`, is never directly event-triggered, and is called only from a
+trusted-base persona workflow.

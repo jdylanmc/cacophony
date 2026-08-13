@@ -18,7 +18,8 @@ Verify:
 
 1. no prompt placeholders remain;
 2. prompt slug, workflow path, artifact name, and output path agree;
-3. active and sample prompts match in Cacophony mode;
+3. each README catalog entry resolves to one canonical prompt in
+   `.cacophony/agents/`;
 4. every remote `uses:` dependency in each workflow created or modified by this
    skill uses a full commit SHA, never a mutable tag;
 5. the persona workflow declares its selected deployment directly;

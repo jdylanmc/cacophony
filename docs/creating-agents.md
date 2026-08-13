@@ -62,12 +62,12 @@ Create these matching files:
 
 ```text
 .cacophony/agents/<slug>.md
-examples/reviewers/<slug>.md
 .github/workflows/<slug>.yml
 ```
 
-The active and sample prompt files must be byte-for-byte identical. Add a
-documentation test that reads both files and asserts equality.
+The active prompt under `.cacophony/agents/` is the sole reviewer-contract
+source. README catalog entries link to that canonical file; do not create or
+manually synchronize a second prompt copy.
 
 Add a README entry describing the lens, block prefix, and workflow.
 In every workflow created from this guide, pin each remote action reference to
@@ -190,10 +190,11 @@ or `COLLABORATOR` author before checkout.
 
 `examples/basic` demonstrates only the simple same-repository mode. Its direct
 action invocation is intentional and must not be copied as a trusted-base fork
-review workflow.
+review workflow. The simple workflow never calls the reusable worker. The
+reusable worker has only `workflow_call`, is never directly event-triggered,
+and is called only by a `pull_request_target` trusted-base persona workflow.
 
-An external repository does not need the `examples/reviewers` copy or Cacophony
-documentation tests unless its maintainers want a local catalog.
+An external repository does not need Cacophony's README catalog tests.
 
 ## 5. Validate and publish
 
@@ -207,7 +208,8 @@ git diff --check
 
 Also verify:
 
-- active and sample prompts are identical;
+- every README catalog entry resolves to its canonical prompt under
+  `.cacophony/agents/`;
 - workflow filename, prompt slug, artifact name, and output path agree;
 - every remote action reference in each workflow created or modified by this
   process is a full commit SHA;
