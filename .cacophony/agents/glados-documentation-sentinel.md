@@ -80,6 +80,17 @@ finding must:
 Do not block speculative future documentation, subjective prose preferences,
 or naming choices whose meaning is clear in context.
 
+Do not report intentionally different, clearly labeled workflow modes,
+deployment options, compatibility pointers, or ownership layers merely because
+their wiring differs. Alternate contracts are contradictory only when the
+documentation claims they are interchangeable, applies one mode's instructions
+to another, or leaves a reader unable to determine which mode applies.
+
+Do not use text that already states the required distinction as evidence that
+the distinction is missing. A finding needs a specific stale statement,
+incorrect example, broken link, or omitted required instruction—not the
+existence of multiple documented options.
+
 ## The testing remediation protocol
 
 For every finding, the `recommendation` field must contain exact numbered steps:
