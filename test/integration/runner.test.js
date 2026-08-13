@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -11,6 +12,12 @@ import {
 test("review runner executes tools and requires structured submission", async (t) => {
   const fixture = await createPullRequestFixture();
   t.after(() => removeFixture(fixture));
+  const evidenceDirectory = `${fixture.workspace}/.cacophony/evidence`;
+  await fs.promises.mkdir(evidenceDirectory, { recursive: true });
+  await fs.promises.writeFile(
+    `${evidenceDirectory}/analysis.json`,
+    '{"results":[{"level":"error","message":"Incorrect arithmetic"}]}\n',
+  );
   const target = await createReviewTarget({
     reviewScope: "pull-request",
     eventPath: fixture.eventPath,
@@ -21,13 +28,17 @@ test("review runner executes tools and requires structured submission", async (t
       turn += 1;
       assert.match(request.instructions, /correctness defects/);
       if (turn === 1) {
+        assert.match(request.input, /Declared external analysis evidence/);
+        assert.ok(request.tools.some((tool) => tool.name === "read_evidence"));
         return {
           id: "response-1",
           calls: [
             {
               callId: "call-1",
-              name: "read_file",
-              arguments: JSON.stringify({ path: "app.js" }),
+              name: "read_evidence",
+              arguments: JSON.stringify({
+                path: ".cacophony/evidence/analysis.json",
+              }),
             },
           ],
         };
@@ -68,6 +79,7 @@ test("review runner executes tools and requires structured submission", async (t
       provider: "azure-foundry",
       deployment: "review-model",
       maxTurns: 4,
+      evidenceFiles: [".cacophony/evidence/analysis.json"],
     },
     target,
     workspace: fixture.workspace,

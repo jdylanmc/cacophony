@@ -43,6 +43,21 @@ function relativePath(name, value) {
   return normalized;
 }
 
+function relativePaths(name, value) {
+  const paths = value
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => relativePath(name, entry));
+  if (paths.length > 20) {
+    throw new Error(`${name} cannot contain more than 20 paths`);
+  }
+  if (new Set(paths).size !== paths.length) {
+    throw new Error(`${name} cannot contain duplicate paths`);
+  }
+  return paths;
+}
+
 export function normalizeAgentId(promptFile) {
   const stem = path.basename(promptFile, path.extname(promptFile));
   const id = stem
@@ -99,6 +114,7 @@ export function readInputs(env = process.env) {
       "workspace-directory",
       getInput("workspace-directory", env) || ".",
     ),
+    evidenceFiles: relativePaths("evidence-files", getInput("evidence-files", env)),
     outputDirectory: relativePath(
       "output-directory",
       getInput("output-directory", env) || ".cacophony/out",

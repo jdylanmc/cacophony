@@ -22,7 +22,21 @@ test("readInputs applies simple defaults", () => {
   assert.equal(result.failOn, "high");
   assert.equal(result.reviewScope, "pull-request");
   assert.equal(result.workspaceDirectory, ".");
+  assert.deepEqual(result.evidenceFiles, []);
   assert.equal(result.outputDirectory, ".cacophony/out");
+});
+
+test("readInputs accepts declared evidence files", () => {
+  const result = readInputs(
+    validEnv({
+      "INPUT_EVIDENCE-FILES":
+        ".cacophony/evidence/codeql.sarif\n.cacophony/evidence/tests.xml",
+    }),
+  );
+  assert.deepEqual(result.evidenceFiles, [
+    ".cacophony/evidence/codeql.sarif",
+    ".cacophony/evidence/tests.xml",
+  ]);
 });
 
 test("readInputs accepts repository audit scope", () => {
@@ -63,6 +77,20 @@ test("readInputs rejects traversal and invalid bounds", () => {
   assert.throws(
     () => readInputs(validEnv({ "INPUT_WORKSPACE-DIRECTORY": "../outside" })),
     /cannot leave/,
+  );
+  assert.throws(
+    () => readInputs(validEnv({ "INPUT_EVIDENCE-FILES": "../outside.sarif" })),
+    /cannot leave/,
+  );
+  assert.throws(
+    () =>
+      readInputs(
+        validEnv({
+          "INPUT_EVIDENCE-FILES":
+            ".cacophony/evidence/report.json\n.cacophony/evidence/report.json",
+        }),
+      ),
+    /duplicate/,
   );
 });
 

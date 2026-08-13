@@ -7,6 +7,8 @@ const execFileAsync = promisify(execFile);
 const MAX_FILE_BYTES = 200_000;
 const MAX_DIFF_BYTES = 500_000;
 const MAX_SEARCH_BYTES = 5_000_000;
+const MAX_EVIDENCE_FILE_BYTES = 10_000_000;
+const MAX_EVIDENCE_READ_BYTES = 200_000;
 const MAX_LIST_ENTRIES = 1_000;
 const MAX_SEARCH_RESULTS = 100;
 
@@ -185,6 +187,47 @@ export const TOOL_DEFINITIONS = [
   },
   {
     type: "function",
+    name: "list_evidence",
+    description: "List declared structured evidence files and their sizes.",
+    parameters: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    type: "function",
+    name: "read_evidence",
+    description:
+      "Read a byte range from one declared evidence file. Use offset to continue through large reports.",
+    parameters: {
+      type: "object",
+      properties: {
+        path: { type: "string" },
+        offset: { type: "integer", minimum: 0 },
+        max_bytes: {
+          type: "integer",
+          minimum: 1,
+          maximum: MAX_EVIDENCE_READ_BYTES,
+        },
+      },
+      required: ["path"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "search_evidence",
+    description:
+      "Search declared evidence files for a case-sensitive literal and return bounded surrounding context.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        path: { type: "string" },
+      },
+      required: ["query"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
     name: "submit_report",
     description: "Submit the final structured review. This is the only way to finish.",
     parameters: {
@@ -237,9 +280,35 @@ export const TOOL_DEFINITIONS = [
   },
 ];
 
-export async function createRepositoryTools({ workspace, toolScope }) {
+export async function createRepositoryTools({
+  workspace,
+  toolScope,
+  evidenceFiles = [],
+}) {
   const root = await fs.promises.realpath(workspace);
   const { pullRequest, expectedRepositorySha } = toolScope;
+  const evidence = new Map();
+  for (const declaredPath of evidenceFiles) {
+    const file = await ensureInside(root, declaredPath);
+    const stat = await fs.promises.stat(file);
+    if (!stat.isFile()) {
+      throw new Error(`evidence file is not a file: ${declaredPath}`);
+    }
+    if (stat.size > MAX_EVIDENCE_FILE_BYTES) {
+      throw new Error(
+        `evidence file exceeds ${MAX_EVIDENCE_FILE_BYTES} bytes: ${declaredPath}`,
+      );
+    }
+    evidence.set(path.relative(root, file), { file, bytes: stat.size });
+  }
+  const evidenceToolNames =
+    evidence.size > 0
+      ? ["list_evidence", "read_evidence", "search_evidence"]
+      : [];
+  const allowedNames = new Set([
+    ...toolScope.allowedNames,
+    ...evidenceToolNames,
+  ]);
   const baseSha = pullRequest?.baseSha;
   const headSha = pullRequest?.headSha;
   if (pullRequest) {
@@ -255,11 +324,11 @@ export async function createRepositoryTools({ workspace, toolScope }) {
 
   return {
     definitions: TOOL_DEFINITIONS.filter((tool) =>
-      toolScope.allowedNames.includes(tool.name),
+      allowedNames.has(tool.name),
     ),
 
     async execute(name, args = {}) {
-      if (!toolScope.allowedNames.includes(name)) {
+      if (!allowedNames.has(name)) {
         throw new Error(`Tool is unavailable for this review target: ${name}`);
       }
       switch (name) {
@@ -386,6 +455,109 @@ export async function createRepositoryTools({ workspace, toolScope }) {
             }
           }
           return { matches, truncated: false, bytesRead };
+        }
+
+        case "list_evidence":
+          return {
+            files: [...evidence.entries()].map(([evidencePath, metadata]) => ({
+              path: evidencePath,
+              bytes: metadata.bytes,
+            })),
+          };
+
+        case "read_evidence": {
+          const metadata = evidence.get(assertRelativePath(args.path));
+          if (!metadata) {
+            throw new Error("path is not a declared evidence file");
+          }
+          const offset = args.offset ?? 0;
+          const maximum = args.max_bytes ?? MAX_EVIDENCE_READ_BYTES;
+          if (
+            !Number.isInteger(offset) ||
+            offset < 0 ||
+            !Number.isInteger(maximum) ||
+            maximum < 1 ||
+            maximum > MAX_EVIDENCE_READ_BYTES
+          ) {
+            throw new Error("invalid evidence byte range");
+          }
+          const handle = await fs.promises.open(metadata.file, "r");
+          try {
+            const length = Math.min(
+              maximum,
+              Math.max(0, metadata.bytes - offset),
+            );
+            const buffer = Buffer.alloc(length);
+            const { bytesRead } = await handle.read(
+              buffer,
+              0,
+              length,
+              offset,
+            );
+            const content = buffer.subarray(0, bytesRead).toString("utf8");
+            if (content.includes("\0")) {
+              throw new Error("binary evidence files cannot be read");
+            }
+            return {
+              path: args.path,
+              offset,
+              bytesRead,
+              totalBytes: metadata.bytes,
+              nextOffset:
+                offset + bytesRead < metadata.bytes ? offset + bytesRead : null,
+              content,
+            };
+          } finally {
+            await handle.close();
+          }
+        }
+
+        case "search_evidence": {
+          if (
+            typeof args.query !== "string" ||
+            !args.query ||
+            args.query.length > 200
+          ) {
+            throw new Error("query must contain 1 through 200 characters");
+          }
+          const selected =
+            args.path === undefined
+              ? [...evidence.entries()]
+              : [[
+                  assertRelativePath(args.path),
+                  evidence.get(assertRelativePath(args.path)),
+                ]];
+          if (selected.some(([, metadata]) => !metadata)) {
+            throw new Error("path is not a declared evidence file");
+          }
+          const matches = [];
+          for (const [evidencePath, metadata] of selected) {
+            const buffer = await fs.promises.readFile(metadata.file);
+            if (buffer.includes(0)) {
+              continue;
+            }
+            const content = buffer.toString("utf8");
+            let offset = 0;
+            while (matches.length < MAX_SEARCH_RESULTS) {
+              const match = content.indexOf(args.query, offset);
+              if (match === -1) {
+                break;
+              }
+              matches.push({
+                path: evidencePath,
+                offset: Buffer.byteLength(content.slice(0, match), "utf8"),
+                context: content.slice(
+                  Math.max(0, match - 250),
+                  match + args.query.length + 250,
+                ),
+              });
+              offset = match + args.query.length;
+            }
+            if (matches.length >= MAX_SEARCH_RESULTS) {
+              return { matches, truncated: true };
+            }
+          }
+          return { matches, truncated: false };
         }
 
         default:

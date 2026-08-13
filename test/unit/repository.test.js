@@ -28,6 +28,52 @@ test("repository tools inspect the pull request without shell access", async (t)
     toolScope: target.toolScope,
   });
 
+  test("repository tools expose only declared structured evidence", async (t) => {
+    const fixture = await createPullRequestFixture();
+    t.after(() => removeFixture(fixture));
+    const evidenceDirectory = path.join(
+      fixture.workspace,
+      ".cacophony",
+      "evidence",
+    );
+    await fs.promises.mkdir(evidenceDirectory, { recursive: true });
+    await fs.promises.writeFile(
+      path.join(evidenceDirectory, "analysis.json"),
+      JSON.stringify({
+        tool: "example",
+        results: [{ level: "error", message: "Unsafe input flow" }],
+      }),
+    );
+    const target = await createReviewTarget({
+      reviewScope: "pull-request",
+      eventPath: fixture.eventPath,
+    });
+    const tools = await createRepositoryTools({
+      workspace: fixture.workspace,
+      toolScope: target.toolScope,
+      evidenceFiles: [".cacophony/evidence/analysis.json"],
+    });
+
+    const listed = await tools.execute("list_evidence");
+    assert.deepEqual(listed.files.map((file) => file.path), [
+      ".cacophony/evidence/analysis.json",
+    ]);
+    const search = await tools.execute("search_evidence", {
+      query: "Unsafe input",
+    });
+    assert.equal(search.matches[0].path, ".cacophony/evidence/analysis.json");
+    const read = await tools.execute("read_evidence", {
+      path: ".cacophony/evidence/analysis.json",
+      offset: search.matches[0].offset,
+      max_bytes: 20,
+    });
+    assert.match(read.content, /Unsafe input/);
+    await assert.rejects(
+      () => tools.execute("read_evidence", { path: "app.js" }),
+      /not a declared evidence file/,
+    );
+  });
+
   const changed = await tools.execute("list_changed_files");
   assert.match(changed.content, /app\.js/);
   assert.match(changed.content, /new\.txt/);
