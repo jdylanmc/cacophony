@@ -84,6 +84,32 @@ test("all executable workflows pin remote actions to full commit SHAs", async ()
   }
 });
 
+test("secret-backed trusted-base workflows authorize provider spend", async () => {
+  const workflowFiles = await listWorkflowFiles([".github"]);
+
+  for (const file of workflowFiles) {
+    const workflow = await fs.promises.readFile(file, "utf8");
+    if (
+      !workflow.includes("pull_request_target:") ||
+      !workflow.includes("secrets.CACOPHONY_AZURE_API_KEY")
+    ) {
+      continue;
+    }
+
+    assert.match(workflow, /name: Authorize Azure-backed review/);
+    assert.match(workflow, /OWNER\|MEMBER\|COLLABORATOR/);
+    assert.match(workflow, /cancel-in-progress: true/);
+
+    const authorization = workflow.indexOf(
+      "name: Authorize Azure-backed review",
+    );
+    const checkout = workflow.indexOf("uses: actions/checkout@");
+    const secret = workflow.indexOf("secrets.CACOPHONY_AZURE_API_KEY");
+    assert.ok(authorization < checkout, `${file} must authorize before checkout`);
+    assert.ok(authorization < secret, `${file} must authorize before secret use`);
+  }
+});
+
 test("workflow discovery includes new nested workflow filenames", async () => {
   const temporaryRoot = await fs.promises.mkdtemp(
     path.join(os.tmpdir(), "cacophony-workflows-"),
