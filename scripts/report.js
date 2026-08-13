@@ -2,7 +2,8 @@
 
 import fs from "node:fs";
 
-import { renderMarkdown, validateSubmission } from "../src/reports/report.js";
+import { validateSubmission } from "../src/reports/model.js";
+import { renderMarkdown } from "../src/reports/renderer.js";
 
 const [command, inputPath, outputPath] = process.argv.slice(2);
 if (!["validate", "render"].includes(command) || !inputPath) {

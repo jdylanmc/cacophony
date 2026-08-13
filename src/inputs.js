@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { SEVERITIES } from "./reports/report.js";
+import { SEVERITIES } from "./reports/model.js";
 
 function getInput(name, env = process.env) {
   return (

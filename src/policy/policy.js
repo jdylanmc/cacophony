@@ -1,4 +1,4 @@
-import { severityRank } from "../reports/report.js";
+import { severityRank } from "../reports/model.js";
 
 export function shouldFail(report, failOn) {
   if (report.status === "inconclusive" || report.verdict === "inconclusive") {
