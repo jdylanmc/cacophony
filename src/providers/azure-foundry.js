@@ -39,7 +39,7 @@ function retryDelayMs(response, retryIndex) {
 function waitForRetry(delayMs, signal) {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
-      reject(new ProviderRateLimitError("Azure AI Foundry"));
+      reject(signal.reason ?? new Error("Cacophony review aborted"));
       return;
     }
 
@@ -49,7 +49,7 @@ function waitForRetry(delayMs, signal) {
     }, delayMs);
     const onAbort = () => {
       clearTimeout(timer);
-      reject(new ProviderRateLimitError("Azure AI Foundry"));
+      reject(signal.reason ?? new Error("Cacophony review aborted"));
     };
     signal?.addEventListener("abort", onAbort, { once: true });
   });

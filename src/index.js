@@ -1,7 +1,13 @@
 import path from "node:path";
 
 import { loadPullRequestContext } from "./context/pull-request.js";
-import { error as logError, info, setOutputs, warning } from "./github.js";
+import {
+  appendStepSummary,
+  error as logError,
+  info,
+  setOutputs,
+  warning,
+} from "./github.js";
 import { readInputs } from "./inputs.js";
 import { shouldFail } from "./policy/policy.js";
 import {
@@ -11,6 +17,7 @@ import {
 import {
   createErrorReport,
   createInconclusiveReport,
+  renderMarkdown,
   writeReports,
 } from "./reports/report.js";
 import { runReview } from "./runner/review.js";
@@ -82,6 +89,7 @@ async function main() {
 
   const outputDirectory = config?.outputDirectory ?? ".cacophony/out";
   const paths = await writeReports(report, workspace, outputDirectory);
+  await appendStepSummary(renderMarkdown(report));
   await setOutputs({
     verdict: report.verdict,
     "max-severity": report.maxSeverity,
@@ -98,7 +106,9 @@ async function main() {
     logError(
       report.status === "error"
         ? `Cacophony failed: ${report.summary}`
-        : `Cacophony found ${report.maxSeverity} severity issues`,
+        : report.status === "inconclusive"
+          ? `Cacophony review inconclusive: ${report.summary}`
+          : `Cacophony found ${report.maxSeverity} severity issues: ${report.summary}`,
     );
     process.exitCode = 1;
   }

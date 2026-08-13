@@ -132,3 +132,35 @@ test("Azure provider retries HTTP 429 using header-based exponential backoff", a
   assert.equal(attempts, 3);
   assert.deepEqual(delays, [25, 50]);
 });
+
+test("Azure provider preserves timeout cancellation during retry backoff", async () => {
+  const controller = new AbortController();
+  const provider = createAzureFoundryProvider({
+    endpoint: "https://example.invalid",
+    deployment: "review-model",
+    apiKey: "test-secret",
+    rateLimitRetries: 1,
+    fetchImplementation: async () =>
+      new Response(null, {
+        status: 429,
+        headers: { "retry-after-ms": "10000" },
+      }),
+  });
+
+  setTimeout(
+    () => controller.abort(new Error("Cacophony review timed out")),
+    5,
+  );
+  await assert.rejects(
+    () =>
+      provider.turn({
+        instructions: "review",
+        input: "start",
+        tools: [],
+        signal: controller.signal,
+      }),
+    (error) =>
+      !(error instanceof ProviderRateLimitError) &&
+      error.message === "Cacophony review timed out",
+  );
+});

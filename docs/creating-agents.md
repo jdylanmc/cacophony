@@ -51,6 +51,11 @@ Every prompt should:
 Cacophony derives the canonical verdict from finding severity, so the evidence
 and severity matter more than theatrical certainty.
 
+Every run writes JSON and Markdown artifacts and appends the full Markdown
+report to the GitHub job summary. A failing action annotation includes the
+agent's submitted summary; the job summary contains the complete findings and
+remediation.
+
 ## 3. Add an agent inside Cacophony
 
 Create these matching files:
@@ -151,9 +156,9 @@ them from framework failures:
 
 - supported finding: remediate the code and rerun;
 - prompt not on base: expected only on the reviewer's introduction pull request;
-- provider HTTP 429: treat the generated report as inconclusive, not approval or
-  a finding-based failure, and retry after quota is available when a completed
-  decision is required;
+- provider HTTP 429: Cacophony retries twice by default, then writes an
+  inconclusive report and fails the step closed because no reviewer decision
+  was completed;
 - provider HTTP 5xx: rerun once;
 - no valid report within the budget: increase the reviewer budget in a separate
   prerequisite pull request rather than bypassing the gate.

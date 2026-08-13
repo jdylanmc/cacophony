@@ -153,7 +153,10 @@ variable.
 | `agent-id` | ID derived from the prompt filename. |
 
 Reports and outputs are written before findings-based failure is applied. Use
-`if: always()` on artifact upload steps.
+`if: always()` on artifact upload steps. The complete Markdown report is also
+appended to the GitHub job summary, where findings and remediation render
+directly without downloading the artifact. Failure annotations include the
+agent's submitted summary instead of only a generic severity message.
 
 `fail-on` is an inclusive severity threshold. For example, `high` fails on
 `high` and `critical` findings. `never` prevents findings from failing the
@@ -161,8 +164,9 @@ step. Framework errors such as authentication failure, timeout, invalid model
 output, or exhausted turn budget always fail.
 
 Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report and a
-workflow warning without failing the step after `rate-limit-retries` is
-exhausted. Retry delays use Azure's `retry-after-ms`,
+workflow warning, then fails the step closed after `rate-limit-retries` is
+exhausted. The default of `2` means three total attempts. Retry delays use
+Azure's `retry-after-ms`,
 `x-ms-retry-after-ms`, or `Retry-After` value as the base and multiply it by
 `2^retryIndex`. If Azure provides no delay, the base is one second. The total
 `timeout-seconds` deadline remains the hard ceiling. Inconclusive is not
@@ -223,6 +227,10 @@ The agent can use `get_pull_request`, `list_changed_files`, `get_diff`,
 write repository files.
 
 ## Multiple agents
+
+Each checked-in or copied example declares its selected Azure deployment
+directly in workflow YAML. Edit that literal when choosing a different model;
+the examples require only the endpoint variable and API key secret.
 
 For a small sequential workflow, repeat the action step with a different
 `prompt-file` and step ID. For parallel reviews, use a matrix:
@@ -332,10 +340,10 @@ declares `gpt-5.4-mini` directly.
   `CACOPHONY_AZURE_API_KEY` and is mapped through `env`.
 - **Azure 404:** verify the project endpoint and deployment. Cacophony appends
   `/openai/v1/responses` unless the endpoint already ends in `/responses`.
-- **Azure 429:** the report is marked `inconclusive` and the step does not fail.
-  Before that result, Cacophony retries with header-based exponential backoff
-  within `timeout-seconds`. Retry after model quota is available if the
-  repository requires a completed review.
+- **Azure 429:** Cacophony makes three total attempts by default
+  (`rate-limit-retries: 2`) with header-based exponential backoff within
+  `timeout-seconds`. Persistent throttling writes an `inconclusive` report and
+  fails the step because no reviewer decision was completed.
 - **Git diff failure:** use `actions/checkout` with `fetch-depth: 0`.
 - **No report submission:** make the prompt more explicit and increase
   `max-turns` within the allowed range.

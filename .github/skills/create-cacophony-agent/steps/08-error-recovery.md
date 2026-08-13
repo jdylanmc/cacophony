@@ -22,11 +22,11 @@ reviewer findings.
 ## Provider returns HTTP 429
 
 Treat Cacophony's report as inconclusive. It is neither approval nor a
-finding-based block, and the action should not fail solely because of
-throttling. Before that result, Cacophony retries the configured number of
-times using Azure's retry header as the base for exponential backoff, bounded
-by the total action timeout. Retry after quota is available when the repository
-requires a completed reviewer decision.
+finding-based block, but the action must fail closed because no reviewer
+decision was completed. Before that result, Cacophony retries the configured
+number of times (two by default) using Azure's retry header as the base for
+exponential backoff, bounded by the total action timeout. Retry after quota is
+available.
 
 ## Reviewer exhausts its turn budget
 

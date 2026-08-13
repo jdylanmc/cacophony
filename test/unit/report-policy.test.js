@@ -78,7 +78,7 @@ test("policy maps severity thresholds and always fails framework errors", () => 
       },
       "low",
     ),
-    false,
+    true,
   );
 });
 
