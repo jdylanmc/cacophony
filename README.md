@@ -46,9 +46,8 @@ callers of `.github/workflows/cacophony-review.yml`. That reusable workflow
 owns the pinned Cacophony invocation, authorization, trusted checkout,
 base-prompt check, secret scope, and artifact upload. Each caller owns its
 `pull_request_target` trigger, read-only permissions, and per-pull-request
-concurrency, and passes required pull-request metadata as typed inputs. The
-reusable worker does not read `github.event.pull_request` directly. Before
-checkout, it rejects any other event,
+concurrency. The reusable worker reads authoritative pull-request metadata from
+the inherited GitHub event context. Before checkout, it rejects any other event,
 allows a same-repository pull request, and allows a fork only when GitHub's
 `author_association` is `OWNER`, `MEMBER`, or `COLLABORATOR`. It inspects pull
 request content without executing it.
@@ -145,9 +144,10 @@ These contracts are mutually exclusive:
 
 Do not combine the simple direct-action secret mapping with the trusted-base
 reusable-workflow secret handoff. A trusted-base caller also passes the event
-name, pull-request number, base SHA, head repository, and author association as
-typed workflow inputs; the reusable worker uses those inputs rather than
-reading `github.event.pull_request` directly.
+reusable-workflow secret handoff. A trusted-base caller must not restate event
+identity, pull-request coordinates, repository origin, or author association;
+the reusable worker reads those authoritative values from the inherited GitHub
+event context.
 
 ## Prompt contract
 

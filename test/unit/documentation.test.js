@@ -95,14 +95,21 @@ test("reusable trusted-base workflow owns provider security policy", async () =>
   );
   assert.match(shared, /workflow_call:/);
   assert.match(shared, /name: Authorize Azure-backed review/);
-  assert.match(shared, /EVENT_NAME.*inputs\.event-name/);
+  assert.match(shared, /EVENT_NAME.*github\.event_name/);
   assert.match(shared, /EVENT_NAME" != "pull_request_target"/);
   assert.match(shared, /OWNER\|MEMBER\|COLLABORATOR/);
   assert.match(shared, /uses: actions\/checkout@[a-f0-9]{40}/);
   assert.match(shared, /persist-credentials: false/);
   assert.match(shared, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.match(shared, /prompt-file: \.cacophony\/agents\/\$\{\{ inputs\.agent-slug \}\}\.md/);
-  assert.doesNotMatch(shared, /github\.event\.pull_request/);
+  assert.match(shared, /github\.event\.pull_request\.author_association/);
+  assert.match(shared, /github\.event\.pull_request\.head\.repo\.full_name/);
+  assert.match(shared, /github\.event\.pull_request\.number/);
+  assert.match(shared, /github\.event\.pull_request\.base\.sha/);
+  assert.doesNotMatch(
+    shared,
+    /inputs\.(?:event-name|pull-request-number|base-sha|head-repository|author-association)/,
+  );
   assert.match(shared, /CACOPHONY_AZURE_API_KEY: \$\{\{ secrets\.azure-api-key \}\}/);
   assert.match(shared, /name: cacophony-\$\{\{ inputs\.agent-slug \}\}/);
 
@@ -127,11 +134,10 @@ test("trusted-base persona workflows are narrow reusable callers", async () => {
     assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
     assert.match(workflow, /azure-api-key: \$\{\{ secrets\.CACOPHONY_AZURE_API_KEY \}\}/);
     assert.match(workflow, /cancel-in-progress: true/);
-    assert.match(workflow, /event-name: \$\{\{ github\.event_name \}\}/);
-    assert.match(workflow, /pull-request-number: \$\{\{ github\.event\.pull_request\.number \}\}/);
-    assert.match(workflow, /base-sha: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/);
-    assert.match(workflow, /head-repository: \$\{\{ github\.event\.pull_request\.head\.repo\.full_name \}\}/);
-    assert.match(workflow, /author-association: \$\{\{ github\.event\.pull_request\.author_association \}\}/);
+    assert.doesNotMatch(
+      workflow,
+      /event-name:|pull-request-number:|base-sha:|head-repository:|author-association:/,
+    );
     assert.doesNotMatch(workflow, /actions\/checkout@/);
     assert.doesNotMatch(workflow, /name: Authorize Azure-backed review/);
     assert.doesNotMatch(workflow, /jdylanmc\/cacophony@/);

@@ -33,8 +33,9 @@ Use `pull_request_target` only for a trusted-base workflow where:
   event-triggered, and is called only by a `pull_request_target` persona
   workflow;
 - persona workflows are thin callers that provide only agent settings;
-- callers pass required pull-request metadata as explicit typed inputs, and the
-  reusable worker does not read `github.event.pull_request` directly;
+- callers do not pass event identity or pull-request security context; the
+  reusable worker reads those authoritative values from the inherited GitHub
+  event;
 - each caller owns its `pull_request_target` trigger, read-only permissions, and
   per-pull-request concurrency;
 - the Cacophony action and every remote dependency in the reusable workflow are

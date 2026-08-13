@@ -110,18 +110,14 @@ jobs:
       timeout-seconds: 600
       rate-limit-retries: 2
       fail-on: high
-      event-name: ${{ github.event_name }}
-      pull-request-number: ${{ github.event.pull_request.number }}
-      base-sha: ${{ github.event.pull_request.base.sha }}
-      head-repository: ${{ github.event.pull_request.head.repo.full_name }}
-      author-association: ${{ github.event.pull_request.author_association }}
     secrets:
       azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
 ```
 
-The thin caller passes pull-request metadata as explicit typed inputs and the
-repository secret as `secrets.azure-api-key`. The reusable worker does not read
-`github.event.pull_request` directly. Only it maps the secret to the action's
+The thin caller passes only persona settings and the repository secret as
+`secrets.azure-api-key`. The reusable worker reads authoritative pull-request
+metadata from its inherited GitHub event context. Only it maps the secret to
+the action's
 `CACOPHONY_AZURE_API_KEY` environment variable. This differs intentionally from
 the simple consumer quick start, where the workflow invokes the action directly
 and therefore maps the secret directly on that action step.
