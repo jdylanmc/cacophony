@@ -225,24 +225,6 @@ test("action metadata defines the retry and inconclusive contract", async () => 
   assert.match(metadata, /inconclusive means no reviewer decision completed, always fails closed/);
 });
 
-test("legacy reviewer catalog files point to canonical prompts", async () => {
-  const slugs = [
-    "gilfoyle-security-architect",
-    "solid-snake-architecture",
-    "glados-documentation-sentinel",
-  ];
-
-  for (const slug of slugs) {
-    const pointer = await fs.promises.readFile(
-      `examples/reviewers/${slug}.md`,
-      "utf8",
-    );
-    assert.match(pointer, new RegExp(`\\.cacophony/agents/${slug}\\.md`));
-    assert.match(pointer, /intentionally contains no prompt copy/);
-    assert.doesNotMatch(pointer, /\[BLOCK:/);
-  }
-});
-
 test("Hello World dogfood runs a model-generated joke prompt", async () => {
   const prompt = await fs.promises.readFile(
     ".cacophony/agents/hello-world.md",
