@@ -37,7 +37,7 @@ jobs:
       - name: Run GLaDOS documentation review
         id: glados
         if: steps.prompt.outputs.ready == 'true'
-        uses: jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503
+        uses: jdylanmc/cacophony@0fa7da77031642d753e6af21d5e1265585a67d37
         with:
           prompt-file: .cacophony/agents/glados-documentation-sentinel.md
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
