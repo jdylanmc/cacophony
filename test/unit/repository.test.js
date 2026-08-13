@@ -46,6 +46,61 @@ test("repository tools inspect the pull request without shell access", async (t)
   await assert.rejects(() => tools.execute("run_shell", {}), /Unknown tool/);
 });
 
+test("repository audit tools expose the full tree without pull request tools", async (t) => {
+  const fixture = await createPullRequestFixture();
+  t.after(() => removeFixture(fixture));
+  const tools = await createRepositoryTools({
+    workspace: fixture.workspace,
+    context: {
+      repository: {
+        name: "example/repository",
+        sha: fixture.headSha,
+        ref: "main",
+        actor: "octocat",
+        url: "https://github.com/example/repository",
+      },
+    },
+  });
+
+  assert.deepEqual(
+    tools.definitions
+      .map((tool) => tool.name)
+      .filter((name) =>
+        ["get_pull_request", "list_changed_files", "get_diff"].includes(name),
+      ),
+    [],
+  );
+  const files = await tools.execute("list_files");
+  assert.ok(files.entries.includes("app.js"));
+  const file = await tools.execute("read_file", { path: "app.js" });
+  assert.match(file.content, /return a - b/);
+  await assert.rejects(
+    () => tools.execute("get_diff"),
+    /unavailable for repository audits/,
+  );
+});
+
+test("repository audit tools reject a checkout that does not match its target", async (t) => {
+  const fixture = await createPullRequestFixture();
+  t.after(() => removeFixture(fixture));
+  await assert.rejects(
+    () =>
+      createRepositoryTools({
+        workspace: fixture.workspace,
+        context: {
+          repository: {
+            name: "example/repository",
+            sha: fixture.baseSha,
+            ref: "main",
+            actor: "octocat",
+            url: "https://github.com/example/repository",
+          },
+        },
+      }),
+    /checkout does not match GITHUB_SHA/,
+  );
+});
+
 test("repository tools reject symlinks that escape the workspace", async (t) => {
   const fixture = await createPullRequestFixture();
   const outside = await fs.promises.mkdtemp(path.join(os.tmpdir(), "cacophony-outside-"));

@@ -20,7 +20,15 @@ test("readInputs applies simple defaults", () => {
   assert.equal(result.timeoutSeconds, 300);
   assert.equal(result.rateLimitRetries, 2);
   assert.equal(result.failOn, "high");
+  assert.equal(result.reviewScope, "pull-request");
   assert.equal(result.outputDirectory, ".cacophony/out");
+});
+
+test("readInputs accepts repository audit scope", () => {
+  const result = readInputs(
+    validEnv({ "INPUT_REVIEW-SCOPE": "repository" }),
+  );
+  assert.equal(result.reviewScope, "repository");
 });
 
 test("readInputs rejects prompts outside .cacophony", () => {
@@ -46,6 +54,10 @@ test("readInputs rejects traversal and invalid bounds", () => {
   assert.throws(
     () => readInputs(validEnv({ "INPUT_RATE-LIMIT-RETRIES": "11" })),
     /between 0 and 10/,
+  );
+  assert.throws(
+    () => readInputs(validEnv({ "INPUT_REVIEW-SCOPE": "workspace" })),
+    /review-scope must be/,
   );
 });
 

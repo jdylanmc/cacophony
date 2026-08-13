@@ -239,19 +239,42 @@ export const TOOL_DEFINITIONS = [
 
 export async function createRepositoryTools({ workspace, context }) {
   const root = await fs.promises.realpath(workspace);
-  const { baseSha, headSha } = context.pullRequest;
-  assertSha(baseSha, "pull_request.base.sha");
-  assertSha(headSha, "pull_request.head.sha");
+  const pullRequest = context.pullRequest;
+  const baseSha = pullRequest?.baseSha;
+  const headSha = pullRequest?.headSha;
+  if (pullRequest) {
+    assertSha(baseSha, "pull_request.base.sha");
+    assertSha(headSha, "pull_request.head.sha");
+  } else {
+    assertSha(context.repository?.sha, "repository.sha");
+    const checkedOut = await git(root, ["rev-parse", "HEAD"], 100);
+    if (checkedOut.content.trim() !== context.repository.sha) {
+      throw new Error("repository audit checkout does not match GITHUB_SHA");
+    }
+  }
 
   return {
-    definitions: TOOL_DEFINITIONS,
+    definitions: pullRequest
+      ? TOOL_DEFINITIONS
+      : TOOL_DEFINITIONS.filter(
+          (tool) =>
+            !["get_pull_request", "list_changed_files", "get_diff"].includes(
+              tool.name,
+            ),
+        ),
 
     async execute(name, args = {}) {
       switch (name) {
         case "get_pull_request":
-          return context.pullRequest;
+          if (!pullRequest) {
+            throw new Error("get_pull_request is unavailable for repository audits");
+          }
+          return pullRequest;
 
         case "list_changed_files": {
+          if (!pullRequest) {
+            throw new Error("list_changed_files is unavailable for repository audits");
+          }
           const result = await git(root, [
             "diff",
             "--name-status",
@@ -263,6 +286,9 @@ export async function createRepositoryTools({ workspace, context }) {
         }
 
         case "get_diff": {
+          if (!pullRequest) {
+            throw new Error("get_diff is unavailable for repository audits");
+          }
           const command = [
             "diff",
             "--no-ext-diff",
@@ -371,11 +397,15 @@ export async function createRepositoryTools({ workspace, context }) {
   };
 }
 
-export async function readPrompt(workspace, promptFile, baseSha) {
+export async function readPrompt(workspace, promptFile, trustedSha) {
   const root = await fs.promises.realpath(workspace);
-  assertSha(baseSha, "pull_request.base.sha");
+  assertSha(trustedSha, "trusted prompt SHA");
   const normalized = assertRelativePath(promptFile).split(path.sep).join("/");
-  const result = await git(root, ["show", `${baseSha}:${normalized}`], MAX_FILE_BYTES);
+  const result = await git(
+    root,
+    ["show", `${trustedSha}:${normalized}`],
+    MAX_FILE_BYTES,
+  );
   if (result.truncated) {
     throw new Error(`Prompt must be no larger than ${MAX_FILE_BYTES} bytes`);
   }

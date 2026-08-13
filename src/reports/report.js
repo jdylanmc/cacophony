@@ -165,7 +165,9 @@ export function createCompletedReport({
       name: config.provider,
       deployment: config.deployment,
     },
-    pullRequest: context.pullRequest,
+    reviewScope: config.reviewScope ?? "pull-request",
+    pullRequest: context.pullRequest ?? null,
+    repository: context.repository ?? null,
     startedAt,
     completedAt: new Date().toISOString(),
     execution: { turns, toolCalls },
@@ -196,7 +198,9 @@ function createTerminalReport({
       name: config?.provider ?? "unknown",
       deployment: config?.deployment ?? "unknown",
     },
+    reviewScope: config?.reviewScope ?? "pull-request",
     pullRequest: context?.pullRequest ?? null,
+    repository: context?.repository ?? null,
     startedAt,
     completedAt: new Date().toISOString(),
     execution: { turns: 0, toolCalls: 0 },
@@ -240,11 +244,18 @@ export function renderMarkdown(report) {
     `**Status:** ${report.status}`,
     `**Verdict:** ${report.verdict}`,
     `**Maximum severity:** ${report.maxSeverity}`,
-    "",
-    "## Summary",
-    "",
-    report.summary,
   ];
+
+  if (report.reviewScope === "repository" && report.repository) {
+    lines.push(
+      `**Repository:** ${report.repository.name}`,
+      `**Commit:** ${report.repository.sha}`,
+    );
+  } else if (report.pullRequest) {
+    lines.push(`**Pull request:** #${report.pullRequest.number}`);
+  }
+
+  lines.push("", "## Summary", "", report.summary);
 
   if (report.limitations) {
     lines.push("", "## Limitations", "", report.limitations);

@@ -112,6 +112,7 @@ test("terminal reports share one envelope with outcome-specific fields", () => {
     ...input,
     error: new Error("framework failed"),
   });
+
   const inconclusiveReport = createInconclusiveReport({
     ...input,
     reason: new Error("provider unavailable"),
@@ -130,6 +131,33 @@ test("terminal reports share one envelope with outcome-specific fields", () => {
   assert.equal(inconclusiveReport.summary, "provider unavailable");
 });
 
+test("repository audit reports identify the audited target", () => {
+  const context = {
+    repository: {
+      name: "example/repository",
+      sha: "a".repeat(40),
+      ref: "main",
+      actor: "octocat",
+      url: "https://github.com/example/repository",
+    },
+  };
+  const report = createInconclusiveReport({
+    reason: new Error("provider unavailable"),
+    config: {
+      agentId: "reviewer",
+      promptFile: ".cacophony/agents/reviewer.md",
+      provider: "azure-foundry",
+      deployment: "review-model",
+      reviewScope: "repository",
+    },
+    context,
+    startedAt: "2026-01-01T00:00:00.000Z",
+  });
+  assert.equal(report.reviewScope, "repository");
+  assert.equal(report.pullRequest, null);
+  assert.deepEqual(report.repository, context.repository);
+});
+
 test("renderMarkdown derives readable output from canonical data", () => {
   const submission = validateSubmission(validSubmission);
   const markdown = renderMarkdown({
@@ -143,6 +171,28 @@ test("renderMarkdown derives readable output from canonical data", () => {
   assert.match(markdown, /# Cacophony: correctness/);
   assert.match(markdown, /app\.js:2/);
   assert.match(markdown, /Restore addition/);
+});
+
+test("renderMarkdown identifies a repository audit commit", () => {
+  const markdown = renderMarkdown({
+    schemaVersion: "1.0",
+    status: "completed",
+    reviewScope: "repository",
+    agent: { id: "security" },
+    provider: { name: "azure-foundry", deployment: "model" },
+    repository: {
+      name: "example/repository",
+      sha: "a".repeat(40),
+    },
+    pullRequest: null,
+    execution: { turns: 2, toolCalls: 3 },
+    verdict: "pass",
+    maxSeverity: "none",
+    summary: "[APPROVED]",
+    findings: [],
+  });
+  assert.match(markdown, /\*\*Repository:\*\* example\/repository/);
+  assert.match(markdown, new RegExp(`\\*\\*Commit:\\*\\* ${"a".repeat(40)}`));
 });
 
 test("writeReports rejects output symlinks that escape the workspace", async (t) => {

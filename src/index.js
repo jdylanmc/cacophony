@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import { loadPullRequestContext } from "./context/pull-request.js";
+import { loadRepositoryContext } from "./context/repository.js";
 import {
   appendStepSummary,
   error as logError,
@@ -42,7 +43,10 @@ async function main() {
 
   try {
     config = readInputs();
-    context = await loadPullRequestContext(process.env.GITHUB_EVENT_PATH);
+    context =
+      config.reviewScope === "repository"
+        ? loadRepositoryContext()
+        : await loadPullRequestContext(process.env.GITHUB_EVENT_PATH);
     const provider = createAzureFoundryProvider({
       endpoint: config.endpoint,
       deployment: config.deployment,
