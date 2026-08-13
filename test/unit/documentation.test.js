@@ -128,7 +128,6 @@ test("reusable trusted-base workflow owns provider security policy", async () =>
 
 test("trusted-base persona workflows are narrow reusable callers", async () => {
   const callers = [
-    ".github/workflows/hello-world.yml",
     ".github/workflows/solid-snake-architecture.yml",
     ".github/workflows/master-chief-domain-commander.yml",
     ".github/workflows/fletcher-prompt-conductor.yml",
@@ -301,25 +300,6 @@ test("repository audit workflow runs all canonical adversaries sequentially", as
   assert.doesNotMatch(workflow, /uses: \.\/\s*$/m);
   assert.match(workflow, /CACOPHONY_AZURE_API_KEY/);
   assert.match(workflow, /cacophony-repository-audit-\$\{\{ matrix\.agent \}\}/);
-});
-
-test("Hello World dogfood runs a model-generated joke prompt", async () => {
-  const prompt = await fs.promises.readFile(
-    ".cacophony/agents/hello-world.md",
-    "utf8",
-  );
-  const workflow = await fs.promises.readFile(
-    ".github/workflows/hello-world.yml",
-    "utf8",
-  );
-  assert.match(prompt, /exactly `Hello World`/);
-  assert.match(prompt, /programmer joke generated for this run/);
-  assert.doesNotMatch(prompt, /dark mode|light attracts bugs/);
-  assert.match(workflow, /pull_request_target:/);
-  assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
-  assert.match(workflow, /agent-slug: hello-world/);
-  assert.match(workflow, /deployment: gpt-5\.4-mini/);
-  assert.match(workflow, /rate-limit-retries: 2/);
 });
 
 test("Gilfoyle canonical prompt configures the security reviewer", async () => {
