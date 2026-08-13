@@ -75,8 +75,13 @@ a reviewed full commit SHA.
 
 ### Workflow pattern
 
-Each reviewer gets an independent workflow so GitHub schedules all established
-reviewers in parallel:
+The repository owns the security-sensitive review sequence once in
+`.github/workflows/cacophony-review.yml`. It performs fork authorization,
+trusted merge-ref checkout, base-prompt availability checks, the pinned
+Cacophony invocation, secret scoping, and artifact upload.
+
+Each reviewer gets an independent thin caller so GitHub schedules all
+established reviewers in parallel:
 
 ```yaml
 name: <Reviewer name>
@@ -93,71 +98,24 @@ concurrency:
 
 jobs:
   review:
-    runs-on: ubuntu-latest
-    env:
-      CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-    steps:
-      - name: Authorize Azure-backed review
-        shell: bash
-        env:
-          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
-          BASE_REPOSITORY: ${{ github.repository }}
-          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-        run: |
-          if [[ "$HEAD_REPOSITORY" == "$BASE_REPOSITORY" ]]; then
-            exit 0
-          fi
-          case "$AUTHOR_ASSOCIATION" in
-            OWNER|MEMBER|COLLABORATOR) ;;
-            *) echo "::error::Unauthorized fork review"; exit 1 ;;
-          esac
-
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          # The workflow and action are trusted. PR content is inspected only;
-          # Cacophony loads prompt-file from pull_request.base.sha via git show.
-          ref: refs/pull/${{ github.event.pull_request.number }}/merge
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Check trusted prompt availability
-        id: prompt
-        shell: bash
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          if git cat-file -e "$BASE_SHA:.cacophony/agents/<slug>.md"; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Run review
-        id: review
-        if: steps.prompt.outputs.ready == 'true'
-        uses: jdylanmc/cacophony@<reviewed-full-commit-sha>
-        with:
-          prompt-file: .cacophony/agents/<slug>.md
-          endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
-          deployment: <azure-deployment-name>
-          max-turns: 20
-          timeout-seconds: 600
-          rate-limit-retries: 2
-          fail-on: high
-        env:
-          CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
-
-      - name: Upload report
-        if: always() && steps.review.outcome != 'skipped'
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-        with:
-          name: cacophony-<slug>
-          path: .cacophony/out/<slug>/
+    uses: ./.github/workflows/cacophony-review.yml
+    with:
+      agent-slug: <slug>
+      deployment: <azure-deployment-name>
+      max-turns: 20
+      timeout-seconds: 600
+      rate-limit-retries: 2
+      fail-on: high
+    secrets:
+      azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
 ```
 
-Never execute pull request scripts, local actions, package commands, or other
-head-controlled code in this trusted workflow. The pinned Cacophony action may
-read the checked-out head, but it loads the prompt itself from the base commit.
+Do not copy the shared steps into persona callers. Update trust policy,
+checkout, action pins, provider-secret handling, and artifact behavior only in
+the reusable workflow. Never execute pull request scripts, local actions,
+package commands, or other head-controlled code there. The pinned Cacophony
+action may read the checked-out head, but it loads the prompt itself from the
+base commit.
 
 ### Stacked rollout
 
@@ -177,7 +135,8 @@ them from framework failures:
 
 - supported finding: remediate the code and rerun;
 - prompt not on base: expected only on the reviewer's introduction pull request;
-- provider HTTP 429: Cacophony retries twice by default, then writes an
+- provider HTTP 429: `rate-limit-retries: 2` means two retries after the initial
+  request, for three total attempts; Cacophony then writes an
   `inconclusive` non-review outcome and fails the step closed because no
   reviewer decision was completed; this is neither approval nor a
   findings-based block;
@@ -207,11 +166,13 @@ The canonical simple consumer workflow is the README quick start: use
 `pull_request` with an always-running job that explicitly fails fork pull
 requests before checkout or review. Do not guard the entire job with a
 same-repository condition. For a trusted-base workflow that reviews forks, use the
-`pull_request_target` pattern above and obey every trust-boundary restriction:
-every remote action in the generated workflow pinned to a full commit SHA,
-read-only permissions, base-commit prompt, no execution of head-controlled code,
-and the secret scoped only to the Cacophony step. Reject unauthorized fork
-authors before checkout, and use per-pull-request concurrency to cancel
+same architecture as Cacophony's `.github/workflows/cacophony-review.yml`: one
+repository-owned reusable workflow holds the trust boundary and thin
+`pull_request_target` persona callers provide only agent settings. Pin every
+remote action in that reusable workflow to a full commit SHA, use read-only
+permissions and a base-commit prompt, execute no head-controlled code, and
+scope the secret only to the Cacophony step. Reject unauthorized fork authors
+before checkout, and use per-pull-request concurrency in each caller to cancel
 superseded Azure-backed reviews.
 
 An external repository does not need the `examples/reviewers` copy or Cacophony

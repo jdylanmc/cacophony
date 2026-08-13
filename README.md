@@ -41,13 +41,14 @@ The built-in dogfood workflows require `CACOPHONY_AZURE_API_KEY`,
 `CACOPHONY_AZURE_ENDPOINT`, and endpoint deployments named `gpt-5.4-mini`
 (Hello World and GLaDOS) and `gpt-5.6-sol` (Gilfoyle and Solid Snake).
 
-This repository's dogfood workflow uses `pull_request_target` narrowly so its
-workflow, prompt, and pinned Cacophony implementation all come from trusted
-base history. It checks out pull request content for read-only inspection and
-never executes that content. Before checkout, it authorizes Azure-backed work:
-same-repository pull requests run automatically, while fork pull requests run
-only for authors GitHub identifies as an owner, member, or collaborator.
-Per-pull-request concurrency cancels superseded runs.
+This repository's dogfood persona workflows are thin `pull_request_target`
+callers of `.github/workflows/cacophony-review.yml`. That reusable workflow
+owns the pinned Cacophony invocation, authorization, trusted checkout,
+base-prompt check, secret scope, and artifact upload. It inspects pull request
+content without executing it. Same-repository pull requests run automatically,
+while fork pull requests run only for authors GitHub identifies as an owner,
+member, or collaborator. Per-pull-request concurrency in each caller cancels
+superseded runs.
 
 ## Quick start
 
@@ -63,7 +64,7 @@ authorization and concurrency controls.
    Foundry project or OpenAI-compatible endpoint. The workflow below declares
    `deployment: gpt-5.4-mini` directly; edit that literal to select a different
    deployment. It also sets `rate-limit-retries: 2`, meaning two retries after
-   the initial HTTP 429 response.
+   the initial request, for three total attempts.
 4. Create `.cacophony/agents/reviewer.md`:
 
    ```markdown
@@ -155,7 +156,7 @@ code.
 | `provider` | No | `azure-foundry` | Provider adapter. |
 | `max-turns` | No | `8` | Model turns, from 1 through 20. |
 | `timeout-seconds` | No | `300` | Total deadline, including retry waits, from 30 through 1800 seconds. |
-| `rate-limit-retries` | No | `2` | Additional HTTP 429 attempts, from 0 through 10. |
+| `rate-limit-retries` | No | `2` | Retries after the initial HTTP 429 request, from 0 through 10; `2` means three total attempts. |
 | `fail-on` | No | `high` | `low`, `medium`, `high`, `critical`, or `never`. |
 | `output-directory` | No | `.cacophony/out` | Repository-relative report root. |
 
@@ -192,7 +193,8 @@ always fails.
 
 Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report and a
 workflow warning, then fails the step closed after `rate-limit-retries` is
-exhausted. The default of `2` means three total attempts. Retry delays use
+exhausted. `rate-limit-retries: 2` means two retries after the initial request,
+for three total attempts. Retry delays use
 Azure's `retry-after-ms`,
 `x-ms-retry-after-ms`, or `Retry-After` value as the base and multiply it by
 `2^retryIndex`. If Azure provides no delay, the base is one second. The total
@@ -309,11 +311,9 @@ exploitation paths, requires exact evidence and numbered remediation, and uses
 `[BLOCK: SECURITY]` or `[APPROVED]` summaries.
 
 This repository dogfoods the reviewer through
-`.github/workflows/gilfoyle-security-architect.yml`. The workflow uses the same
-trusted-base pattern as the Hello World check: the workflow, prompt, and pinned
-Cacophony implementation are trusted while pull request content is checked out
-from the base repository's merge ref only for read-only inspection. Its
-workflow declares `gpt-5.6-sol` directly.
+`.github/workflows/gilfoyle-security-architect.yml`. The thin caller declares
+`gpt-5.6-sol` and delegates the shared trusted-base review sequence to
+`.github/workflows/cacophony-review.yml`.
 
 ### Solid Snake, SOLID Architecture Operative
 
@@ -325,11 +325,9 @@ numbered code-comms extraction steps; clean changes use `[APPROVED]`.
 
 `.github/workflows/solid-snake-architecture.yml` runs independently from
 Gilfoyle on the same pull request event, so GitHub schedules both reviews in
-parallel and uploads separate artifacts. Snake uses a trusted
-`pull_request_target` workflow and a pinned Cacophony action. Pull request
-content is checked out from the base repository's merge ref only for read-only
-inspection; Cacophony loads Snake's prompt from the base commit. Its workflow
-declares `gpt-5.6-sol` directly.
+parallel and uploads separate artifacts. Snake's thin caller declares
+`gpt-5.6-sol`; the shared reusable workflow owns the trusted checkout, pinned
+action, and base-commit prompt loading.
 
 ### GLaDOS, Documentation Synchronization Sentinel
 
@@ -341,7 +339,7 @@ consistent changes use `[APPROVED]`.
 
 `.github/workflows/glados-documentation-sentinel.yml` runs independently from
 Gilfoyle and Solid Snake. Once merged, all three reviewers execute in parallel
-on subsequent pull requests and upload separate artifacts. Her workflow
+on subsequent pull requests and upload separate artifacts. Her thin caller
 declares `gpt-5.4-mini` directly.
 
 ## Security
@@ -350,13 +348,12 @@ declares `gpt-5.4-mini` directly.
   explicitly fails fork pull requests before any secret-bearing step. Never put
   the only review job behind a same-repository condition because GitHub treats a
   skipped required job as successful.
-- A `pull_request_target` workflow may review forks only when the workflow comes
-  from trusted base history, the action is pinned, the prompt comes from the
-  base commit, permissions are read-only, and no head-controlled code is
-  executed. It must also reject unauthorized fork authors before checkout or
-  any secret-backed step and cancel superseded runs with per-pull-request
-  concurrency. Code-execution safety does not authorize strangers to spend
-  provider quota.
+- A `pull_request_target` persona caller may review forks only through a
+  trusted-base reusable workflow that owns the pinned action, base-commit
+  prompt, read-only permissions, authorization, checkout, and secret scope.
+  The reusable workflow executes no head-controlled code; each caller cancels
+  superseded runs with per-pull-request concurrency. Code-execution safety does
+  not authorize strangers to spend provider quota.
 - Repository secrets are unavailable to `pull_request` workflows from forks.
   The quick-start workflow fails those pull requests explicitly rather than
   silently passing a skipped gate.
@@ -374,8 +371,8 @@ declares `gpt-5.4-mini` directly.
   `CACOPHONY_AZURE_API_KEY` and is mapped through `env`.
 - **Azure 404:** verify the project endpoint and deployment. Cacophony appends
   `/openai/v1/responses` unless the endpoint already ends in `/responses`.
-- **Azure 429:** Cacophony makes three total attempts by default
-  (`rate-limit-retries: 2`) with header-based exponential backoff within
+- **Azure 429:** `rate-limit-retries: 2` means two retries after the initial
+  request, for three total attempts, with header-based exponential backoff within
   `timeout-seconds`. Persistent throttling writes an `inconclusive` report and
   fails the step because no reviewer decision was completed.
 - **Git diff failure:** use `actions/checkout` with `fetch-depth: 0`.

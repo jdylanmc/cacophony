@@ -10,26 +10,23 @@ examples/reviewers/<slug>.md
 
 The active and sample prompts must be byte-for-byte identical.
 
-Copy an established persona workflow and preserve:
+Create a thin caller of `.github/workflows/cacophony-review.yml`. Keep shared
+authorization, checkout, prompt availability, action invocation, secret
+scoping, and artifact logic exclusively in that reusable workflow.
+
+The caller preserves:
 
 - trusted `pull_request_target` trigger;
 - `contents: read`;
-- every remote `uses:` dependency in the new workflow pinned to a reviewed full
-  commit SHA;
-- Checkout of the base repository's pull request merge ref for read-only
-  inspection with persisted credentials disabled;
-- trust-boundary comment stating prompts load from `pull_request.base.sha`;
-- base-prompt availability check;
-- pinned full Cacophony commit SHA;
+- local `uses: ./.github/workflows/cacophony-review.yml`;
 - the selected model deployment hardcoded in the workflow;
 - `max-turns: 20`;
 - `timeout-seconds: 600`;
-- `rate-limit-retries: 2`;
-- API key only on the pinned Cacophony step;
-- authorization before checkout that permits same-repository pull requests and
-  only owner, member, or collaborator fork authors;
+- `rate-limit-retries: 2`, meaning two retries after the initial request, for
+  three total attempts;
+- API key passed only through the reusable workflow's declared secret;
 - per-pull-request concurrency with superseded runs canceled;
-- artifact upload skipped when the reviewer did not run.
+- one narrow agent slug plus its review settings.
 
 The trusted-base pattern may review authorized fork pull requests because it
 never executes head-controlled code. That code trust boundary does not by

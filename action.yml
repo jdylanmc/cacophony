@@ -25,7 +25,7 @@ inputs:
     required: false
     default: "300"
   rate-limit-retries:
-    description: Additional HTTP 429 attempts, from 0 through 10. Azure retry delays receive exponential backoff.
+    description: Retries after the initial HTTP 429 request, from 0 through 10. The default of 2 means two retries after the initial request, for three total attempts, with exponential backoff.
     required: false
     default: "2"
   fail-on:

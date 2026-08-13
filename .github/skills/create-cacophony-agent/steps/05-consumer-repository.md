@@ -26,7 +26,10 @@ same-repository condition.
 
 Use `pull_request_target` only for a trusted-base workflow where:
 
-- the Cacophony action is pinned;
+- one repository-owned reusable workflow contains the shared trust boundary;
+- persona workflows are thin callers that provide only agent settings;
+- the Cacophony action and every remote dependency in the reusable workflow are
+  pinned;
 - prompt content comes from the base commit;
 - permissions are read-only;
 - no head-controlled code is executed;

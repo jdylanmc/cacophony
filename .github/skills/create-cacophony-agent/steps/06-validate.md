@@ -25,7 +25,11 @@ Verify:
 6. no credential is committed or stored as a variable;
 7. workflow trust guards and comments remain intact;
 8. the agent has a sufficient turn and timeout budget;
-9. `git diff --check` passes.
+9. `rate-limit-retries: 2` is understood as two retries after the initial
+   request, for three total attempts;
+10. Cacophony repository personas call the shared reusable workflow instead of
+    copying its security-sensitive steps;
+11. `git diff --check` passes.
 
 Inside a trusted Cacophony checkout, the fixed validation commands are:
 

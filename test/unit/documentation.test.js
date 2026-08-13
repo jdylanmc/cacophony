@@ -86,29 +86,45 @@ test("all executable workflows pin remote actions to full commit SHAs", async ()
   }
 });
 
-test("secret-backed trusted-base workflows authorize provider spend", async () => {
-  const workflowFiles = await listWorkflowFiles([".github"]);
+test("reusable trusted-base workflow owns provider security policy", async () => {
+  const shared = await fs.promises.readFile(
+    ".github/workflows/cacophony-review.yml",
+    "utf8",
+  );
+  assert.match(shared, /workflow_call:/);
+  assert.match(shared, /name: Authorize Azure-backed review/);
+  assert.match(shared, /OWNER\|MEMBER\|COLLABORATOR/);
+  assert.match(shared, /uses: actions\/checkout@[a-f0-9]{40}/);
+  assert.match(shared, /persist-credentials: false/);
+  assert.match(shared, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(shared, /prompt-file: \.cacophony\/agents\/\$\{\{ inputs\.agent-slug \}\}\.md/);
+  assert.match(shared, /CACOPHONY_AZURE_API_KEY: \$\{\{ secrets\.azure-api-key \}\}/);
+  assert.match(shared, /name: cacophony-\$\{\{ inputs\.agent-slug \}\}/);
 
-  for (const file of workflowFiles) {
+  const authorization = shared.indexOf("name: Authorize Azure-backed review");
+  const checkout = shared.indexOf("uses: actions/checkout@");
+  const secret = shared.indexOf("secrets.azure-api-key");
+  assert.ok(authorization < checkout);
+  assert.ok(authorization < secret);
+});
+
+test("trusted-base persona workflows are narrow reusable callers", async () => {
+  const callers = [
+    ".github/workflows/hello-world.yml",
+    ".github/workflows/gilfoyle-security-architect.yml",
+    ".github/workflows/solid-snake-architecture.yml",
+    ".github/workflows/glados-documentation-sentinel.yml",
+  ];
+
+  for (const file of callers) {
     const workflow = await fs.promises.readFile(file, "utf8");
-    if (
-      !workflow.includes("pull_request_target:") ||
-      !workflow.includes("secrets.CACOPHONY_AZURE_API_KEY")
-    ) {
-      continue;
-    }
-
-    assert.match(workflow, /name: Authorize Azure-backed review/);
-    assert.match(workflow, /OWNER\|MEMBER\|COLLABORATOR/);
+    assert.match(workflow, /pull_request_target:/);
+    assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
+    assert.match(workflow, /azure-api-key: \$\{\{ secrets\.CACOPHONY_AZURE_API_KEY \}\}/);
     assert.match(workflow, /cancel-in-progress: true/);
-
-    const authorization = workflow.indexOf(
-      "name: Authorize Azure-backed review",
-    );
-    const checkout = workflow.indexOf("uses: actions/checkout@");
-    const secret = workflow.indexOf("secrets.CACOPHONY_AZURE_API_KEY");
-    assert.ok(authorization < checkout, `${file} must authorize before checkout`);
-    assert.ok(authorization < secret, `${file} must authorize before secret use`);
+    assert.doesNotMatch(workflow, /actions\/checkout@/);
+    assert.doesNotMatch(workflow, /name: Authorize Azure-backed review/);
+    assert.doesNotMatch(workflow, /jdylanmc\/cacophony@/);
   }
 });
 
@@ -197,16 +213,10 @@ test("Hello World dogfood runs a model-generated joke prompt", async () => {
   assert.match(prompt, /programmer joke generated for this run/);
   assert.doesNotMatch(prompt, /dark mode|light attracts bugs/);
   assert.match(workflow, /pull_request_target:/);
-  assert.match(
-    workflow,
-    /ref: refs\/pull\/\$\{\{ github\.event\.pull_request\.number \}\}\/merge/,
-  );
-  assert.match(workflow, /persist-credentials: false/);
-  assert.match(workflow, /prompt-file: \.cacophony\/agents\/hello-world\.md/);
-  assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
+  assert.match(workflow, /agent-slug: hello-world/);
   assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /rate-limit-retries: 2/);
-  assert.match(workflow, /name: cacophony-hello-world/);
 });
 
 test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
@@ -227,19 +237,13 @@ test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
   assert.match(activePrompt, /\[BLOCK: SECURITY\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
   assert.match(workflow, /pull_request_target:/);
-  assert.match(
-    workflow,
-    /prompt-file: \.cacophony\/agents\/gilfoyle-security-architect\.md/,
-  );
-  assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
+  assert.match(workflow, /agent-slug: gilfoyle-security-architect/);
   assert.match(workflow, /deployment: gpt-5\.6-sol/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
-  assert.match(workflow, /name: Authorize Azure-backed review/);
-  assert.match(workflow, /OWNER\|MEMBER\|COLLABORATOR/);
   assert.match(workflow, /cancel-in-progress: true/);
-  assert.match(workflow, /name: cacophony-gilfoyle-security-architect/);
 });
 
 test("Solid Snake sample matches its independent architecture reviewer", async () => {
@@ -272,31 +276,13 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
   assert.match(activePrompt, /MockTestDatabase/);
   assert.match(activePrompt, /IEmailNotifier/);
   assert.match(workflow, /pull_request_target:/);
-  assert.doesNotMatch(workflow, /head\.repo\.full_name == github\.repository/);
-  assert.match(workflow, /name: Authorize Azure-backed review/);
-  assert.match(workflow, /OWNER\|MEMBER\|COLLABORATOR/);
   assert.match(workflow, /cancel-in-progress: true/);
-  assert.match(
-    workflow,
-    /ref: refs\/pull\/\$\{\{ github\.event\.pull_request\.number \}\}\/merge/,
-  );
-  assert.match(workflow, /persist-credentials: false/);
-  assert.match(workflow, /loads prompt-file from pull_request\.base\.sha via git show/);
-  assert.match(
-    workflow,
-    /prompt-file: \.cacophony\/agents\/solid-snake-architecture\.md/,
-  );
-  assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
+  assert.match(workflow, /agent-slug: solid-snake-architecture/);
   assert.match(workflow, /deployment: gpt-5\.6-sol/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
-  assert.match(workflow, /name: cacophony-solid-snake-architecture/);
-  assert.match(
-    workflow,
-    /git cat-file -e "\$BASE_SHA:\.cacophony\/agents\/solid-snake-architecture\.md"/,
-  );
-  assert.match(workflow, /if: steps\.prompt\.outputs\.ready == 'true'/);
   assert.notEqual(workflow, gilfoyleWorkflow);
 });
 
@@ -321,20 +307,15 @@ test("GLaDOS sample matches its independent documentation reviewer", async () =>
   assert.match(activePrompt, /Self-documenting clarity/);
   assert.match(activePrompt, /Stale and mismatched comments/);
   assert.match(workflow, /pull_request_target:/);
-  assert.match(workflow, /name: Authorize Azure-backed review/);
-  assert.match(workflow, /OWNER\|MEMBER\|COLLABORATOR/);
   assert.match(workflow, /cancel-in-progress: true/);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
+  assert.match(workflow, /agent-slug: glados-documentation-sentinel/);
   assert.match(
     workflow,
     /deployment: gpt-5\.4-mini/,
   );
-  assert.match(
-    workflow,
-    /prompt-file: \.cacophony\/agents\/glados-documentation-sentinel\.md/,
-  );
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /rate-limit-retries: 2/);
-  assert.match(workflow, /name: cacophony-glados-documentation-sentinel/);
 });
 
 test("agent creation guide and shared skill capture the stacked workflow", async () => {
@@ -397,6 +378,8 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /canonical simple consumer workflow/);
   assert.match(lifecycle, /unauthorized fork authors/);
   assert.match(lifecycle, /workflow this skill creates/);
+  assert.match(lifecycle, /shared reusable workflow/);
+  assert.match(lifecycle, /three total attempts/);
   assert.doesNotMatch(
     lifecycle,
     /deployment identifiers belong in repository variables/,
@@ -405,7 +388,6 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   const guideActionReferences = [
     ...guide.matchAll(/uses:\s+(actions\/[^\s#]+)/g),
   ].map(([, reference]) => reference);
-  assert.notEqual(guideActionReferences.length, 0);
   for (const reference of guideActionReferences) {
     assert.match(reference, /^actions\/[^@\s]+@[a-f0-9]{40}$/);
   }

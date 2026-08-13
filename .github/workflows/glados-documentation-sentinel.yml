@@ -12,68 +12,13 @@ concurrency:
 
 jobs:
   documentation-review:
-    runs-on: ubuntu-latest
-    env:
-      CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-    steps:
-      - name: Authorize Azure-backed review
-        shell: bash
-        env:
-          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
-          BASE_REPOSITORY: ${{ github.repository }}
-          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-        run: |
-          if [[ "$HEAD_REPOSITORY" == "$BASE_REPOSITORY" ]]; then
-            exit 0
-          fi
-
-          case "$AUTHOR_ASSOCIATION" in
-            OWNER|MEMBER|COLLABORATOR) ;;
-            *)
-              echo "::error::Fork reviews require an owner, member, or collaborator author to authorize Azure quota."
-              exit 1
-              ;;
-          esac
-
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          # The workflow and action are trusted. PR content is inspected only;
-          # Cacophony loads prompt-file from pull_request.base.sha via git show.
-          ref: refs/pull/${{ github.event.pull_request.number }}/merge
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Check trusted prompt availability
-        id: prompt
-        shell: bash
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          if git cat-file -e "$BASE_SHA:.cacophony/agents/glados-documentation-sentinel.md"; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "GLaDOS starts reviewing after her prompt is merged to the base branch."
-          fi
-
-      - name: Run GLaDOS documentation review
-        id: glados
-        if: steps.prompt.outputs.ready == 'true'
-        uses: jdylanmc/cacophony@7f31d99597e908372592dec996720749b476889c
-        with:
-          prompt-file: .cacophony/agents/glados-documentation-sentinel.md
-          endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
-          deployment: gpt-5.4-mini
-          max-turns: 20
-          timeout-seconds: 600
-          rate-limit-retries: 2
-          fail-on: high
-        env:
-          CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
-
-      - name: Upload GLaDOS report
-        if: always() && steps.glados.outcome != 'skipped'
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-        with:
-          name: cacophony-glados-documentation-sentinel
-          path: .cacophony/out/glados-documentation-sentinel/
+    uses: ./.github/workflows/cacophony-review.yml
+    with:
+      agent-slug: glados-documentation-sentinel
+      deployment: gpt-5.4-mini
+      max-turns: 20
+      timeout-seconds: 600
+      rate-limit-retries: 2
+      fail-on: high
+    secrets:
+      azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
