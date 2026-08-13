@@ -166,14 +166,14 @@ test("action audits a complete repository without pull request context", async (
     env: {
       ...process.env,
       GITHUB_WORKSPACE: path.dirname(fixture.workspace),
-      GITHUB_ACTION_PATH: fixture.workspace,
       GITHUB_OUTPUT: outputFile,
       GITHUB_REPOSITORY: "example/repository",
       GITHUB_SHA: fixture.headSha,
       GITHUB_REF_NAME: "main",
       GITHUB_ACTOR: "octocat",
       CACOPHONY_AZURE_API_KEY: "test-secret",
-      "INPUT_PROMPT-FILE": ".cacophony/agents/reviewer.md",
+      "INPUT_PROMPT-FILE":
+        ".cacophony/agents/gilfoyle-security-architect.md",
       "INPUT_REVIEW-SCOPE": "repository",
       "INPUT_WORKSPACE-DIRECTORY": path.basename(fixture.workspace),
       INPUT_ENDPOINT: `http://127.0.0.1:${port}`,
@@ -188,7 +188,7 @@ test("action audits a complete repository without pull request context", async (
         fixture.workspace,
         ".cacophony",
         "out",
-        "reviewer",
+        "gilfoyle-security-architect",
         "report.json",
       ),
       "utf8",
@@ -223,7 +223,6 @@ test("action rejects a workspace symlink that escapes GITHUB_WORKSPACE", async (
         env: {
           ...process.env,
           GITHUB_WORKSPACE: workspaceRoot,
-          GITHUB_ACTION_PATH: fixture.workspace,
           GITHUB_OUTPUT: outputFile,
           CACOPHONY_AZURE_API_KEY: "canary-secret",
           "INPUT_PROMPT-FILE": ".cacophony/agents/reviewer.md",
