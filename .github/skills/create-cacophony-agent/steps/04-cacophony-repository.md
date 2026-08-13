@@ -30,7 +30,11 @@ The caller preserves:
 
 The trusted-base pattern may review authorized fork pull requests because it
 never executes head-controlled code. That code trust boundary does not by
-itself authorize arbitrary fork authors to spend provider quota.
+itself authorize arbitrary fork authors to spend provider quota. The caller
+owns `pull_request_target`, read-only permissions, and concurrency. The reusable
+workflow rejects other events, accepts same-repository pull requests, and
+accepts a fork only for an `OWNER`, `MEMBER`, or `COLLABORATOR` author before
+checkout.
 
 Add:
 

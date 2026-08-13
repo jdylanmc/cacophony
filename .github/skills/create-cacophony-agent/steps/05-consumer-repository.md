@@ -29,13 +29,16 @@ Use `pull_request_target` only for a trusted-base workflow where:
 
 - one repository-owned reusable workflow contains the shared trust boundary;
 - persona workflows are thin callers that provide only agent settings;
+- each caller owns its `pull_request_target` trigger, read-only permissions, and
+  per-pull-request concurrency;
 - the Cacophony action and every remote dependency in the reusable workflow are
   pinned;
 - prompt content comes from the base commit;
 - permissions are read-only;
 - no head-controlled code is executed;
-- unauthorized fork authors are rejected before checkout;
-- per-pull-request concurrency cancels superseded reviews;
+- the reusable workflow rejects other events, accepts same-repository pull
+  requests, and accepts a fork only for an `OWNER`, `MEMBER`, or `COLLABORATOR`
+  author before checkout;
 - the caller passes `secrets.azure-api-key` to the reusable workflow;
 - only the reusable workflow maps that secret to the Cacophony step's
   `CACOPHONY_AZURE_API_KEY` environment variable.

@@ -94,6 +94,8 @@ test("reusable trusted-base workflow owns provider security policy", async () =>
   );
   assert.match(shared, /workflow_call:/);
   assert.match(shared, /name: Authorize Azure-backed review/);
+  assert.match(shared, /EVENT_NAME.*github\.event_name/);
+  assert.match(shared, /EVENT_NAME" != "pull_request_target"/);
   assert.match(shared, /OWNER\|MEMBER\|COLLABORATOR/);
   assert.match(shared, /uses: actions\/checkout@[a-f0-9]{40}/);
   assert.match(shared, /persist-credentials: false/);
@@ -377,11 +379,12 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /distinct non-review outcome/);
   assert.match(lifecycle, /consumer repository configuration contract/);
   assert.match(lifecycle, /canonical simple consumer workflow/);
-  assert.match(lifecycle, /unauthorized fork authors/);
+  assert.match(lifecycle, /accepts a fork only/);
   assert.match(lifecycle, /workflow this skill creates/);
   assert.match(lifecycle, /shared reusable workflow/);
   assert.match(lifecycle, /three total attempts/);
   assert.match(lifecycle, /caller passes `secrets\.azure-api-key`/);
+  assert.match(lifecycle, /rejects other events/);
   assert.doesNotMatch(
     lifecycle,
     /deployment identifiers belong in repository variables/,

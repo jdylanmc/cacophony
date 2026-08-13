@@ -43,8 +43,14 @@ jobs:
         env:
           AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
           BASE_REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: |
+          if [[ "$EVENT_NAME" != "pull_request_target" ]]; then
+            echo "::error::Trusted Cacophony reviews require a pull_request_target caller."
+            exit 1
+          fi
+
           if [[ "$HEAD_REPOSITORY" == "$BASE_REPOSITORY" ]]; then
             exit 0
           fi

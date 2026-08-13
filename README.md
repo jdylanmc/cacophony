@@ -44,11 +44,12 @@ The built-in dogfood workflows require `CACOPHONY_AZURE_API_KEY`,
 This repository's dogfood persona workflows are thin `pull_request_target`
 callers of `.github/workflows/cacophony-review.yml`. That reusable workflow
 owns the pinned Cacophony invocation, authorization, trusted checkout,
-base-prompt check, secret scope, and artifact upload. It inspects pull request
-content without executing it. Same-repository pull requests run automatically,
-while fork pull requests run only for authors GitHub identifies as an owner,
-member, or collaborator. Per-pull-request concurrency in each caller cancels
-superseded runs.
+base-prompt check, secret scope, and artifact upload. Each caller owns its
+`pull_request_target` trigger, read-only permissions, and per-pull-request
+concurrency. Before checkout, the reusable workflow rejects any other event,
+allows a same-repository pull request, and allows a fork only when GitHub's
+`author_association` is `OWNER`, `MEMBER`, or `COLLABORATOR`. It inspects pull
+request content without executing it.
 
 ## Quick start
 
@@ -353,10 +354,13 @@ declares `gpt-5.4-mini` directly.
   skipped required job as successful.
 - A `pull_request_target` persona caller may review forks only through a
   trusted-base reusable workflow that owns the pinned action, base-commit
-  prompt, read-only permissions, authorization, checkout, and secret scope.
-  The reusable workflow executes no head-controlled code; each caller cancels
-  superseded runs with per-pull-request concurrency. Code-execution safety does
-  not authorize strangers to spend provider quota.
+  prompt, authorization, checkout, and secret scope. Each caller owns read-only
+  permissions and per-pull-request concurrency. The reusable workflow rejects
+  non-`pull_request_target` events, accepts same-repository pull requests, and
+  accepts forks only for `OWNER`, `MEMBER`, or `COLLABORATOR`
+  `author_association` values before checkout. It executes no head-controlled
+  code. Code-execution safety does not authorize strangers to spend provider
+  quota.
 - Repository secrets are unavailable to `pull_request` workflows from forks.
   The quick-start workflow fails those pull requests explicitly rather than
   silently passing a skipped gate.

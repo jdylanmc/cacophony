@@ -78,7 +78,11 @@ a reviewed full commit SHA.
 The repository owns the security-sensitive review sequence once in
 `.github/workflows/cacophony-review.yml`. It performs fork authorization,
 trusted merge-ref checkout, base-prompt availability checks, the pinned
-Cacophony invocation, secret scoping, and artifact upload.
+Cacophony invocation, secret scoping, and artifact upload. Each persona caller
+owns its `pull_request_target` trigger, read-only permissions, and concurrency.
+Before checkout, the reusable workflow rejects any other event, accepts
+same-repository pull requests, and accepts fork pull requests only when
+`author_association` is `OWNER`, `MEMBER`, or `COLLABORATOR`.
 
 Each reviewer gets an independent thin caller so GitHub schedules all
 established reviewers in parallel:
@@ -177,9 +181,11 @@ repository-owned reusable workflow holds the trust boundary and thin
 `pull_request_target` persona callers provide only agent settings. Pin every
 remote action in that reusable workflow to a full commit SHA, use read-only
 permissions and a base-commit prompt, execute no head-controlled code, and
-scope the secret only to the Cacophony step. Reject unauthorized fork authors
-before checkout, and use per-pull-request concurrency in each caller to cancel
-superseded Azure-backed reviews.
+scope the secret only to the Cacophony step. The caller owns the
+`pull_request_target` trigger, read-only permissions, and per-pull-request
+concurrency. The reusable workflow rejects other events, accepts
+same-repository pull requests, and accepts a fork only for an `OWNER`, `MEMBER`,
+or `COLLABORATOR` author before checkout.
 
 An external repository does not need the `examples/reviewers` copy or Cacophony
 documentation tests unless its maintainers want a local catalog.
