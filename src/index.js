@@ -84,6 +84,7 @@ async function main() {
         provider,
         signal: controller.signal,
         startedAt,
+        onWarning: warning,
       });
     } finally {
       clearTimeout(timeout);

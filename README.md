@@ -215,7 +215,7 @@ executes repository code.
 | `provider` | No | `azure-foundry` | Provider adapter. |
 | `review-scope` | No | `pull-request` | `pull-request` for event review or `repository` for a full checked-out repository audit. |
 | `workspace-directory` | No | `.` | Repository-relative checkout directory to inspect. |
-| `max-turns` | No | `8` | Model turns, from 1 through 50. Pull request personas use 20; the full repository audit uses 40. |
+| `max-turns` | No | `8` | Model turns, from 1 through 20. Cacophony tells the reviewer its exact and remaining budget, provides `request_more_turns` to emit a workflow warning when the budget is insufficient, directs finalization during the last three turns, and reserves the final turn for `submit_report`. |
 | `timeout-seconds` | No | `300` | Total deadline, including retry waits, from 30 through 1800 seconds. |
 | `rate-limit-retries` | No | `2` | Retries after the initial HTTP 429 request, from 0 through 10; `2` means three total attempts. |
 | `fail-on` | No | `high` | `low`, `medium`, `high`, `critical`, or `never`. |
@@ -474,8 +474,13 @@ declares `gpt-5.4-mini` directly.
   `timeout-seconds`. Persistent throttling writes an `inconclusive` report and
   fails the step because no reviewer decision was completed.
 - **Git diff failure:** use `actions/checkout` with `fetch-depth: 0`.
-- **No report submission:** make the prompt more explicit and increase
-  `max-turns` within the allowed range.
+- **No report submission:** Cacophony announces the remaining turn budget,
+  directs the reviewer to finalize during the last three turns, and exposes
+  only `submit_report` on the final turn. If submission still fails, tighten
+  the review lens or reduce the amount of repository context it must traverse.
+- **Reviewer requests more turns:** `request_more_turns` emits a GitHub Actions
+  warning containing the requested capacity and reason. It does not extend the
+  current run; use the warning to tune a later run or narrow the review lens.
 - **Fork pull request rejected:** the simple workflow fails closed because
   GitHub does not expose repository secrets to fork workflows. Use the
   documented trusted-base pattern when fork reviews are required.

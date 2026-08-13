@@ -23,9 +23,12 @@ Before editing files, decide:
 - **Remediation format:** the concrete numbered steps every finding requires;
 - **Model deployment:** the Azure deployment name to declare directly in this
   reviewer's workflow;
-- **Pull-request budget:** start complex pull-request reviewers at 20 turns and
-  600 seconds. Repository-wide audits use the reusable audit workflow's
-  separate 40-turn, 1800-second budget.
+- **Budget:** start complex reviewers at 20 turns and 600 seconds. Cacophony
+  warns reviewers as the budget closes and reserves the final turn for
+  structured report submission. Reviewers can call `request_more_turns` before
+  the final turn to emit a workflow warning when the configured budget prevents
+  them from meeting the lens's evidence standard; the current run is never
+  extended automatically.
 
 One reviewer should own one lens. More persona does not compensate for an
 ambiguous responsibility.

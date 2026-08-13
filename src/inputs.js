@@ -90,7 +90,7 @@ export function readInputs(env = process.env) {
     provider,
     endpoint: required("endpoint", env),
     deployment: required("deployment", env),
-    maxTurns: boundedInteger("max-turns", 8, 1, 50, env),
+    maxTurns: boundedInteger("max-turns", 8, 1, 20, env),
     timeoutSeconds: boundedInteger("timeout-seconds", 300, 30, 1800, env),
     rateLimitRetries: boundedInteger("rate-limit-retries", 2, 0, 10, env),
     failOn,
