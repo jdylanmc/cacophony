@@ -66,6 +66,7 @@ test("README contains a deterministic agent installation contract", async () => 
     "Default to `pull_request`",
     "Use `pull_request_target` only",
     "`pull_request_target` workflow that follows the documented trusted-base",
+    "Both supported workflow modes load the prompt from the pull request's base",
     "Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report",
   ]) {
     assert.match(readme, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));

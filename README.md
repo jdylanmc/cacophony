@@ -130,9 +130,14 @@ Cacophony adds trusted framework instructions requiring tool-based inspection,
 evidence, and a final structured `submit_report` call. Pull request text and
 repository content are explicitly treated as untrusted data.
 
-For pull request runs, Cacophony loads the prompt from the pull request's base
-commit. A pull request cannot weaken its own review instructions. A newly added
-prompt begins running after the setup change is merged.
+Both supported workflow modes load the prompt from the pull request's base
+commit, so a pull request cannot weaken its own review instructions and a newly
+added prompt begins running only after its setup change is merged. The modes
+differ elsewhere: the quick start uses `pull_request`, rejects forks because
+repository secrets are unavailable, and reviews same-repository changes; the
+trusted-base `pull_request_target` pattern authorizes fork authors before its
+secret-backed step and inspects the merge ref without executing pull-request
+code.
 
 ## Action inputs
 
