@@ -12,9 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-      CACOPHONY_AZURE_DEPLOYMENT: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           # The workflow and action are trusted. Head content is inspected only;
           # Cacophony loads prompt-file from pull_request.base.sha via git show.
@@ -37,20 +36,21 @@ jobs:
       - name: Run GLaDOS documentation review
         id: glados
         if: steps.prompt.outputs.ready == 'true'
-        uses: jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503
+        uses: jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2
         with:
           prompt-file: .cacophony/agents/glados-documentation-sentinel.md
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
-          deployment: ${{ env.CACOPHONY_AZURE_DEPLOYMENT }}
+          deployment: gpt-5.4-mini
           max-turns: 16
           timeout-seconds: 600
+          rate-limit-retries: 2
           fail-on: high
         env:
           CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
 
       - name: Upload GLaDOS report
         if: always() && steps.glados.outcome != 'skipped'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: cacophony-glados-documentation-sentinel
           path: .cacophony/out/glados-documentation-sentinel/
