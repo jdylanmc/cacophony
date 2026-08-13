@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -59,6 +60,7 @@ test("action writes reports and outputs before applying policy", async (t) => {
     response.writeHead(200, { "content-type": "application/json" });
     response.end(JSON.stringify({ id: `response-${requestCount}`, output }));
   });
+
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const { port } = server.address();
@@ -117,6 +119,138 @@ test("action writes reports and outputs before applying policy", async (t) => {
     `${processError.stdout}${processError.stderr}${outputs}`,
     new RegExp(secret),
   );
+});
+
+test("action audits a complete repository without pull request context", async (t) => {
+  const fixture = await createPullRequestFixture();
+  t.after(() => removeFixture(fixture));
+  let requestCount = 0;
+  const server = http.createServer(async (incoming, response) => {
+    for await (const _chunk of incoming) {
+      // Drain the request before responding.
+    }
+    requestCount += 1;
+    const output =
+      requestCount === 1
+        ? [
+            {
+              type: "function_call",
+              call_id: "call-1",
+              name: "read_file",
+              arguments: JSON.stringify({ path: "app.js" }),
+            },
+          ]
+        : [
+            {
+              type: "function_call",
+              call_id: "call-2",
+              name: "submit_report",
+              arguments: JSON.stringify({
+                verdict: "pass",
+                summary: "[APPROVED]",
+                findings: [],
+              }),
+            },
+          ];
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ id: `response-${requestCount}`, output }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+
+  const { port } = server.address();
+  const outputFile = path.join(fixture.workspace, "repository-output.txt");
+  await fs.promises.writeFile(outputFile, "");
+  await execFileAsync(process.execPath, [actionEntry], {
+    cwd: fixture.workspace,
+    env: {
+      ...process.env,
+      GITHUB_WORKSPACE: path.dirname(fixture.workspace),
+      GITHUB_ACTION_PATH: fixture.workspace,
+      GITHUB_OUTPUT: outputFile,
+      GITHUB_REPOSITORY: "example/repository",
+      GITHUB_SHA: fixture.headSha,
+      GITHUB_REF_NAME: "main",
+      GITHUB_ACTOR: "octocat",
+      CACOPHONY_AZURE_API_KEY: "test-secret",
+      "INPUT_PROMPT-FILE": ".cacophony/agents/reviewer.md",
+      "INPUT_REVIEW-SCOPE": "repository",
+      "INPUT_WORKSPACE-DIRECTORY": path.basename(fixture.workspace),
+      INPUT_ENDPOINT: `http://127.0.0.1:${port}`,
+      INPUT_DEPLOYMENT: "review-model",
+    },
+    encoding: "utf8",
+  });
+
+  const report = JSON.parse(
+    await fs.promises.readFile(
+      path.join(
+        fixture.workspace,
+        ".cacophony",
+        "out",
+        "reviewer",
+        "report.json",
+      ),
+      "utf8",
+    ),
+  );
+  assert.equal(report.reviewScope, "repository");
+  assert.equal(report.pullRequest, null);
+  assert.equal(report.repository.sha, fixture.headSha);
+  assert.equal(report.summary, "[APPROVED]");
+});
+
+test("action rejects a workspace symlink that escapes GITHUB_WORKSPACE", async (t) => {
+  const fixture = await createPullRequestFixture();
+  const workspaceRoot = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), "cacophony-workspace-"),
+  );
+  t.after(async () => {
+    await removeFixture(fixture);
+    await fs.promises.rm(workspaceRoot, { recursive: true, force: true });
+  });
+  await fs.promises.symlink(
+    fixture.workspace,
+    path.join(workspaceRoot, "audit-target"),
+  );
+  const outputFile = path.join(workspaceRoot, "github-output.txt");
+  await fs.promises.writeFile(outputFile, "");
+
+  await assert.rejects(
+    () =>
+      execFileAsync(process.execPath, [actionEntry], {
+        cwd: workspaceRoot,
+        env: {
+          ...process.env,
+          GITHUB_WORKSPACE: workspaceRoot,
+          GITHUB_ACTION_PATH: fixture.workspace,
+          GITHUB_OUTPUT: outputFile,
+          CACOPHONY_AZURE_API_KEY: "canary-secret",
+          "INPUT_PROMPT-FILE": ".cacophony/agents/reviewer.md",
+          "INPUT_REVIEW-SCOPE": "repository",
+          "INPUT_WORKSPACE-DIRECTORY": "audit-target",
+          INPUT_ENDPOINT: "https://example.invalid",
+          INPUT_DEPLOYMENT: "review-model",
+        },
+        encoding: "utf8",
+      }),
+    (error) => error.code === 1,
+  );
+
+  const report = JSON.parse(
+    await fs.promises.readFile(
+      path.join(
+        workspaceRoot,
+        ".cacophony",
+        "out",
+        "reviewer",
+        "report.json",
+      ),
+      "utf8",
+    ),
+  );
+  assert.equal(report.status, "error");
+  assert.match(report.summary, /cannot leave GITHUB_WORKSPACE/);
 });
 
 test("action writes an error report when authentication is missing", async (t) => {

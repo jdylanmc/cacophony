@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { runReview } from "../../src/runner/review.js";
+import { createReviewTarget } from "../../src/scopes/review-target.js";
 import {
   createPullRequestFixture,
   removeFixture,
@@ -10,6 +11,10 @@ import {
 test("review runner executes tools and requires structured submission", async (t) => {
   const fixture = await createPullRequestFixture();
   t.after(() => removeFixture(fixture));
+  const target = await createReviewTarget({
+    reviewScope: "pull-request",
+    eventPath: fixture.eventPath,
+  });
   let turn = 0;
   const provider = {
     async turn(request) {
@@ -64,8 +69,9 @@ test("review runner executes tools and requires structured submission", async (t
       deployment: "review-model",
       maxTurns: 4,
     },
-    context: fixture.context,
+    target,
     workspace: fixture.workspace,
+    actionPath: fixture.workspace,
     provider,
     signal: new AbortController().signal,
     startedAt: new Date().toISOString(),
@@ -80,6 +86,10 @@ test("review runner executes tools and requires structured submission", async (t
 test("review runner rejects agents that never submit", async (t) => {
   const fixture = await createPullRequestFixture();
   t.after(() => removeFixture(fixture));
+  const target = await createReviewTarget({
+    reviewScope: "pull-request",
+    eventPath: fixture.eventPath,
+  });
   const provider = {
     async turn() {
       return { id: crypto.randomUUID(), calls: [], text: "done" };
@@ -92,8 +102,9 @@ test("review runner rejects agents that never submit", async (t) => {
           promptFile: ".cacophony/agents/reviewer.md",
           maxTurns: 2,
         },
-        context: fixture.context,
+        target,
         workspace: fixture.workspace,
+        actionPath: fixture.workspace,
         provider,
         signal: new AbortController().signal,
         startedAt: new Date().toISOString(),

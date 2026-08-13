@@ -229,6 +229,30 @@ test("action metadata defines the retry and inconclusive contract", async () => 
   const metadata = await fs.promises.readFile("action.yml", "utf8");
   assert.match(metadata, /default of 2 means two retries after the initial request/);
   assert.match(metadata, /inconclusive means no reviewer decision completed, always fails closed/);
+  assert.match(metadata, /review-scope:/);
+  assert.match(metadata, /repository for a full checkout audit/);
+});
+
+test("repository audit workflow runs all canonical adversaries sequentially", async () => {
+  const workflow = await fs.promises.readFile(
+    ".github/workflows/repository-audit.yml",
+    "utf8",
+  );
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /workflow_call:/);
+  assert.match(workflow, /max-parallel: 1/);
+  assert.match(workflow, /fail-fast: false/);
+  assert.match(workflow, /agent: gilfoyle-security-architect/);
+  assert.match(workflow, /agent: solid-snake-architecture/);
+  assert.match(workflow, /agent: glados-documentation-sentinel/);
+  assert.match(workflow, /review-scope: repository/);
+  assert.match(workflow, /workspace-directory: audit-target/);
+  assert.match(workflow, /fail-on: low/);
+  assert.match(workflow, /name: Require the default branch/);
+  assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.doesNotMatch(workflow, /uses: \.\/\s*$/m);
+  assert.match(workflow, /CACOPHONY_AZURE_API_KEY/);
+  assert.match(workflow, /cacophony-repository-audit-\$\{\{ matrix\.agent \}\}/);
 });
 
 test("Hello World dogfood runs a model-generated joke prompt", async () => {

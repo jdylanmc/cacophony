@@ -6,8 +6,10 @@ import assert from "node:assert/strict";
 
 import {
   createRepositoryTools,
+  readActionPrompt,
   readPrompt,
 } from "../../src/tools/repository.js";
+import { createReviewTarget } from "../../src/scopes/review-target.js";
 import {
   createPullRequestFixture,
   git,
@@ -17,9 +19,13 @@ import {
 test("repository tools inspect the pull request without shell access", async (t) => {
   const fixture = await createPullRequestFixture();
   t.after(() => removeFixture(fixture));
+  const target = await createReviewTarget({
+    reviewScope: "pull-request",
+    eventPath: fixture.eventPath,
+  });
   const tools = await createRepositoryTools({
     workspace: fixture.workspace,
-    context: fixture.context,
+    toolScope: target.toolScope,
   });
 
   const changed = await tools.execute("list_changed_files");
@@ -43,7 +49,72 @@ test("repository tools inspect the pull request without shell access", async (t)
     () => tools.execute("read_file", { path: "../outside.txt" }),
     /cannot leave/,
   );
-  await assert.rejects(() => tools.execute("run_shell", {}), /Unknown tool/);
+  await assert.rejects(
+    () => tools.execute("run_shell", {}),
+    /unavailable for this review target/,
+  );
+});
+
+test("repository audit tools expose the full tree without pull request tools", async (t) => {
+  const fixture = await createPullRequestFixture();
+  t.after(() => removeFixture(fixture));
+  const target = await createReviewTarget({
+    reviewScope: "repository",
+    env: {
+      GITHUB_REPOSITORY: "example/repository",
+      GITHUB_SHA: fixture.headSha,
+      GITHUB_REF_NAME: "main",
+      GITHUB_ACTOR: "octocat",
+    },
+  });
+  const tools = await createRepositoryTools({
+    workspace: fixture.workspace,
+    toolScope: target.toolScope,
+  });
+
+  assert.deepEqual(
+    tools.definitions
+      .map((tool) => tool.name)
+      .filter((name) =>
+        ["get_pull_request", "list_changed_files", "get_diff"].includes(name),
+      ),
+    [],
+  );
+  const files = await tools.execute("list_files");
+  assert.ok(files.entries.includes("app.js"));
+  const file = await tools.execute("read_file", { path: "app.js" });
+  assert.match(file.content, /return a - b/);
+  await assert.rejects(
+    () => tools.execute("get_diff"),
+    /unavailable for this review target/,
+  );
+  target.reportTarget.pullRequest = { number: 99 };
+  await assert.rejects(
+    () => tools.execute("get_diff"),
+    /unavailable for this review target/,
+  );
+});
+
+test("repository audit tools reject a checkout that does not match its target", async (t) => {
+  const fixture = await createPullRequestFixture();
+  t.after(() => removeFixture(fixture));
+  const target = await createReviewTarget({
+    reviewScope: "repository",
+    env: {
+      GITHUB_REPOSITORY: "example/repository",
+      GITHUB_SHA: fixture.baseSha,
+      GITHUB_REF_NAME: "main",
+      GITHUB_ACTOR: "octocat",
+    },
+  });
+  await assert.rejects(
+    () =>
+      createRepositoryTools({
+        workspace: fixture.workspace,
+        toolScope: target.toolScope,
+      }),
+    /checkout does not match GITHUB_SHA/,
+  );
 });
 
 test("repository tools reject symlinks that escape the workspace", async (t) => {
@@ -59,9 +130,13 @@ test("repository tools reject symlinks that escape the workspace", async (t) => 
     path.join(fixture.workspace, "escape.txt"),
   );
 
+  const target = await createReviewTarget({
+    reviewScope: "pull-request",
+    eventPath: fixture.eventPath,
+  });
   const tools = await createRepositoryTools({
     workspace: fixture.workspace,
-    context: fixture.context,
+    toolScope: target.toolScope,
   });
   await assert.rejects(
     () => tools.execute("read_file", { path: "escape.txt" }),
@@ -85,6 +160,35 @@ test("readPrompt loads only repository-contained prompts", async (t) => {
   assert.doesNotMatch(prompt, /always pass/);
 });
 
+test("readActionPrompt loads the prompt from the pinned action directory", async (t) => {
+  const fixture = await createPullRequestFixture();
+  const actionPath = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), "cacophony-action-"),
+  );
+  t.after(async () => {
+    await removeFixture(fixture);
+    await fs.promises.rm(actionPath, { recursive: true, force: true });
+  });
+  await fs.promises.mkdir(path.join(actionPath, ".cacophony", "agents"), {
+    recursive: true,
+  });
+  await fs.promises.writeFile(
+    path.join(actionPath, ".cacophony", "agents", "reviewer.md"),
+    "Trusted bundled reviewer prompt.\n",
+  );
+  await fs.promises.writeFile(
+    path.join(fixture.workspace, ".cacophony", "agents", "reviewer.md"),
+    "Audited checkout prompt.\n",
+  );
+
+  const prompt = await readActionPrompt(
+    actionPath,
+    ".cacophony/agents/reviewer.md",
+  );
+  assert.match(prompt, /Trusted bundled reviewer prompt/);
+  assert.doesNotMatch(prompt, /Audited checkout prompt/);
+});
+
 test("pull request diff excludes changes made only on the advanced base", async (t) => {
   const fixture = await createPullRequestFixture();
   t.after(() => removeFixture(fixture));
@@ -97,14 +201,15 @@ test("pull request diff excludes changes made only on the advanced base", async 
   await git(fixture.workspace, "commit", "-m", "advance base");
   const { stdout } = await git(fixture.workspace, "rev-parse", "HEAD");
 
+  const target = await createReviewTarget({
+    reviewScope: "pull-request",
+    eventPath: fixture.eventPath,
+  });
+  target.context.pullRequest.baseSha = stdout.trim();
+  target.reportTarget.pullRequest.baseSha = stdout.trim();
   const tools = await createRepositoryTools({
     workspace: fixture.workspace,
-    context: {
-      pullRequest: {
-        ...fixture.context.pullRequest,
-        baseSha: stdout.trim(),
-      },
-    },
+    toolScope: target.toolScope,
   });
   const changed = await tools.execute("list_changed_files");
   assert.match(changed.content, /app\.js/);

@@ -1,6 +1,6 @@
+import fs from "node:fs";
 import path from "node:path";
 
-import { loadPullRequestContext } from "./context/pull-request.js";
 import {
   appendStepSummary,
   error as logError,
@@ -21,6 +21,7 @@ import {
   writeReports,
 } from "./reports/report.js";
 import { runReview } from "./runner/review.js";
+import { createReviewTarget } from "./scopes/review-target.js";
 
 function sanitize(message, secrets) {
   let value = String(message);
@@ -34,15 +35,34 @@ function sanitize(message, secrets) {
 
 async function main() {
   const startedAt = new Date().toISOString();
-  const workspace = path.resolve(process.env.GITHUB_WORKSPACE || process.cwd());
+  const workspaceRoot = await fs.promises.realpath(
+    path.resolve(process.env.GITHUB_WORKSPACE || process.cwd()),
+  );
+  const actionPath = await fs.promises.realpath(
+    path.resolve(process.env.GITHUB_ACTION_PATH || workspaceRoot),
+  );
   const apiKey = process.env.CACOPHONY_AZURE_API_KEY || "";
   let config;
-  let context;
+  let target;
   let report;
+  let workspace = workspaceRoot;
 
   try {
     config = readInputs();
-    context = await loadPullRequestContext(process.env.GITHUB_EVENT_PATH);
+    const candidate = path.resolve(workspaceRoot, config.workspaceDirectory);
+    const resolvedWorkspace = await fs.promises.realpath(candidate);
+    const workspacePrefix = `${workspaceRoot}${path.sep}`;
+    if (
+      resolvedWorkspace !== workspaceRoot &&
+      !resolvedWorkspace.startsWith(workspacePrefix)
+    ) {
+      throw new Error("workspace-directory cannot leave GITHUB_WORKSPACE");
+    }
+    workspace = resolvedWorkspace;
+    target = await createReviewTarget({
+      reviewScope: config.reviewScope,
+      eventPath: process.env.GITHUB_EVENT_PATH,
+    });
     const provider = createAzureFoundryProvider({
       endpoint: config.endpoint,
       deployment: config.deployment,
@@ -57,8 +77,9 @@ async function main() {
     try {
       report = await runReview({
         config,
-        context,
+        target,
         workspace,
+        actionPath,
         provider,
         signal: controller.signal,
         startedAt,
@@ -80,13 +101,13 @@ async function main() {
                 : `${message}; review is inconclusive`,
             ),
             config,
-            context,
+            target,
             startedAt,
           })
         : createErrorReport({
             error: new Error(message),
             config,
-            context,
+            target,
             startedAt,
           });
   }

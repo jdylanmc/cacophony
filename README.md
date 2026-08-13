@@ -171,6 +171,40 @@ trusted-base `pull_request_target` pattern authorizes fork authors before its
 secret-backed step and inspects the merge ref without executing pull-request
 code.
 
+## Repository-wide ad-hoc audit
+
+`.github/workflows/repository-audit.yml` is a repository-owned reusable
+workflow with both `workflow_dispatch` and `workflow_call`. It audits the full
+checked-out commit rather than a pull request diff and runs the three canonical
+adversaries sequentially to reduce provider throttling:
+
+1. Gilfoyle with `gpt-5.6-sol`;
+2. Solid Snake with `gpt-5.6-sol`;
+3. GLaDOS with `gpt-5.4-mini`.
+
+The workflow accepts only the default branch, checks it out as audit data, and
+runs an independently pinned Cacophony action implementation. Reviewer prompts
+come from that pinned action revision, not from the audited checkout. The Azure
+key is never exposed to code from the commit under audit. Each reviewer receives
+read and search tools for working-tree source files; Git metadata and generated
+dependency directories such as `node_modules` are excluded. Any finding
+severity fails its matrix job, while `fail-fast: false` ensures all three
+reports are uploaded as separate artifacts. Run it from the Actions tab with
+**Run workflow**, or call it from another workflow in this repository:
+
+```yaml
+jobs:
+  repository-audit:
+    uses: ./.github/workflows/repository-audit.yml
+    secrets:
+      azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
+```
+
+The manual dispatch reads the repository's existing
+`CACOPHONY_AZURE_ENDPOINT` variable and `CACOPHONY_AZURE_API_KEY` secret.
+Repository audit mode is intended for trusted checked-out commits; it never
+executes repository code.
+
 ## Action inputs
 
 | Input | Required | Default | Description |
@@ -179,6 +213,8 @@ code.
 | `endpoint` | Yes | | Azure AI Foundry project or OpenAI-compatible endpoint. |
 | `deployment` | Yes | | Model deployment name. |
 | `provider` | No | `azure-foundry` | Provider adapter. |
+| `review-scope` | No | `pull-request` | `pull-request` for event review or `repository` for a full checked-out repository audit. |
+| `workspace-directory` | No | `.` | Repository-relative checkout directory to inspect. |
 | `max-turns` | No | `8` | Model turns, from 1 through 20. |
 | `timeout-seconds` | No | `300` | Total deadline, including retry waits, from 30 through 1800 seconds. |
 | `rate-limit-retries` | No | `2` | Retries after the initial HTTP 429 request, from 0 through 10; `2` means three total attempts. |
@@ -243,7 +279,9 @@ The JSON report is the canonical artifact. Markdown is rendered from it.
     "name": "azure-foundry",
     "deployment": "review-model"
   },
+  "reviewScope": "pull-request",
   "pullRequest": {},
+  "repository": null,
   "startedAt": "2026-08-13T14:00:00.000Z",
   "completedAt": "2026-08-13T14:01:00.000Z",
   "execution": {
@@ -299,9 +337,10 @@ terminal value of the public `verdict` field. It always fails closed and should
 be retried when quota is available. Framework failures use the same empty
 findings shape with both `status` and `verdict` set to `error`.
 
-The agent can use `get_pull_request`, `list_changed_files`, `get_diff`,
-`read_file`, `list_files`, and `search_text`. It cannot execute commands or
-write repository files.
+For pull request scope, the agent can use `get_pull_request`,
+`list_changed_files`, `get_diff`, `read_file`, `list_files`, and `search_text`.
+Repository scope exposes only `read_file`, `list_files`, and `search_text`.
+Neither scope can execute commands or write repository files.
 
 ## Multiple agents
 

@@ -79,6 +79,11 @@ export function readInputs(env = process.env) {
     );
   }
 
+  const reviewScope = (getInput("review-scope", env) || "pull-request").toLowerCase();
+  if (!["pull-request", "repository"].includes(reviewScope)) {
+    throw new Error("review-scope must be pull-request or repository");
+  }
+
   return {
     promptFile,
     agentId: normalizeAgentId(promptFile),
@@ -89,6 +94,11 @@ export function readInputs(env = process.env) {
     timeoutSeconds: boundedInteger("timeout-seconds", 300, 30, 1800, env),
     rateLimitRetries: boundedInteger("rate-limit-retries", 2, 0, 10, env),
     failOn,
+    reviewScope,
+    workspaceDirectory: relativePath(
+      "workspace-directory",
+      getInput("workspace-directory", env) || ".",
+    ),
     outputDirectory: relativePath(
       "output-directory",
       getInput("output-directory", env) || ".cacophony/out",

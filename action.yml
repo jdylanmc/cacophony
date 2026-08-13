@@ -1,5 +1,5 @@
 name: Cacophony Review
-description: Run one adversarial pull request review prompt and produce structured reports.
+description: Run one adversarial pull request or repository review prompt and produce structured reports.
 author: jdylanmc
 
 inputs:
@@ -10,6 +10,14 @@ inputs:
     description: Agent provider. Only azure-foundry is currently supported.
     required: false
     default: azure-foundry
+  review-scope:
+    description: Review target. Use pull-request for event-driven review or repository for a full checkout audit.
+    required: false
+    default: pull-request
+  workspace-directory:
+    description: Repository-relative checkout directory to inspect. Defaults to GITHUB_WORKSPACE.
+    required: false
+    default: "."
   endpoint:
     description: Azure AI Foundry project or OpenAI-compatible endpoint.
     required: true

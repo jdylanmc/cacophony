@@ -1,0 +1,85 @@
+name: Reusable Repository Audit
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      max-turns:
+        required: false
+        type: number
+        default: 20
+      timeout-seconds:
+        required: false
+        type: number
+        default: 1800
+      rate-limit-retries:
+        required: false
+        type: number
+        default: 2
+    secrets:
+      azure-api-key:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - name: Gilfoyle security audit
+            agent: gilfoyle-security-architect
+            deployment: gpt-5.6-sol
+          - name: Solid Snake architecture audit
+            agent: solid-snake-architecture
+            deployment: gpt-5.6-sol
+          - name: GLaDOS documentation audit
+            agent: glados-documentation-sentinel
+            deployment: gpt-5.4-mini
+    env:
+      CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
+    steps:
+      - name: Require the default branch
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ "$REF_NAME" != "$DEFAULT_BRANCH" ]]; then
+            echo "::error::Repository audits may run only against the default branch."
+            exit 1
+          fi
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          path: audit-target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run ${{ matrix.name }}
+        id: audit
+        uses: jdylanmc/cacophony@22283f5dffd10e5cd96460deba91260b024f0174
+        with:
+          prompt-file: .cacophony/agents/${{ matrix.agent }}.md
+          review-scope: repository
+          workspace-directory: audit-target
+          endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
+          deployment: ${{ matrix.deployment }}
+          max-turns: ${{ inputs.max-turns || 20 }}
+          timeout-seconds: ${{ inputs.timeout-seconds || 1800 }}
+          rate-limit-retries: ${{ inputs.rate-limit-retries || 2 }}
+          fail-on: low
+        env:
+          CACOPHONY_AZURE_API_KEY: ${{ secrets.azure-api-key || secrets.CACOPHONY_AZURE_API_KEY }}
+
+      - name: Upload ${{ matrix.name }} report
+        if: always()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: cacophony-repository-audit-${{ matrix.agent }}
+          path: audit-target/.cacophony/out/${{ matrix.agent }}/
