@@ -21,6 +21,8 @@ Before editing files, decide:
 - **Block summary:** an exact prefix such as `[BLOCK: SECURITY]`;
 - **Approval summary:** normally `[APPROVED]`;
 - **Remediation format:** the concrete numbered steps every finding requires;
+- **Model deployment:** the Azure deployment name to declare directly in this
+  reviewer's workflow;
 - **Budget:** start complex reviewers at 16 turns and 600 seconds.
 
 One reviewer should own one lens. More persona does not compensate for an
@@ -84,7 +86,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-      CACOPHONY_AZURE_DEPLOYMENT: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -112,7 +113,7 @@ jobs:
         with:
           prompt-file: .cacophony/agents/<slug>.md
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
-          deployment: ${{ env.CACOPHONY_AZURE_DEPLOYMENT }}
+          deployment: <azure-deployment-name>
           max-turns: 16
           timeout-seconds: 600
           rate-limit-retries: 2
@@ -173,7 +174,7 @@ Configure:
 
 - repository secret `CACOPHONY_AZURE_API_KEY`;
 - repository variable `CACOPHONY_AZURE_ENDPOINT`;
-- repository variable `CACOPHONY_AZURE_DEPLOYMENT`.
+- a reviewed Azure deployment name hardcoded in this agent's workflow.
 
 For a simple same-repository workflow, use `pull_request` plus a fork guard as
 shown in the README quick start. For a trusted-base workflow, use the

@@ -13,8 +13,10 @@ Artifact, by a reviewed full commit SHA. Never copy Cacophony's `src/`.
 Required repository settings:
 
 - secret `CACOPHONY_AZURE_API_KEY`;
-- variable `CACOPHONY_AZURE_ENDPOINT`;
-- variable `CACOPHONY_AZURE_DEPLOYMENT`.
+- variable `CACOPHONY_AZURE_ENDPOINT`.
+
+Hardcode the selected Azure deployment name in this agent's workflow so the
+reviewer carries its model choice to another repository.
 
 Default to the README quick-start `pull_request` workflow with a same-repository
 fork guard.

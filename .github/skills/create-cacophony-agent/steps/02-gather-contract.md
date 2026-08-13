@@ -10,7 +10,8 @@ Extract supplied answers before asking questions. Gather only missing fields:
 6. approval summary, defaulting to `[APPROVED]`;
 7. evidence threshold;
 8. false positives and out-of-scope concerns;
-9. numbered remediation requirements.
+9. numbered remediation requirements;
+10. Azure model deployment name.
 
 One reviewer owns one lens.
 

@@ -21,7 +21,7 @@ jobs:
         with:
           prompt-file: .cacophony/agents/reviewer.md
           endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-          deployment: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+          deployment: gpt-5.4-mini
           rate-limit-retries: 2
           fail-on: high
         env:

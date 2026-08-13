@@ -59,7 +59,7 @@ test("README contains a deterministic agent installation contract", async () => 
     "jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2",
     "CACOPHONY_AZURE_API_KEY",
     "CACOPHONY_AZURE_ENDPOINT",
-    "CACOPHONY_AZURE_DEPLOYMENT",
+    "deployment: gpt-5.4-mini",
     "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
     "actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4",
     "fetch-depth: 0",
@@ -140,6 +140,7 @@ test("basic example includes the documented consumer files", async () => {
     workflow,
     /uses: jdylanmc\/cacophony@[a-f0-9]{40}/,
   );
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.doesNotMatch(workflow, /jdylanmc\/cacophony@v1/);
   assert.match(workflow, /if: always\(\)/);
   assert.match(workflow, /path: \.cacophony\/out\//);
@@ -162,6 +163,7 @@ test("Hello World dogfood runs a model-generated joke prompt", async () => {
   assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
   assert.match(workflow, /prompt-file: \.cacophony\/agents\/hello-world\.md/);
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /name: cacophony-hello-world/);
 });
@@ -189,6 +191,7 @@ test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
     /prompt-file: \.cacophony\/agents\/gilfoyle-security-architect\.md/,
   );
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /deployment: gpt-5\.6-sol/);
   assert.match(workflow, /max-turns: 16/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
@@ -236,6 +239,7 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
     /prompt-file: \.cacophony\/agents\/solid-snake-architecture\.md/,
   );
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /deployment: gpt-5\.6-sol/);
   assert.match(workflow, /max-turns: 16/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
@@ -271,7 +275,7 @@ test("GLaDOS sample matches its independent documentation reviewer", async () =>
   assert.match(workflow, /pull_request_target:/);
   assert.match(
     workflow,
-    /CACOPHONY_AZURE_DEPLOYMENT: \$\{\{ vars\.GLADOS_AZURE_DEPLOYMENT \}\}/,
+    /deployment: gpt-5\.4-mini/,
   );
   assert.match(
     workflow,

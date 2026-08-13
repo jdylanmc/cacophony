@@ -49,10 +49,8 @@ never executes that content.
 
 1. In the target repository, open **Settings > Secrets and variables > Actions**.
 2. Create the secret `CACOPHONY_AZURE_API_KEY`.
-3. Create repository variables:
-   - `CACOPHONY_AZURE_ENDPOINT`: the Azure AI Foundry project or
-     OpenAI-compatible endpoint.
-   - `CACOPHONY_AZURE_DEPLOYMENT`: the model deployment name.
+3. Create the repository variable `CACOPHONY_AZURE_ENDPOINT` with the Azure AI
+   Foundry project or OpenAI-compatible endpoint.
 4. Create `.cacophony/agents/reviewer.md`:
 
    ```markdown
@@ -91,7 +89,7 @@ never executes that content.
            with:
              prompt-file: .cacophony/agents/reviewer.md
              endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-             deployment: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+             deployment: gpt-5.4-mini
              rate-limit-retries: 2
              fail-on: high
            env:
@@ -231,10 +229,13 @@ For a small sequential workflow, repeat the action step with a different
 strategy:
   fail-fast: false
   matrix:
-    agent:
-      - correctness
-      - security
-      - maintainability
+    include:
+      - agent: correctness
+        deployment: gpt-5.4-mini
+      - agent: security
+        deployment: gpt-5.6-sol
+      - agent: maintainability
+        deployment: gpt-5.4-mini
 
 steps:
   - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -245,7 +246,7 @@ steps:
     with:
       prompt-file: .cacophony/agents/${{ matrix.agent }}.md
       endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
-      deployment: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+      deployment: ${{ matrix.deployment }}
       rate-limit-retries: 2
     env:
       CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
@@ -275,7 +276,7 @@ This repository dogfoods the reviewer through
 `.github/workflows/gilfoyle-security-architect.yml`. The workflow uses the same
 trusted-base pattern as the Hello World check: the workflow, prompt, and pinned
 Cacophony implementation are trusted while pull request content is checked out
-only for read-only inspection.
+only for read-only inspection. Its workflow declares `gpt-5.6-sol` directly.
 
 ### Solid Snake, SOLID Architecture Operative
 
@@ -290,7 +291,8 @@ Gilfoyle on the same pull request event, so GitHub schedules both reviews in
 parallel and uploads separate artifacts. Snake uses a trusted
 `pull_request_target` workflow, a pinned Cacophony action, and the same-repository
 guard. Pull request content is checked out only for read-only inspection;
-Cacophony loads Snake's prompt from the base commit.
+Cacophony loads Snake's prompt from the base commit. Its workflow declares
+`gpt-5.6-sol` directly.
 
 ### GLaDOS, Documentation Synchronization Sentinel
 
@@ -302,7 +304,8 @@ consistent changes use `[APPROVED]`.
 
 `.github/workflows/glados-documentation-sentinel.yml` runs independently from
 Gilfoyle and Solid Snake. Once merged, all three reviewers execute in parallel
-on subsequent pull requests and upload separate artifacts.
+on subsequent pull requests and upload separate artifacts. Her workflow
+declares `gpt-5.4-mini` directly.
 
 ## Security
 
@@ -355,8 +358,8 @@ When asked to install Cacophony in a repository, perform these steps exactly:
 5. Reference
    `jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2`;
    do not copy Cacophony source into the consumer repository.
-6. Use repository variables named `CACOPHONY_AZURE_ENDPOINT` and
-   `CACOPHONY_AZURE_DEPLOYMENT`.
+6. Use the repository variable `CACOPHONY_AZURE_ENDPOINT` and declare the
+   reviewer's model deployment directly in its workflow.
 7. Map the repository secret `CACOPHONY_AZURE_API_KEY` into the review step's
    environment. Never place the key in a committed file.
 8. Add Upload Artifact pinned to the documented full commit SHA with

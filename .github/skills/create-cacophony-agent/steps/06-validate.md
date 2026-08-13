@@ -20,10 +20,11 @@ Verify:
 2. prompt slug, workflow path, artifact name, and output path agree;
 3. active and sample prompts match in Cacophony mode;
 4. every remote `uses:` dependency uses a full commit SHA, never a mutable tag;
-5. no credential is committed or stored as a variable;
-6. workflow trust guards and comments remain intact;
-7. the agent has a sufficient turn and timeout budget;
-8. `git diff --check` passes.
+5. the persona workflow declares its selected deployment directly;
+6. no credential is committed or stored as a variable;
+7. workflow trust guards and comments remain intact;
+8. the agent has a sufficient turn and timeout budget;
+9. `git diff --check` passes.
 
 Inside a trusted Cacophony checkout, the fixed validation commands are:
 

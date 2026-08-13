@@ -20,6 +20,7 @@ Copy an established persona workflow and preserve:
 - trust-boundary comment stating prompts load from `pull_request.base.sha`;
 - base-prompt availability check;
 - pinned full Cacophony commit SHA;
+- the selected model deployment hardcoded in the workflow;
 - `max-turns: 16`;
 - `timeout-seconds: 600`;
 - `rate-limit-retries: 2`;
