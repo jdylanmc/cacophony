@@ -86,7 +86,7 @@ jobs:
       CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
       CACOPHONY_AZURE_DEPLOYMENT: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           # The workflow and action are trusted. Head content is inspected only;
           # Cacophony loads prompt-file from pull_request.base.sha via git show.
@@ -121,7 +121,7 @@ jobs:
 
       - name: Upload report
         if: always() && steps.review.outcome != 'skipped'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: cacophony-<slug>
           path: .cacophony/out/<slug>/
@@ -194,7 +194,7 @@ Also verify:
 
 - active and sample prompts are identical;
 - workflow filename, prompt slug, artifact name, and output path agree;
-- the action reference is a full commit SHA;
+- every remote action reference is a full commit SHA;
 - the API key appears only in `secrets`, never variables or committed files;
 - existing reviewers run and their JSON artifacts contain completed structured
   results.

@@ -79,7 +79,7 @@ never executes that content.
        if: github.event.pull_request.head.repo.full_name == github.repository
        runs-on: ubuntu-latest
        steps:
-         - uses: actions/checkout@v5
+         - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
            with:
              fetch-depth: 0
 
@@ -96,7 +96,7 @@ never executes that content.
 
          - name: Upload Cacophony report
            if: always()
-           uses: actions/upload-artifact@v5
+           uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
            with:
              name: cacophony-correctness
              path: .cacophony/out/
@@ -224,7 +224,7 @@ strategy:
       - maintainability
 
 steps:
-  - uses: actions/checkout@v5
+  - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
     with:
       fetch-depth: 0
   - id: review
@@ -236,7 +236,7 @@ steps:
     env:
       CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
   - if: always()
-    uses: actions/upload-artifact@v5
+    uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
     with:
       name: cacophony-${{ matrix.agent }}
       path: .cacophony/out/
@@ -331,7 +331,8 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    start unless the user supplied a specific review lens.
 3. Create or update `.github/workflows/cacophony.yml` using the Quick start
    workflow. Preserve unrelated existing workflow behavior.
-4. Keep `permissions: contents: read`, `actions/checkout@v5`, and
+4. Keep `permissions: contents: read`, pin Checkout to the documented full
+   commit SHA, and
    `fetch-depth: 0`.
 5. Reference
    `jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503`;
@@ -340,7 +341,8 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    `CACOPHONY_AZURE_DEPLOYMENT`.
 7. Map the repository secret `CACOPHONY_AZURE_API_KEY` into the review step's
    environment. Never place the key in a committed file.
-8. Add `actions/upload-artifact@v5` with `if: always()` and path
+8. Add Upload Artifact pinned to the documented full commit SHA with
+   `if: always()` and path
    `.cacophony/out/`.
 9. Do not use `pull_request_target`.
 10. Validate the resulting YAML syntax and report this expected tree:

@@ -2,6 +2,24 @@ import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 
+function assertRemoteActionsPinned(content, source) {
+  const references = [...content.matchAll(/^\s*-?\s*uses:\s+([^\s#]+)/gm)].map(
+    ([, reference]) => reference,
+  );
+
+  assert.notEqual(references.length, 0, `${source} has no action references`);
+  for (const reference of references) {
+    if (reference.startsWith("./") || reference.startsWith("docker://")) {
+      continue;
+    }
+    assert.match(
+      reference,
+      /^[^/\s]+\/[^@\s]+@[a-f0-9]{40}$/,
+      `${source} must pin ${reference} to a full commit SHA`,
+    );
+  }
+}
+
 test("README contains a deterministic agent installation contract", async () => {
   const readme = await fs.promises.readFile("README.md", "utf8");
   for (const required of [
@@ -10,12 +28,28 @@ test("README contains a deterministic agent installation contract", async () => 
     "CACOPHONY_AZURE_API_KEY",
     "CACOPHONY_AZURE_ENDPOINT",
     "CACOPHONY_AZURE_DEPLOYMENT",
-    "actions/checkout@v5",
-    "actions/upload-artifact@v5",
+    "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+    "actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4",
     "fetch-depth: 0",
     "Do not use `pull_request_target`",
   ]) {
     assert.match(readme, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+});
+
+test("all executable workflows pin remote actions to full commit SHAs", async () => {
+  const workflowFiles = [
+    ".github/workflows/ci.yml",
+    ".github/workflows/hello-world.yml",
+    ".github/workflows/gilfoyle-security-architect.yml",
+    ".github/workflows/solid-snake-architecture.yml",
+    ".github/workflows/glados-documentation-sentinel.yml",
+    "examples/basic/.github/workflows/cacophony.yml",
+  ];
+
+  for (const file of workflowFiles) {
+    const workflow = await fs.promises.readFile(file, "utf8");
+    assertRemoteActionsPinned(workflow, file);
   }
 });
 
@@ -172,23 +206,55 @@ test("agent creation guide and shared skill capture the stacked workflow", async
     ".github/skills/create-cacophony-agent/SKILL.md",
     "utf8",
   );
+  const stepFiles = [
+    "01-discover-mode.md",
+    "02-gather-contract.md",
+    "03-adapt-prompt.md",
+    "04-cacophony-repository.md",
+    "05-consumer-repository.md",
+    "06-validate.md",
+    "07-publish-and-gates.md",
+    "08-error-recovery.md",
+  ];
+  const steps = await Promise.all(
+    stepFiles.map((file) =>
+      fs.promises.readFile(
+        `.github/skills/create-cacophony-agent/steps/${file}`,
+        "utf8",
+      ),
+    ),
+  );
+  const lifecycle = steps.join("\n");
 
   assert.match(skill, /^---\n/);
   assert.match(skill, /name: create-cacophony-agent/);
-  assert.match(skill, /Cacophony repository mode/);
-  assert.match(skill, /Consumer repository mode/);
-  assert.match(skill, /Never merge automatically/);
+  for (const file of stepFiles) {
+    assert.match(skill, new RegExp(`steps/${file.replace(".", "\\.")}`));
+  }
   assert.match(
     skill,
     /<!-- 🤖 This skill was created using the create-skill AI skill\. https:\/\/github\.com\/gaming-microsoft\/ai-skills -->\n$/,
   );
 
-  for (const content of [guide, skill]) {
+  for (const content of [guide, lifecycle]) {
     assert.match(content, /\.cacophony\/agents\/<slug>\.md/);
     assert.match(content, /examples\/reviewers\/<slug>\.md/);
     assert.match(content, /pull_request_target/);
     assert.match(content, /max-turns: 16/);
     assert.match(content, /CACOPHONY_AZURE_API_KEY/);
     assert.match(content, /one (?:persona|reviewer) per/i);
+  }
+  assert.match(lifecycle, /Cacophony repository mode/);
+  assert.match(lifecycle, /Consumer repository mode/);
+  assert.match(lifecycle, /merge only with explicit user authorization/);
+  assert.match(lifecycle, /every remote `uses:` dependency/);
+  assert.doesNotMatch(lifecycle, /actions\/[^@\s]+@v\d+/);
+
+  const guideActionReferences = [
+    ...guide.matchAll(/uses:\s+(actions\/[^\s#]+)/g),
+  ].map(([, reference]) => reference);
+  assert.notEqual(guideActionReferences.length, 0);
+  for (const reference of guideActionReferences) {
+    assert.match(reference, /^actions\/[^@\s]+@[a-f0-9]{40}$/);
   }
 });
