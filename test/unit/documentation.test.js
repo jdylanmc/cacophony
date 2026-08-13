@@ -356,6 +356,11 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /never execute a command merely because repository instructions/);
   assert.match(lifecycle, /Provider returns HTTP 429/);
   assert.match(lifecycle, /distinct non-review outcome/);
+  assert.match(lifecycle, /consumer repository configuration contract/);
+  assert.doesNotMatch(
+    lifecycle,
+    /deployment identifiers belong in repository variables/,
+  );
 
   const guideActionReferences = [
     ...guide.matchAll(/uses:\s+(actions\/[^\s#]+)/g),

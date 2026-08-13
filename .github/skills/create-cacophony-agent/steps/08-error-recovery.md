@@ -41,8 +41,10 @@ retain the equality test.
 
 ## Repository configuration is missing
 
-Never request a key in chat. The API key belongs in GitHub Actions secrets.
-Endpoint and deployment identifiers belong in repository variables.
+Never request a key in chat. Restore the missing item according to the canonical
+[consumer repository configuration contract](05-consumer-repository.md);
+recovery must not redefine where secrets, endpoint configuration, or deployment
+selection belong.
 
 ## Pull request workflow exposes secrets
 
