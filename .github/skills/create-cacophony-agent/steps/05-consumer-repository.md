@@ -20,10 +20,11 @@ Hardcode the selected Azure deployment name in this agent's workflow so the
 reviewer carries its model choice to another repository.
 
 The canonical simple consumer workflow is the README quick-start
-`pull_request` workflow: use an always-running job that explicitly fails fork
-pull requests before checkout or review. Never put the only review job behind a
-same-repository condition. Because this mode invokes the action directly, map
-`CACOPHONY_AZURE_API_KEY` through the action step's `env`.
+`pull_request` workflow: use an always-running job whose unsupported-mode guard
+fails fork use before checkout or review. That guard does not authorize or
+review forks. Never put the only review job behind a same-repository condition.
+Because this mode invokes the action directly, map `CACOPHONY_AZURE_API_KEY`
+through the action step's `env`.
 
 Use `pull_request_target` only for a trusted-base workflow where:
 

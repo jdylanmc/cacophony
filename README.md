@@ -54,8 +54,10 @@ request content without executing it.
 ## Quick start
 
 This quick start is the simple mode for pull requests whose branches are in the
-same repository. It intentionally fails fork pull requests. To review forks,
-use the trusted-base `pull_request_target` pattern in
+same repository. Its first step is an unsupported-mode guard: it fails if a
+fork attempts to use this simple workflow, but it does not authorize or review
+the fork. All actual fork review uses the trusted-base `pull_request_target`
+pattern in
 [`docs/creating-agents.md`](docs/creating-agents.md), including its author
 authorization and concurrency controls.
 
@@ -92,10 +94,10 @@ authorization and concurrency controls.
      correctness:
        runs-on: ubuntu-latest
        steps:
-         - name: Reject unreviewable fork pull requests
+         - name: Reject fork use of simple mode
            if: github.event.pull_request.head.repo.full_name != github.repository
            run: |
-             echo "::error::Cacophony requires the documented trusted-base workflow to review fork pull requests."
+             echo "::error::This same-repository-only workflow does not review forks. Install the documented trusted-base workflow."
              exit 1
 
          - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -348,10 +350,11 @@ declares `gpt-5.4-mini` directly.
 
 ## Security
 
-- The simple `pull_request` consumer pattern must use an always-running job that
-  explicitly fails fork pull requests before any secret-bearing step. Never put
-  the only review job behind a same-repository condition because GitHub treats a
-  skipped required job as successful.
+- The simple `pull_request` consumer pattern must use an always-running job with
+  an unsupported-mode guard that fails fork use before any secret-bearing step.
+  That guard does not authorize or review forks. Never put the only review job
+  behind a same-repository condition because GitHub treats a skipped required
+  job as successful.
 - A `pull_request_target` persona caller may review forks only through a
   trusted-base reusable workflow that owns the pinned action, base-commit
   prompt, authorization, checkout, and secret scope. Each caller owns read-only
@@ -419,13 +422,14 @@ When asked to install Cacophony in a repository, perform these steps exactly:
 8. Add Upload Artifact pinned to the documented full commit SHA with
    `if: always()` and path
    `.cacophony/out/`.
-9. Default to `pull_request` with an always-running job that explicitly fails
-   fork pull requests before checkout or review. Use `pull_request_target` only
-   for the documented trusted-base pattern with one repository-owned reusable
-   workflow holding every pinned remote action, the base-commit prompt,
-   read-only permissions, authorization before checkout, no execution of
-   head-controlled code, and API-key mapping. Keep persona callers narrow and
-   give each per-pull-request concurrency.
+9. Default to `pull_request` with an always-running job whose unsupported-mode
+   guard fails fork use before checkout or review. The guard is not a fork
+   authorization path. Use `pull_request_target` only for the documented
+   trusted-base pattern with one repository-owned reusable workflow holding
+   every pinned remote action, the base-commit prompt, read-only permissions,
+   authorization before checkout, no execution of head-controlled code, and
+   API-key mapping. Keep persona callers narrow and give each per-pull-request
+   concurrency.
 10. Validate the resulting YAML syntax and report this expected tree:
 
     ```text

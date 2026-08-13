@@ -199,6 +199,8 @@ test("basic example includes the documented consumer files", async () => {
     /if: github\.event\.pull_request\.head\.repo\.full_name != github\.repository/,
   );
   assert.match(workflow, /exit 1/);
+  assert.match(workflow, /Reject fork use of simple mode/);
+  assert.match(workflow, /same-repository-only workflow does not review forks/);
   assert.match(workflow, /path: \.cacophony\/out\//);
   assert.match(prompt, /correctness defects/);
 });

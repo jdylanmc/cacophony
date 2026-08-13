@@ -173,11 +173,12 @@ Configure:
 - a reviewed Azure deployment name hardcoded in this agent's workflow.
 
 The canonical simple consumer workflow is the README quick start: use
-`pull_request` with an always-running job that explicitly fails fork pull
-requests before checkout or review. Do not guard the entire job with a
-same-repository condition. For a trusted-base workflow that reviews forks, use the
-same architecture as Cacophony's `.github/workflows/cacophony-review.yml`: one
-repository-owned reusable workflow holds the trust boundary and thin
+`pull_request` with an always-running job whose unsupported-mode guard fails
+fork use before checkout or review. That guard does not authorize or review
+forks. Do not guard the entire job with a same-repository condition. All actual
+fork review uses the same architecture as Cacophony's
+`.github/workflows/cacophony-review.yml`: one repository-owned reusable
+workflow holds the trust boundary and thin
 `pull_request_target` persona callers provide only agent settings. Pin every
 remote action in that reusable workflow to a full commit SHA, use read-only
 permissions and a base-commit prompt, execute no head-controlled code, and

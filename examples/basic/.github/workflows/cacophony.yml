@@ -10,10 +10,10 @@ jobs:
   correctness:
     runs-on: ubuntu-latest
     steps:
-      - name: Reject unreviewable fork pull requests
+      - name: Reject fork use of simple mode
         if: github.event.pull_request.head.repo.full_name != github.repository
         run: |
-          echo "::error::Cacophony requires the documented trusted-base workflow to review fork pull requests."
+          echo "::error::This same-repository-only workflow does not review forks. Install the documented trusted-base workflow."
           exit 1
 
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
