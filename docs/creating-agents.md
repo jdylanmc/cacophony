@@ -70,6 +70,8 @@ The active and sample prompt files must be byte-for-byte identical. Add a
 documentation test that reads both files and asserts equality.
 
 Add a README entry describing the lens, block prefix, and workflow.
+In every workflow created from this guide, pin each remote action reference to
+a reviewed full commit SHA.
 
 ### Workflow pattern
 
@@ -206,10 +208,11 @@ The canonical simple consumer workflow is the README quick start: use
 requests before checkout or review. Do not guard the entire job with a
 same-repository condition. For a trusted-base workflow that reviews forks, use the
 `pull_request_target` pattern above and obey every trust-boundary restriction:
-every remote action pinned to a full commit SHA, read-only permissions,
-base-commit prompt, no execution of head-controlled code, and the secret scoped
-only to the Cacophony step. Reject unauthorized fork authors before checkout,
-and use per-pull-request concurrency to cancel superseded Azure-backed reviews.
+every remote action in the generated workflow pinned to a full commit SHA,
+read-only permissions, base-commit prompt, no execution of head-controlled code,
+and the secret scoped only to the Cacophony step. Reject unauthorized fork
+authors before checkout, and use per-pull-request concurrency to cancel
+superseded Azure-backed reviews.
 
 An external repository does not need the `examples/reviewers` copy or Cacophony
 documentation tests unless its maintainers want a local catalog.
@@ -228,7 +231,8 @@ Also verify:
 
 - active and sample prompts are identical;
 - workflow filename, prompt slug, artifact name, and output path agree;
-- every remote action reference is a full commit SHA;
+- every remote action reference in each workflow created or modified by this
+  process is a full commit SHA;
 - the API key appears only in `secrets`, never variables or committed files;
 - existing reviewers run and their JSON artifacts contain completed structured
   results.

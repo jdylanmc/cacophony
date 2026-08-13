@@ -51,6 +51,12 @@ Per-pull-request concurrency cancels superseded runs.
 
 ## Quick start
 
+This quick start is the simple mode for pull requests whose branches are in the
+same repository. It intentionally fails fork pull requests. To review forks,
+use the trusted-base `pull_request_target` pattern in
+[`docs/creating-agents.md`](docs/creating-agents.md), including its author
+authorization and concurrency controls.
+
 1. In the target repository, open **Settings > Secrets and variables > Actions**.
 2. Create the secret `CACOPHONY_AZURE_API_KEY`.
 3. Create the repository variable `CACOPHONY_AZURE_ENDPOINT` with the Azure AI
@@ -406,11 +412,11 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    `.cacophony/out/`.
 9. Default to `pull_request` with an always-running job that explicitly fails
    fork pull requests before checkout or review. Use `pull_request_target` only
-   for the documented trusted-base pattern with every remote action pinned to a
-   full commit SHA, a base-commit prompt, read-only permissions, no execution of
-   head-controlled code, an authorization step that rejects untrusted fork
-   authors before checkout, per-pull-request concurrency, and the API key scoped
-   only to the Cacophony step.
+   for the documented trusted-base pattern with every remote action in the
+   generated workflow pinned to a full commit SHA, a base-commit prompt,
+   read-only permissions, no execution of head-controlled code, an authorization
+   step that rejects untrusted fork authors before checkout, per-pull-request
+   concurrency, and the API key scoped only to the Cacophony step.
 10. Validate the resulting YAML syntax and report this expected tree:
 
     ```text

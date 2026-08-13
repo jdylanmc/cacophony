@@ -14,7 +14,8 @@ Copy an established persona workflow and preserve:
 
 - trusted `pull_request_target` trigger;
 - `contents: read`;
-- every remote `uses:` dependency pinned to a reviewed full commit SHA;
+- every remote `uses:` dependency in the new workflow pinned to a reviewed full
+  commit SHA;
 - Checkout of the base repository's pull request merge ref for read-only
   inspection with persisted credentials disabled;
 - trust-boundary comment stating prompts load from `pull_request.base.sha`;

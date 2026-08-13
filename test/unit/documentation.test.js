@@ -67,6 +67,7 @@ test("README contains a deterministic agent installation contract", async () => 
     "Use `pull_request_target` only",
     "`pull_request_target` workflow that follows the documented trusted-base",
     "Both supported workflow modes load the prompt from the pull request's base",
+    "This quick start is the simple mode for pull requests whose branches are in the",
     "Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report",
   ]) {
     assert.match(readme, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -395,6 +396,7 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /consumer repository configuration contract/);
   assert.match(lifecycle, /canonical simple consumer workflow/);
   assert.match(lifecycle, /unauthorized fork authors/);
+  assert.match(lifecycle, /workflow this skill creates/);
   assert.doesNotMatch(
     lifecycle,
     /deployment identifiers belong in repository variables/,

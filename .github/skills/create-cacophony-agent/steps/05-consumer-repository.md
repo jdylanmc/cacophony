@@ -7,8 +7,9 @@ Create:
 .github/workflows/<slug>.yml
 ```
 
-Reference every remote action, including Cacophony, Checkout, and Upload
-Artifact, by a reviewed full commit SHA. Never copy Cacophony's `src/`.
+Reference every remote action in the workflow this skill creates, including
+Cacophony, Checkout, and Upload Artifact, by a reviewed full commit SHA. Never
+copy Cacophony's `src/`.
 
 Required repository settings:
 

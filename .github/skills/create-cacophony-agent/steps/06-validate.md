@@ -19,7 +19,8 @@ Verify:
 1. no prompt placeholders remain;
 2. prompt slug, workflow path, artifact name, and output path agree;
 3. active and sample prompts match in Cacophony mode;
-4. every remote `uses:` dependency uses a full commit SHA, never a mutable tag;
+4. every remote `uses:` dependency in each workflow created or modified by this
+   skill uses a full commit SHA, never a mutable tag;
 5. the persona workflow declares its selected deployment directly;
 6. no credential is committed or stored as a variable;
 7. workflow trust guards and comments remain intact;
