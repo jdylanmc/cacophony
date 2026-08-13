@@ -427,6 +427,7 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /workflow this skill creates/);
   assert.match(lifecycle, /shared reusable workflow/);
   assert.match(lifecycle, /three total attempts/);
+  assert.match(lifecycle, /Repository-wide audits[\s\S]*40-turn/);
   assert.match(
     lifecycle,
     /caller declares `azure-api-key: \$\{\{ secrets\.CACOPHONY_AZURE_API_KEY \}\}`/,
