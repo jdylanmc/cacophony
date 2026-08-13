@@ -25,7 +25,7 @@ inputs:
     description: Azure AI Foundry model deployment name.
     required: true
   max-turns:
-    description: Maximum model turns, from 1 through 20.
+    description: Maximum model turns, from 1 through 50.
     required: false
     default: "8"
   timeout-seconds:

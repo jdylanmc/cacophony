@@ -231,6 +231,7 @@ test("action metadata defines the retry and inconclusive contract", async () => 
   assert.match(metadata, /inconclusive means no reviewer decision completed, always fails closed/);
   assert.match(metadata, /review-scope:/);
   assert.match(metadata, /repository for a full checkout audit/);
+  assert.match(metadata, /Maximum model turns, from 1 through 50/);
 });
 
 test("repository audit workflow runs all canonical adversaries sequentially", async () => {
