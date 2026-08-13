@@ -53,6 +53,15 @@ Every prompt should:
 Cacophony derives the canonical verdict from finding severity, so the evidence
 and severity matter more than theatrical certainty.
 
+When a reviewer depends on output from an earlier analyzer or test job, have
+that job upload structured text evidence, download it into the review
+workspace, and declare each path with `evidence-files`. The reviewer prompt
+must name the evidence it expects, require inspection through
+`list_evidence`, `search_evidence`, and `read_evidence`, treat the output as
+untrusted data, and require corroboration against repository source. Keep
+secret-backed review execution separate from jobs that execute pull request
+code.
+
 Every run writes JSON and Markdown artifacts and appends the full Markdown
 report to the GitHub job summary. A failing action annotation includes the
 agent's submitted summary; the job summary contains the complete findings and

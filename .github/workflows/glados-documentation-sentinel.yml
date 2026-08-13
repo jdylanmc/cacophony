@@ -11,12 +11,77 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  unit-test-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authorize unit-test evidence collection
+        shell: bash
+        env:
+          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          BASE_REPOSITORY: ${{ github.repository }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [[ "$HEAD_REPOSITORY" == "$BASE_REPOSITORY" ]]; then
+            exit 0
+          fi
+
+          case "$AUTHOR_ASSOCIATION" in
+            OWNER|MEMBER|COLLABORATOR) ;;
+            *)
+              echo "::error::Fork test execution requires an owner, member, or collaborator author."
+              exit 1
+              ;;
+          esac
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Run verbose unit tests
+        shell: bash
+        run: |
+          mkdir -p .cacophony/evidence
+          set -o pipefail
+          set +e
+          node --test \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=junit \
+            --test-reporter-destination=.cacophony/evidence/unit-tests.junit.xml \
+            2>&1 | tee .cacophony/evidence/unit-tests.verbose.log
+          test_status=${PIPESTATUS[0]}
+          set -e
+          printf '{"exitCode":%s}\n' "$test_status" \
+            > .cacophony/evidence/unit-tests.status.json
+          if [[ "$test_status" -ne 0 ]]; then
+            echo "::warning::Unit tests failed; GLaDOS will inspect the complete report."
+          fi
+
+      - name: Upload unit-test evidence
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: cacophony-evidence-glados
+          path: .cacophony/evidence/
+          if-no-files-found: error
+
   documentation-review:
+    needs: unit-test-evidence
     uses: ./.github/workflows/cacophony-review.yml
     with:
       agent-slug: glados-documentation-sentinel
+      evidence-artifact: cacophony-evidence-glados
+      evidence-files: |
+        .cacophony/evidence/unit-tests.junit.xml
+        .cacophony/evidence/unit-tests.verbose.log
+        .cacophony/evidence/unit-tests.status.json
       deployment: gpt-5.4-mini
-      max-turns: 20
+      max-turns: 40
       timeout-seconds: 600
       rate-limit-retries: 2
       fail-on: high

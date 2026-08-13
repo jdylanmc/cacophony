@@ -18,6 +18,10 @@ inputs:
     description: Repository-relative checkout directory to inspect. Defaults to GITHUB_WORKSPACE.
     required: false
     default: "."
+  evidence-files:
+    description: Multiline list of workspace-relative structured evidence files produced by earlier workflow steps or jobs.
+    required: false
+    default: ""
   endpoint:
     description: Azure AI Foundry project or OpenAI-compatible endpoint.
     required: true

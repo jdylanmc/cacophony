@@ -112,7 +112,7 @@ event trigger.
 
          - name: Run correctness review
            id: review
-           uses: jdylanmc/cacophony@7f31d99597e908372592dec996720749b476889c
+           uses: jdylanmc/cacophony@2ab5ef5d3556d52ffddef891305ab1ddfe8b7412
            with:
              prompt-file: .cacophony/agents/reviewer.md
              endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
@@ -161,6 +161,35 @@ A prompt is the review lens, not a workflow script. It should describe:
 Cacophony adds trusted framework instructions requiring tool-based inspection,
 evidence, and a final structured `submit_report` call. Pull request text and
 repository content are explicitly treated as untrusted data.
+
+### Structured evidence from earlier jobs
+
+Earlier workflow steps or jobs can supply analyzer, test, or build output
+through the optional multiline `evidence-files` input. Each entry is a
+workspace-relative file that must already exist when Cacophony starts:
+
+```yaml
+with:
+  evidence-files: |
+    .cacophony/evidence/codeql.sarif
+    .cacophony/evidence/unit-tests.junit.xml
+```
+
+Cacophony inventories declared evidence in the initial reviewer context and
+adds bounded `list_evidence`, `search_evidence`, and chunked `read_evidence`
+tools. A file is limited to 10 MB, all declared evidence is limited to 20 MB,
+and at most 20 files may be declared. Evidence is read-only and treated as
+untrusted analyzer output; prompts should require findings to be corroborated
+against repository source and pull request changes.
+
+For evidence produced in another job, upload the files as an artifact, download
+them into the checked-out workspace, and pass their resulting paths to
+`evidence-files`. The trusted-base reusable workflow supports this with its
+optional `evidence-artifact` and `evidence-files` inputs. Gilfoyle demonstrates
+the pattern with CodeQL Static Analysis Results Interchange Format (SARIF)
+output, while GLaDOS consumes verbose and JUnit unit-test reports. Their
+producer jobs have no Azure secret; only the reusable review job receives the
+provider key.
 
 Both supported workflow modes load the prompt from the pull request's base
 commit, so a pull request cannot weaken its own review instructions and a newly
@@ -215,6 +244,7 @@ executes repository code.
 | `provider` | No | `azure-foundry` | Provider adapter. |
 | `review-scope` | No | `pull-request` | `pull-request` for event review or `repository` for a full checked-out repository audit. |
 | `workspace-directory` | No | `.` | Repository-relative checkout directory to inspect. |
+| `evidence-files` | No | | Multiline workspace-relative paths to structured evidence produced before the review. |
 | `max-turns` | No | `8` | Model turns, from 1 through 50. Pull request personas use 20; the full repository audit uses 40. |
 | `timeout-seconds` | No | `300` | Total deadline, including retry waits, from 30 through 1800 seconds. |
 | `rate-limit-retries` | No | `2` | Retries after the initial HTTP 429 request, from 0 through 10; `2` means three total attempts. |
@@ -340,7 +370,9 @@ findings shape with both `status` and `verdict` set to `error`.
 For pull request scope, the agent can use `get_pull_request`,
 `list_changed_files`, `get_diff`, `read_file`, `list_files`, and `search_text`.
 Repository scope exposes only `read_file`, `list_files`, and `search_text`.
-Neither scope can execute commands or write repository files.
+When evidence is declared, either scope also receives `list_evidence`,
+`search_evidence`, and `read_evidence`. Neither scope can execute commands or
+write repository files.
 
 ## Multiple agents
 
@@ -368,7 +400,7 @@ steps:
     with:
       fetch-depth: 0
   - id: review
-    uses: jdylanmc/cacophony@7f31d99597e908372592dec996720749b476889c
+    uses: jdylanmc/cacophony@2ab5ef5d3556d52ffddef891305ab1ddfe8b7412
     with:
       prompt-file: .cacophony/agents/${{ matrix.agent }}.md
       endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
@@ -496,7 +528,7 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    commit SHA, and
    `fetch-depth: 0`.
 5. Reference
-   `jdylanmc/cacophony@7f31d99597e908372592dec996720749b476889c`;
+   `jdylanmc/cacophony@2ab5ef5d3556d52ffddef891305ab1ddfe8b7412`;
    do not copy Cacophony source into the consumer repository.
 6. Use the repository variable `CACOPHONY_AZURE_ENDPOINT` and declare the
    reviewer's model deployment directly in its workflow.

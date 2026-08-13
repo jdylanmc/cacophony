@@ -56,7 +56,7 @@ test("README contains a deterministic agent installation contract", async () => 
   const readme = await fs.promises.readFile("README.md", "utf8");
   for (const required of [
     "## Instructions for Copilot or another coding agent",
-    "jdylanmc/cacophony@7f31d99597e908372592dec996720749b476889c",
+    "jdylanmc/cacophony@2ab5ef5d3556d52ffddef891305ab1ddfe8b7412",
     "CACOPHONY_AZURE_API_KEY",
     "CACOPHONY_AZURE_ENDPOINT",
     "deployment: gpt-5.4-mini",
@@ -70,6 +70,9 @@ test("README contains a deterministic agent installation contract", async () => 
     "This quick start is the simple mode for pull requests whose branches are in the",
     "\"status\": \"inconclusive\"",
     "Secret wiring by workflow mode",
+    "Structured evidence from earlier jobs",
+    "evidence-files",
+    "list_evidence",
     "Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report",
   ]) {
     assert.match(readme, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -101,6 +104,9 @@ test("reusable trusted-base workflow owns provider security policy", async () =>
   assert.match(shared, /uses: actions\/checkout@[a-f0-9]{40}/);
   assert.match(shared, /persist-credentials: false/);
   assert.match(shared, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(shared, /evidence-artifact:/);
+  assert.match(shared, /evidence-files:/);
+  assert.match(shared, /uses: actions\/download-artifact@[a-f0-9]{40}/);
   assert.match(shared, /prompt-file: \.cacophony\/agents\/\$\{\{ inputs\.agent-slug \}\}\.md/);
   assert.match(shared, /github\.event\.pull_request\.author_association/);
   assert.match(shared, /github\.event\.pull_request\.head\.repo\.full_name/);
@@ -123,9 +129,7 @@ test("reusable trusted-base workflow owns provider security policy", async () =>
 test("trusted-base persona workflows are narrow reusable callers", async () => {
   const callers = [
     ".github/workflows/hello-world.yml",
-    ".github/workflows/gilfoyle-security-architect.yml",
     ".github/workflows/solid-snake-architecture.yml",
-    ".github/workflows/glados-documentation-sentinel.yml",
   ];
 
   for (const file of callers) {
@@ -142,6 +146,41 @@ test("trusted-base persona workflows are narrow reusable callers", async () => {
     assert.doesNotMatch(workflow, /name: Authorize Azure-backed review/);
     assert.doesNotMatch(workflow, /jdylanmc\/cacophony@/);
   }
+});
+
+test("evidence-backed persona workflows isolate producers from provider secrets", async () => {
+  const gilfoyle = await fs.promises.readFile(
+    ".github/workflows/gilfoyle-security-architect.yml",
+    "utf8",
+  );
+  const glados = await fs.promises.readFile(
+    ".github/workflows/glados-documentation-sentinel.yml",
+    "utf8",
+  );
+
+  for (const workflow of [gilfoyle, glados]) {
+    assert.match(workflow, /pull_request_target:/);
+    assert.match(workflow, /OWNER\|MEMBER\|COLLABORATOR/);
+    assert.match(workflow, /persist-credentials: false/);
+    assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
+    assert.match(workflow, /evidence-artifact:/);
+    assert.match(workflow, /evidence-files:/);
+    assert.match(
+      workflow,
+      /azure-api-key: \$\{\{ secrets\.CACOPHONY_AZURE_API_KEY \}\}/,
+    );
+    const producer = workflow.slice(0, workflow.indexOf("uses: ./.github/workflows/cacophony-review.yml"));
+    assert.doesNotMatch(producer, /CACOPHONY_AZURE_API_KEY/);
+  }
+
+  assert.match(gilfoyle, /github\/codeql-action\/init@[a-f0-9]{40}/);
+  assert.match(gilfoyle, /github\/codeql-action\/analyze@[a-f0-9]{40}/);
+  assert.match(gilfoyle, /upload: never/);
+  assert.match(gilfoyle, /codeql\.sarif/);
+  assert.match(glados, /--test-reporter=spec/);
+  assert.match(glados, /--test-reporter=junit/);
+  assert.match(glados, /unit-tests\.verbose\.log/);
+  assert.match(glados, /unit-tests\.status\.json/);
 });
 
 test("workflow discovery includes new nested workflow filenames", async () => {
@@ -231,6 +270,8 @@ test("action metadata defines the retry and inconclusive contract", async () => 
   assert.match(metadata, /inconclusive means no reviewer decision completed, always fails closed/);
   assert.match(metadata, /review-scope:/);
   assert.match(metadata, /repository for a full checkout audit/);
+  assert.match(metadata, /evidence-files:/);
+  assert.match(metadata, /structured evidence files/);
   assert.match(metadata, /Maximum model turns, from 1 through 50/);
 });
 
@@ -289,6 +330,8 @@ test("Gilfoyle canonical prompt configures the security reviewer", async () => {
 
   assert.match(activePrompt, /\[BLOCK: SECURITY\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
+  assert.match(activePrompt, /CodeQL Static Analysis Results Interchange Format/);
+  assert.match(activePrompt, /untrusted supporting evidence/);
   assert.match(workflow, /pull_request_target:/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: gilfoyle-security-architect/);
@@ -297,6 +340,8 @@ test("Gilfoyle canonical prompt configures the security reviewer", async () => {
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /cancel-in-progress: true/);
+  assert.match(workflow, /codeql-evidence:/);
+  assert.match(workflow, /evidence-artifact: cacophony-evidence-gilfoyle/);
 });
 
 test("Solid Snake canonical prompt configures its architecture reviewer", async () => {
@@ -353,6 +398,8 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   assert.match(activePrompt, /first quote already states the distinction/);
   assert.match(activePrompt, /Do not submit "ambiguous," "easy to misread,"/);
   assert.match(activePrompt, /guard that rejects a documented unsupported mode confirms/);
+  assert.match(activePrompt, /verbose test log, JUnit XML/);
+  assert.match(activePrompt, /breaks an existing unit\s+test/);
   assert.match(activePrompt, /Do not infer GitHub Actions, provider, or platform behavior/);
   assert.match(workflow, /pull_request_target:/);
   assert.match(workflow, /cancel-in-progress: true/);
@@ -362,8 +409,10 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
     workflow,
     /deployment: gpt-5\.4-mini/,
   );
-  assert.match(workflow, /max-turns: 20/);
+  assert.match(workflow, /max-turns: 40/);
   assert.match(workflow, /rate-limit-retries: 2/);
+  assert.match(workflow, /unit-test-evidence:/);
+  assert.match(workflow, /evidence-artifact: cacophony-evidence-glados/);
 });
 
 test("agent creation guide and shared skill capture the stacked workflow", async () => {
