@@ -165,3 +165,30 @@ test("GLaDOS sample matches its independent documentation reviewer", async () =>
   assert.match(workflow, /max-turns: 16/);
   assert.match(workflow, /name: cacophony-glados-documentation-sentinel/);
 });
+
+test("agent creation guide and shared skill capture the stacked workflow", async () => {
+  const guide = await fs.promises.readFile("docs/creating-agents.md", "utf8");
+  const skill = await fs.promises.readFile(
+    ".github/skills/create-cacophony-agent/SKILL.md",
+    "utf8",
+  );
+
+  assert.match(skill, /^---\n/);
+  assert.match(skill, /name: create-cacophony-agent/);
+  assert.match(skill, /Cacophony repository mode/);
+  assert.match(skill, /Consumer repository mode/);
+  assert.match(skill, /Never merge automatically/);
+  assert.match(
+    skill,
+    /<!-- 🤖 This skill was created using the create-skill AI skill\. https:\/\/github\.com\/gaming-microsoft\/ai-skills -->\n$/,
+  );
+
+  for (const content of [guide, skill]) {
+    assert.match(content, /\.cacophony\/agents\/<slug>\.md/);
+    assert.match(content, /examples\/reviewers\/<slug>\.md/);
+    assert.match(content, /pull_request_target/);
+    assert.match(content, /max-turns: 16/);
+    assert.match(content, /CACOPHONY_AZURE_API_KEY/);
+    assert.match(content, /one (?:persona|reviewer) per/i);
+  }
+});

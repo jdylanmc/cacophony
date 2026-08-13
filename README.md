@@ -244,6 +244,12 @@ steps:
 
 ## Sample reviewers
 
+See [Creating Cacophony agents](docs/creating-agents.md) for the complete
+prompt, workflow, validation, and stacked-rollout process. The repository-shared
+[`create-cacophony-agent` skill](.github/skills/create-cacophony-agent/SKILL.md)
+walks Copilot through either adding a sample persona here or installing a
+reviewer in another repository.
+
 ### Gilfoyle the Security Architect
 
 [`examples/reviewers/gilfoyle-security-architect.md`](examples/reviewers/gilfoyle-security-architect.md)
@@ -286,8 +292,11 @@ on subsequent pull requests and upload separate artifacts.
 
 ## Security
 
-- Use `pull_request`, not `pull_request_target`, when checking out and reviewing
-  pull request code with an API key.
+- Use `pull_request` with a same-repository guard for the simple consumer
+  pattern. A `pull_request_target` workflow is acceptable only when the workflow
+  comes from trusted base history, the action is pinned, the prompt comes from
+  the base commit, permissions are read-only, and no head-controlled code is
+  executed.
 - Repository secrets are unavailable to workflows from forks. The quick-start
   workflow explicitly skips those pull requests rather than silently passing.
 - Cacophony rejects absolute paths, traversal, `.git` access, and symlinks that
