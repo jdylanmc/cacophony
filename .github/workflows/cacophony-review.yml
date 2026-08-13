@@ -25,6 +25,21 @@ on:
         required: false
         type: string
         default: high
+      event-name:
+        required: true
+        type: string
+      pull-request-number:
+        required: true
+        type: number
+      base-sha:
+        required: true
+        type: string
+      head-repository:
+        required: true
+        type: string
+      author-association:
+        required: true
+        type: string
     secrets:
       azure-api-key:
         required: true
@@ -41,10 +56,10 @@ jobs:
       - name: Authorize Azure-backed review
         shell: bash
         env:
-          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          AUTHOR_ASSOCIATION: ${{ inputs.author-association }}
           BASE_REPOSITORY: ${{ github.repository }}
-          EVENT_NAME: ${{ github.event_name }}
-          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          EVENT_NAME: ${{ inputs.event-name }}
+          HEAD_REPOSITORY: ${{ inputs.head-repository }}
         run: |
           if [[ "$EVENT_NAME" != "pull_request_target" ]]; then
             echo "::error::Trusted Cacophony reviews require a pull_request_target caller."
@@ -67,7 +82,7 @@ jobs:
         with:
           # The caller and this workflow are trusted. PR content is inspected
           # only; Cacophony loads prompt-file from the base commit via git show.
-          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          ref: refs/pull/${{ inputs.pull-request-number }}/merge
           fetch-depth: 0
           persist-credentials: false
 
@@ -76,7 +91,7 @@ jobs:
         shell: bash
         env:
           AGENT_SLUG: ${{ inputs.agent-slug }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ inputs.base-sha }}
         run: |
           if git cat-file -e "$BASE_SHA:.cacophony/agents/$AGENT_SLUG.md"; then
             echo "ready=true" >> "$GITHUB_OUTPUT"

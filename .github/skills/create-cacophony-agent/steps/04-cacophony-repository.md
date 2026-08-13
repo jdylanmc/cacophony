@@ -25,6 +25,8 @@ The caller preserves:
 - `rate-limit-retries: 2`, meaning two retries after the initial request, for
   three total attempts;
 - API key passed only through the reusable workflow's declared secret;
+- event name, pull-request number, base SHA, head repository, and author
+  association passed as explicit reusable-workflow inputs;
 - per-pull-request concurrency with superseded runs canceled;
 - one narrow agent slug plus its review settings.
 
