@@ -256,6 +256,29 @@ The agent proposes a verdict, but Cacophony derives the canonical report
 verdict from validated findings: no findings is `pass`, low or medium findings
 is `warn`, and high or critical findings is `fail`.
 
+Terminal non-review reports use the same envelope with no findings. An
+exhausted provider retry budget produces:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "status": "inconclusive",
+  "execution": {
+    "turns": 0,
+    "toolCalls": 0
+  },
+  "verdict": "inconclusive",
+  "maxSeverity": "none",
+  "summary": "Azure AI Foundry rate limit exceeded (429); review is inconclusive",
+  "findings": []
+}
+```
+
+No reviewer decision exists in that report. It always fails closed and should
+be retried when quota is available. Framework failures use the same empty
+findings shape with both `status` and `verdict` set to `error`; they are not
+completed-review verdicts.
+
 The agent can use `get_pull_request`, `list_changed_files`, `get_diff`,
 `read_file`, `list_files`, and `search_text`. It cannot execute commands or
 write repository files.
