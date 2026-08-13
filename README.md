@@ -112,7 +112,7 @@ event trigger.
 
          - name: Run correctness review
            id: review
-           uses: jdylanmc/cacophony@410a839794a585f234e43e444881c09533425bcb
+           uses: jdylanmc/cacophony@2ab5ef5d3556d52ffddef891305ab1ddfe8b7412
            with:
              prompt-file: .cacophony/agents/reviewer.md
              endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
@@ -400,7 +400,7 @@ steps:
     with:
       fetch-depth: 0
   - id: review
-    uses: jdylanmc/cacophony@410a839794a585f234e43e444881c09533425bcb
+    uses: jdylanmc/cacophony@2ab5ef5d3556d52ffddef891305ab1ddfe8b7412
     with:
       prompt-file: .cacophony/agents/${{ matrix.agent }}.md
       endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
@@ -528,7 +528,7 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    commit SHA, and
    `fetch-depth: 0`.
 5. Reference
-   `jdylanmc/cacophony@410a839794a585f234e43e444881c09533425bcb`;
+   `jdylanmc/cacophony@2ab5ef5d3556d52ffddef891305ab1ddfe8b7412`;
    do not copy Cacophony source into the consumer repository.
 6. Use the repository variable `CACOPHONY_AZURE_ENDPOINT` and declare the
    reviewer's model deployment directly in its workflow.

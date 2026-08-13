@@ -110,7 +110,7 @@ jobs:
       - name: Run Cacophony review
         id: review
         if: steps.prompt.outputs.ready == 'true'
-        uses: jdylanmc/cacophony@410a839794a585f234e43e444881c09533425bcb
+        uses: jdylanmc/cacophony@2ab5ef5d3556d52ffddef891305ab1ddfe8b7412
         with:
           prompt-file: .cacophony/agents/${{ inputs.agent-slug }}.md
           evidence-files: ${{ inputs.evidence-files }}

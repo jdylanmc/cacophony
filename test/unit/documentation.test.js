@@ -56,7 +56,7 @@ test("README contains a deterministic agent installation contract", async () => 
   const readme = await fs.promises.readFile("README.md", "utf8");
   for (const required of [
     "## Instructions for Copilot or another coding agent",
-    "jdylanmc/cacophony@410a839794a585f234e43e444881c09533425bcb",
+    "jdylanmc/cacophony@2ab5ef5d3556d52ffddef891305ab1ddfe8b7412",
     "CACOPHONY_AZURE_API_KEY",
     "CACOPHONY_AZURE_ENDPOINT",
     "deployment: gpt-5.4-mini",
