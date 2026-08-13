@@ -257,6 +257,18 @@ trusted-base pattern as the Hello World check: the workflow, prompt, and pinned
 Cacophony implementation are trusted while pull request content is checked out
 only for read-only inspection.
 
+### Solid Snake, SOLID Architecture Operative
+
+[`examples/reviewers/solid-snake-architecture.md`](examples/reviewers/solid-snake-architecture.md)
+reviews Single Responsibility Principle (SRP), dependency boundaries,
+interface segregation, and open/closed extension points without demanding
+abstractions for their own sake. Findings use `[BLOCK: ARCHITECTURE]` and
+numbered code-comms extraction steps; clean changes use `[APPROVED]`.
+
+`.github/workflows/solid-snake-architecture.yml` runs independently from
+Gilfoyle on the same pull request event, so GitHub schedules both reviews in
+parallel and uploads separate artifacts.
+
 ## Security
 
 - Use `pull_request`, not `pull_request_target`, when checking out and reviewing
