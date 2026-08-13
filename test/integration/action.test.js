@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -165,6 +166,7 @@ test("action audits a complete repository without pull request context", async (
     env: {
       ...process.env,
       GITHUB_WORKSPACE: path.dirname(fixture.workspace),
+      GITHUB_ACTION_PATH: fixture.workspace,
       GITHUB_OUTPUT: outputFile,
       GITHUB_REPOSITORY: "example/repository",
       GITHUB_SHA: fixture.headSha,
@@ -196,6 +198,59 @@ test("action audits a complete repository without pull request context", async (
   assert.equal(report.pullRequest, null);
   assert.equal(report.repository.sha, fixture.headSha);
   assert.equal(report.summary, "[APPROVED]");
+});
+
+test("action rejects a workspace symlink that escapes GITHUB_WORKSPACE", async (t) => {
+  const fixture = await createPullRequestFixture();
+  const workspaceRoot = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), "cacophony-workspace-"),
+  );
+  t.after(async () => {
+    await removeFixture(fixture);
+    await fs.promises.rm(workspaceRoot, { recursive: true, force: true });
+  });
+  await fs.promises.symlink(
+    fixture.workspace,
+    path.join(workspaceRoot, "audit-target"),
+  );
+  const outputFile = path.join(workspaceRoot, "github-output.txt");
+  await fs.promises.writeFile(outputFile, "");
+
+  await assert.rejects(
+    () =>
+      execFileAsync(process.execPath, [actionEntry], {
+        cwd: workspaceRoot,
+        env: {
+          ...process.env,
+          GITHUB_WORKSPACE: workspaceRoot,
+          GITHUB_ACTION_PATH: fixture.workspace,
+          GITHUB_OUTPUT: outputFile,
+          CACOPHONY_AZURE_API_KEY: "canary-secret",
+          "INPUT_PROMPT-FILE": ".cacophony/agents/reviewer.md",
+          "INPUT_REVIEW-SCOPE": "repository",
+          "INPUT_WORKSPACE-DIRECTORY": "audit-target",
+          INPUT_ENDPOINT: "https://example.invalid",
+          INPUT_DEPLOYMENT: "review-model",
+        },
+        encoding: "utf8",
+      }),
+    (error) => error.code === 1,
+  );
+
+  const report = JSON.parse(
+    await fs.promises.readFile(
+      path.join(
+        workspaceRoot,
+        ".cacophony",
+        "out",
+        "reviewer",
+        "report.json",
+      ),
+      "utf8",
+    ),
+  );
+  assert.equal(report.status, "error");
+  assert.match(report.summary, /cannot leave GITHUB_WORKSPACE/);
 });
 
 test("action writes an error report when authentication is missing", async (t) => {

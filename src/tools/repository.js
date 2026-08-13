@@ -237,29 +237,31 @@ export const TOOL_DEFINITIONS = [
   },
 ];
 
-export async function createRepositoryTools({ workspace, target }) {
+export async function createRepositoryTools({ workspace, toolScope }) {
   const root = await fs.promises.realpath(workspace);
-  const { context } = target;
-  const pullRequest = target.reportTarget.pullRequest;
+  const { pullRequest, expectedRepositorySha } = toolScope;
   const baseSha = pullRequest?.baseSha;
   const headSha = pullRequest?.headSha;
   if (pullRequest) {
     assertSha(baseSha, "pull_request.base.sha");
     assertSha(headSha, "pull_request.head.sha");
   } else {
-    assertSha(target.reportTarget.repository?.sha, "repository.sha");
+    assertSha(expectedRepositorySha, "repository.sha");
     const checkedOut = await git(root, ["rev-parse", "HEAD"], 100);
-    if (checkedOut.content.trim() !== target.reportTarget.repository.sha) {
+    if (checkedOut.content.trim() !== expectedRepositorySha) {
       throw new Error("repository audit checkout does not match GITHUB_SHA");
     }
   }
 
   return {
     definitions: TOOL_DEFINITIONS.filter((tool) =>
-      target.allowedToolNames.includes(tool.name),
+      toolScope.allowedNames.includes(tool.name),
     ),
 
     async execute(name, args = {}) {
+      if (!toolScope.allowedNames.includes(name)) {
+        throw new Error(`Tool is unavailable for this review target: ${name}`);
+      }
       switch (name) {
         case "get_pull_request":
           if (!pullRequest) {
@@ -406,4 +408,21 @@ export async function readPrompt(workspace, promptFile, trustedSha) {
     throw new Error(`Prompt must be no larger than ${MAX_FILE_BYTES} bytes`);
   }
   return result.content;
+}
+
+export async function readActionPrompt(actionPath, promptFile) {
+  const root = await fs.promises.realpath(actionPath);
+  const file = await ensureInside(root, promptFile);
+  const stat = await fs.promises.stat(file);
+  if (!stat.isFile()) {
+    throw new Error("prompt-file is not a file");
+  }
+  if (stat.size > MAX_FILE_BYTES) {
+    throw new Error(`Prompt must be no larger than ${MAX_FILE_BYTES} bytes`);
+  }
+  const content = await fs.promises.readFile(file, "utf8");
+  if (content.includes("\0")) {
+    throw new Error("prompt-file must be text");
+  }
+  return content;
 }

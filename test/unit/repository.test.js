@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 
 import {
   createRepositoryTools,
+  readActionPrompt,
   readPrompt,
 } from "../../src/tools/repository.js";
 import { createReviewTarget } from "../../src/scopes/review-target.js";
@@ -24,7 +25,7 @@ test("repository tools inspect the pull request without shell access", async (t)
   });
   const tools = await createRepositoryTools({
     workspace: fixture.workspace,
-    target,
+    toolScope: target.toolScope,
   });
 
   const changed = await tools.execute("list_changed_files");
@@ -48,7 +49,10 @@ test("repository tools inspect the pull request without shell access", async (t)
     () => tools.execute("read_file", { path: "../outside.txt" }),
     /cannot leave/,
   );
-  await assert.rejects(() => tools.execute("run_shell", {}), /Unknown tool/);
+  await assert.rejects(
+    () => tools.execute("run_shell", {}),
+    /unavailable for this review target/,
+  );
 });
 
 test("repository audit tools expose the full tree without pull request tools", async (t) => {
@@ -65,7 +69,7 @@ test("repository audit tools expose the full tree without pull request tools", a
   });
   const tools = await createRepositoryTools({
     workspace: fixture.workspace,
-    target,
+    toolScope: target.toolScope,
   });
 
   assert.deepEqual(
@@ -82,7 +86,12 @@ test("repository audit tools expose the full tree without pull request tools", a
   assert.match(file.content, /return a - b/);
   await assert.rejects(
     () => tools.execute("get_diff"),
-    /unavailable for repository audits/,
+    /unavailable for this review target/,
+  );
+  target.reportTarget.pullRequest = { number: 99 };
+  await assert.rejects(
+    () => tools.execute("get_diff"),
+    /unavailable for this review target/,
   );
 });
 
@@ -102,7 +111,7 @@ test("repository audit tools reject a checkout that does not match its target", 
     () =>
       createRepositoryTools({
         workspace: fixture.workspace,
-        target,
+        toolScope: target.toolScope,
       }),
     /checkout does not match GITHUB_SHA/,
   );
@@ -127,7 +136,7 @@ test("repository tools reject symlinks that escape the workspace", async (t) => 
   });
   const tools = await createRepositoryTools({
     workspace: fixture.workspace,
-    target,
+    toolScope: target.toolScope,
   });
   await assert.rejects(
     () => tools.execute("read_file", { path: "escape.txt" }),
@@ -151,6 +160,35 @@ test("readPrompt loads only repository-contained prompts", async (t) => {
   assert.doesNotMatch(prompt, /always pass/);
 });
 
+test("readActionPrompt loads the prompt from the pinned action directory", async (t) => {
+  const fixture = await createPullRequestFixture();
+  const actionPath = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), "cacophony-action-"),
+  );
+  t.after(async () => {
+    await removeFixture(fixture);
+    await fs.promises.rm(actionPath, { recursive: true, force: true });
+  });
+  await fs.promises.mkdir(path.join(actionPath, ".cacophony", "agents"), {
+    recursive: true,
+  });
+  await fs.promises.writeFile(
+    path.join(actionPath, ".cacophony", "agents", "reviewer.md"),
+    "Trusted bundled reviewer prompt.\n",
+  );
+  await fs.promises.writeFile(
+    path.join(fixture.workspace, ".cacophony", "agents", "reviewer.md"),
+    "Audited checkout prompt.\n",
+  );
+
+  const prompt = await readActionPrompt(
+    actionPath,
+    ".cacophony/agents/reviewer.md",
+  );
+  assert.match(prompt, /Trusted bundled reviewer prompt/);
+  assert.doesNotMatch(prompt, /Audited checkout prompt/);
+});
+
 test("pull request diff excludes changes made only on the advanced base", async (t) => {
   const fixture = await createPullRequestFixture();
   t.after(() => removeFixture(fixture));
@@ -171,7 +209,7 @@ test("pull request diff excludes changes made only on the advanced base", async 
   target.reportTarget.pullRequest.baseSha = stdout.trim();
   const tools = await createRepositoryTools({
     workspace: fixture.workspace,
-    target,
+    toolScope: target.toolScope,
   });
   const changed = await tools.execute("list_changed_files");
   assert.match(changed.content, /app\.js/);

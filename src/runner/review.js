@@ -1,5 +1,9 @@
 import { createCompletedReport, validateSubmission } from "../reports/report.js";
-import { createRepositoryTools, readPrompt } from "../tools/repository.js";
+import {
+  createRepositoryTools,
+  readActionPrompt,
+  readPrompt,
+} from "../tools/repository.js";
 
 const MAX_TOOL_CALLS_PER_TURN = 8;
 
@@ -46,20 +50,27 @@ export async function runReview({
   config,
   target,
   workspace,
+  actionPath,
   provider,
   signal,
   startedAt,
 }) {
-  const prompt = await readPrompt(
-    workspace,
-    config.promptFile,
-    target.trustedPromptSha,
-  );
+  const prompt =
+    target.promptSource.kind === "action"
+      ? await readActionPrompt(actionPath, config.promptFile)
+      : await readPrompt(
+          workspace,
+          config.promptFile,
+          target.promptSource.sha,
+        );
   if (!prompt.trim()) {
     throw new Error("prompt-file cannot be empty");
   }
 
-  const tools = await createRepositoryTools({ workspace, target });
+  const tools = await createRepositoryTools({
+    workspace,
+    toolScope: target.toolScope,
+  });
   let input = await target.buildInitialInput(tools);
   let previousResponseId;
   let toolCalls = 0;

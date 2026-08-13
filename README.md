@@ -183,12 +183,14 @@ adversaries sequentially to reduce provider throttling:
 3. GLaDOS with `gpt-5.4-mini`.
 
 The workflow accepts only the default branch, checks it out as audit data, and
-runs an independently pinned Cacophony action implementation. The Azure key is
-never exposed to code from the commit under audit. Each reviewer receives only
-full-repository read and search tools. Any finding severity fails its matrix
-job, while `fail-fast: false` ensures all three reports are uploaded as separate
-artifacts. Run it from the Actions tab with **Run workflow**, or call it from
-another workflow in this repository:
+runs an independently pinned Cacophony action implementation. Reviewer prompts
+come from that pinned action revision, not from the audited checkout. The Azure
+key is never exposed to code from the commit under audit. Each reviewer receives
+read and search tools for working-tree source files; Git metadata and generated
+dependency directories such as `node_modules` are excluded. Any finding
+severity fails its matrix job, while `fail-fast: false` ensures all three
+reports are uploaded as separate artifacts. Run it from the Actions tab with
+**Run workflow**, or call it from another workflow in this repository:
 
 ```yaml
 jobs:

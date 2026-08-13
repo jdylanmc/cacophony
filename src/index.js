@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 
 import {
@@ -34,21 +35,30 @@ function sanitize(message, secrets) {
 
 async function main() {
   const startedAt = new Date().toISOString();
-  const workspaceRoot = path.resolve(
-    process.env.GITHUB_WORKSPACE || process.cwd(),
+  const workspaceRoot = await fs.promises.realpath(
+    path.resolve(process.env.GITHUB_WORKSPACE || process.cwd()),
+  );
+  const actionPath = await fs.promises.realpath(
+    path.resolve(process.env.GITHUB_ACTION_PATH || workspaceRoot),
   );
   const apiKey = process.env.CACOPHONY_AZURE_API_KEY || "";
   let config;
   let target;
   let report;
+  let workspace = workspaceRoot;
 
   try {
     config = readInputs();
-    const workspace = path.resolve(workspaceRoot, config.workspaceDirectory);
+    const candidate = path.resolve(workspaceRoot, config.workspaceDirectory);
+    const resolvedWorkspace = await fs.promises.realpath(candidate);
     const workspacePrefix = `${workspaceRoot}${path.sep}`;
-    if (workspace !== workspaceRoot && !workspace.startsWith(workspacePrefix)) {
+    if (
+      resolvedWorkspace !== workspaceRoot &&
+      !resolvedWorkspace.startsWith(workspacePrefix)
+    ) {
       throw new Error("workspace-directory cannot leave GITHUB_WORKSPACE");
     }
+    workspace = resolvedWorkspace;
     target = await createReviewTarget({
       reviewScope: config.reviewScope,
       eventPath: process.env.GITHUB_EVENT_PATH,
@@ -69,6 +79,7 @@ async function main() {
         config,
         target,
         workspace,
+        actionPath,
         provider,
         signal: controller.signal,
         startedAt,
@@ -101,10 +112,6 @@ async function main() {
           });
   }
 
-  const workspace = path.resolve(
-    workspaceRoot,
-    config?.workspaceDirectory ?? ".",
-  );
   const outputDirectory = config?.outputDirectory ?? ".cacophony/out";
   const paths = await writeReports(report, workspace, outputDirectory);
   await appendStepSummary(renderMarkdown(report));

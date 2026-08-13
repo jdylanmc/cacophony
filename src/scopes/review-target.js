@@ -14,8 +14,15 @@ function pullRequestTarget(context) {
   return {
     kind: "pull-request",
     context,
-    trustedPromptSha: pullRequest.baseSha,
-    allowedToolNames: PULL_REQUEST_TOOLS,
+    toolScope: {
+      allowedNames: PULL_REQUEST_TOOLS,
+      pullRequest,
+      expectedRepositorySha: null,
+    },
+    promptSource: {
+      kind: "git",
+      sha: pullRequest.baseSha,
+    },
     scopeInstructions: "Use the supplied read-only tools to inspect the pull request.",
     reportTarget: {
       pullRequest,
@@ -47,10 +54,17 @@ function repositoryTarget(context) {
   return {
     kind: "repository",
     context,
-    trustedPromptSha: repository.sha,
-    allowedToolNames: FILE_TOOLS,
+    toolScope: {
+      allowedNames: FILE_TOOLS,
+      pullRequest: null,
+      expectedRepositorySha: repository.sha,
+    },
+    promptSource: {
+      kind: "action",
+    },
     scopeInstructions: `Perform a repository-wide audit. There is no pull request or changed-file list.
-Systematically inspect the full repository using list_files, search_text, and read_file.
+Systematically inspect working-tree source files using list_files, search_text, and read_file.
+Git metadata and generated dependency directories such as node_modules are excluded.
 Interpret review-lens references to a pull request or diff as instructions to inspect
 the corresponding behavior across the entire repository.`,
     reportTarget: {

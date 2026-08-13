@@ -27,17 +27,21 @@ test("review targets provide one complete scope contract", async (t) => {
 
   for (const target of [pullRequest, repository]) {
     assert.match(target.kind, /^(pull-request|repository)$/);
-    assert.match(target.trustedPromptSha, /^[a-f0-9]{40}$/);
-    assert.ok(target.allowedToolNames.includes("read_file"));
-    assert.ok(target.allowedToolNames.includes("submit_report"));
+    assert.ok(["git", "action"].includes(target.promptSource.kind));
+    assert.ok(target.toolScope.allowedNames.includes("read_file"));
+    assert.ok(target.toolScope.allowedNames.includes("submit_report"));
     assert.equal(typeof target.scopeInstructions, "string");
     assert.equal(typeof target.buildInitialInput, "function");
     assert.ok(target.reportTarget);
   }
 
-  assert.ok(pullRequest.allowedToolNames.includes("get_diff"));
+  assert.match(pullRequest.promptSource.sha, /^[a-f0-9]{40}$/);
+  assert.ok(pullRequest.toolScope.allowedNames.includes("get_diff"));
+  assert.equal(pullRequest.toolScope.pullRequest.number, 7);
   assert.equal(pullRequest.reportTarget.repository, null);
-  assert.equal(repository.allowedToolNames.includes("get_diff"), false);
+  assert.equal(repository.promptSource.kind, "action");
+  assert.equal(repository.toolScope.allowedNames.includes("get_diff"), false);
+  assert.match(repository.toolScope.expectedRepositorySha, /^[a-f0-9]{40}$/);
   assert.equal(repository.reportTarget.pullRequest, null);
 });
 
