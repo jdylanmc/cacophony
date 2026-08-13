@@ -87,11 +87,12 @@ never executes that content.
 
          - name: Run correctness review
            id: review
-           uses: jdylanmc/cacophony@0fa7da77031642d753e6af21d5e1265585a67d37
+           uses: jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2
            with:
              prompt-file: .cacophony/agents/reviewer.md
              endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
              deployment: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+             rate-limit-retries: 2
              fail-on: high
            env:
              CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
@@ -240,11 +241,12 @@ steps:
     with:
       fetch-depth: 0
   - id: review
-    uses: jdylanmc/cacophony@0fa7da77031642d753e6af21d5e1265585a67d37
+    uses: jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2
     with:
       prompt-file: .cacophony/agents/${{ matrix.agent }}.md
       endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
       deployment: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+      rate-limit-retries: 2
     env:
       CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
   - if: always()
@@ -351,7 +353,7 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    commit SHA, and
    `fetch-depth: 0`.
 5. Reference
-   `jdylanmc/cacophony@0fa7da77031642d753e6af21d5e1265585a67d37`;
+   `jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2`;
    do not copy Cacophony source into the consumer repository.
 6. Use repository variables named `CACOPHONY_AZURE_ENDPOINT` and
    `CACOPHONY_AZURE_DEPLOYMENT`.

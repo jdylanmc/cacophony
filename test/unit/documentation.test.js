@@ -56,7 +56,7 @@ test("README contains a deterministic agent installation contract", async () => 
   const readme = await fs.promises.readFile("README.md", "utf8");
   for (const required of [
     "## Instructions for Copilot or another coding agent",
-    "jdylanmc/cacophony@0fa7da77031642d753e6af21d5e1265585a67d37",
+    "jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2",
     "CACOPHONY_AZURE_API_KEY",
     "CACOPHONY_AZURE_ENDPOINT",
     "CACOPHONY_AZURE_DEPLOYMENT",
@@ -162,6 +162,7 @@ test("Hello World dogfood runs a model-generated joke prompt", async () => {
   assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
   assert.match(workflow, /prompt-file: \.cacophony\/agents\/hello-world\.md/);
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /name: cacophony-hello-world/);
 });
 
@@ -189,6 +190,7 @@ test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
   );
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /name: cacophony-gilfoyle-security-architect/);
 });
@@ -235,6 +237,7 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
   );
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /name: cacophony-solid-snake-architecture/);
   assert.match(
@@ -271,6 +274,7 @@ test("GLaDOS sample matches its independent documentation reviewer", async () =>
     /prompt-file: \.cacophony\/agents\/glados-documentation-sentinel\.md/,
   );
   assert.match(workflow, /max-turns: 16/);
+  assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /name: cacophony-glados-documentation-sentinel/);
 });
 

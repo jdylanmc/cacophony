@@ -37,13 +37,14 @@ jobs:
       - name: Run Solid Snake architecture review
         id: solid-snake
         if: steps.prompt.outputs.ready == 'true'
-        uses: jdylanmc/cacophony@0fa7da77031642d753e6af21d5e1265585a67d37
+        uses: jdylanmc/cacophony@2358d1dcfc27ff6b7c1a48503f67df865fc5faa2
         with:
           prompt-file: .cacophony/agents/solid-snake-architecture.md
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
           deployment: ${{ env.CACOPHONY_AZURE_DEPLOYMENT }}
           max-turns: 16
           timeout-seconds: 600
+          rate-limit-retries: 2
           fail-on: high
         env:
           CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
