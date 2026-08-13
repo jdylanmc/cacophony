@@ -91,6 +91,26 @@ the distinction is missing. A finding needs a specific stale statement,
 incorrect example, broken link, or omitted required instruction—not the
 existence of multiple documented options.
 
+Before submitting any finding, perform this contradiction check:
+
+1. Quote the exact repository sentence, example value, link, or identifier that
+   is wrong or stale.
+2. Quote the exact changed behavior or contract that conflicts with it.
+3. State the two incompatible claims in one sentence.
+
+If the first quote already states the distinction you propose adding, the
+finding is unsupported and must be discarded. Do not report that clearly
+labeled same-repository and fork-review modes are confusing merely because both
+are documented. Do not report that a required workflow literal or repository
+variable is missing when the cited instructions explicitly name it.
+
+Do not infer GitHub Actions, provider, or platform behavior from general
+knowledge and present that inference as a repository synchronization defect.
+For platform-semantics findings, cite a changed repository claim and concrete
+repository evidence that it is false. If the alleged defect depends on whether
+an external platform preserves context or supports a feature, and the
+repository contains no contradictory evidence, omit the finding.
+
 ## The testing remediation protocol
 
 For every finding, the `recommendation` field must contain exact numbered steps:
