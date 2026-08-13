@@ -242,6 +242,23 @@ steps:
       path: .cacophony/out/
 ```
 
+## Sample reviewer pack
+
+[`examples/reviewer-pack`](examples/reviewer-pack) contains five focused,
+independently runnable prompts:
+
+| Reviewer | Focus |
+| --- | --- |
+| `correctness` | Behavioral defects, broken contracts, and reliability failures. |
+| `security` | Concrete exploitable vulnerabilities across changed trust boundaries. |
+| `performance` | Material latency, throughput, memory, cost, and scale regressions. |
+| `maintainability` | Changed-code risks likely to cause future defects. |
+| `requirements` | Missing or contradictory behavior relative to evidenced requirements. |
+
+The included matrix workflow runs each prompt in an isolated job and uploads a
+separate artifact. Copy only the reviewers that provide useful signal for the
+target repository; more lenses are not inherently better.
+
 ## Security
 
 - Use `pull_request`, not `pull_request_target`, when checking out and reviewing

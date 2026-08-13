@@ -1,0 +1,44 @@
+name: Cacophony reviewer pack
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        agent:
+          - correctness
+          - security
+          - performance
+          - maintainability
+          - requirements
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Run ${{ matrix.agent }} review
+        id: review
+        uses: jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503
+        with:
+          prompt-file: .cacophony/agents/${{ matrix.agent }}.md
+          endpoint: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
+          deployment: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+          fail-on: high
+        env:
+          CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
+
+      - name: Upload ${{ matrix.agent }} report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: cacophony-${{ matrix.agent }}
+          path: .cacophony/out/
