@@ -18,9 +18,10 @@ Required repository settings:
 Hardcode the selected Azure deployment name in this agent's workflow so the
 reviewer carries its model choice to another repository.
 
-Default to the README quick-start `pull_request` workflow with an always-running
-job that explicitly fails fork pull requests before checkout or review. Never
-put the only review job behind a same-repository condition.
+The canonical simple consumer workflow is the README quick-start
+`pull_request` workflow: use an always-running job that explicitly fails fork
+pull requests before checkout or review. Never put the only review job behind a
+same-repository condition.
 
 Use `pull_request_target` only for a trusted-base workflow where:
 
@@ -28,6 +29,8 @@ Use `pull_request_target` only for a trusted-base workflow where:
 - prompt content comes from the base commit;
 - permissions are read-only;
 - no head-controlled code is executed;
+- unauthorized fork authors are rejected before checkout;
+- per-pull-request concurrency cancels superseded reviews;
 - the API key exists only on the Cacophony step.
 
 Do not add a sample catalog copy unless requested.

@@ -208,6 +208,9 @@ test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
   assert.match(workflow, /max-turns: 16/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
+  assert.match(workflow, /name: Authorize Azure-backed review/);
+  assert.match(workflow, /OWNER\|MEMBER\|COLLABORATOR/);
+  assert.match(workflow, /cancel-in-progress: true/);
   assert.match(workflow, /name: cacophony-gilfoyle-security-architect/);
 });
 
@@ -242,6 +245,9 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
   assert.match(activePrompt, /IEmailNotifier/);
   assert.match(workflow, /pull_request_target:/);
   assert.doesNotMatch(workflow, /head\.repo\.full_name == github\.repository/);
+  assert.match(workflow, /name: Authorize Azure-backed review/);
+  assert.match(workflow, /OWNER\|MEMBER\|COLLABORATOR/);
+  assert.match(workflow, /cancel-in-progress: true/);
   assert.match(
     workflow,
     /ref: refs\/pull\/\$\{\{ github\.event\.pull_request\.number \}\}\/merge/,
@@ -287,6 +293,9 @@ test("GLaDOS sample matches its independent documentation reviewer", async () =>
   assert.match(activePrompt, /Self-documenting clarity/);
   assert.match(activePrompt, /Stale and mismatched comments/);
   assert.match(workflow, /pull_request_target:/);
+  assert.match(workflow, /name: Authorize Azure-backed review/);
+  assert.match(workflow, /OWNER\|MEMBER\|COLLABORATOR/);
+  assert.match(workflow, /cancel-in-progress: true/);
   assert.match(
     workflow,
     /deployment: gpt-5\.4-mini/,
@@ -357,6 +366,8 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /Provider returns HTTP 429/);
   assert.match(lifecycle, /distinct non-review outcome/);
   assert.match(lifecycle, /consumer repository configuration contract/);
+  assert.match(lifecycle, /canonical simple consumer workflow/);
+  assert.match(lifecycle, /unauthorized fork authors/);
   assert.doesNotMatch(
     lifecycle,
     /deployment identifiers belong in repository variables/,

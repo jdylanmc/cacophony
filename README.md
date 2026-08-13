@@ -44,7 +44,10 @@ The built-in dogfood workflows require `CACOPHONY_AZURE_API_KEY`,
 This repository's dogfood workflow uses `pull_request_target` narrowly so its
 workflow, prompt, and pinned Cacophony implementation all come from trusted
 base history. It checks out pull request content for read-only inspection and
-never executes that content.
+never executes that content. Before checkout, it authorizes Azure-backed work:
+same-repository pull requests run automatically, while fork pull requests run
+only for authors GitHub identifies as an owner, member, or collaborator.
+Per-pull-request concurrency cancels superseded runs.
 
 ## Quick start
 
@@ -339,7 +342,10 @@ declares `gpt-5.4-mini` directly.
 - A `pull_request_target` workflow may review forks only when the workflow comes
   from trusted base history, the action is pinned, the prompt comes from the
   base commit, permissions are read-only, and no head-controlled code is
-  executed.
+  executed. It must also reject unauthorized fork authors before checkout or
+  any secret-backed step and cancel superseded runs with per-pull-request
+  concurrency. Code-execution safety does not authorize strangers to spend
+  provider quota.
 - Repository secrets are unavailable to `pull_request` workflows from forks.
   The quick-start workflow fails those pull requests explicitly rather than
   silently passing a skipped gate.
@@ -397,7 +403,9 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    fork pull requests before checkout or review. Use `pull_request_target` only
    for the documented trusted-base pattern with every remote action pinned to a
    full commit SHA, a base-commit prompt, read-only permissions, no execution of
-   head-controlled code, and the API key scoped only to the Cacophony step.
+   head-controlled code, an authorization step that rejects untrusted fork
+   authors before checkout, per-pull-request concurrency, and the API key scoped
+   only to the Cacophony step.
 10. Validate the resulting YAML syntax and report this expected tree:
 
     ```text

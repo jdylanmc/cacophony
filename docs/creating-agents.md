@@ -85,12 +85,31 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   review:
     runs-on: ubuntu-latest
     env:
       CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
     steps:
+      - name: Authorize Azure-backed review
+        shell: bash
+        env:
+          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          BASE_REPOSITORY: ${{ github.repository }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [[ "$HEAD_REPOSITORY" == "$BASE_REPOSITORY" ]]; then
+            exit 0
+          fi
+          case "$AUTHOR_ASSOCIATION" in
+            OWNER|MEMBER|COLLABORATOR) ;;
+            *) echo "::error::Unauthorized fork review"; exit 1 ;;
+          esac
+
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           # The workflow and action are trusted. PR content is inspected only;
@@ -182,14 +201,15 @@ Configure:
 - repository variable `CACOPHONY_AZURE_ENDPOINT`;
 - a reviewed Azure deployment name hardcoded in this agent's workflow.
 
-For the simple workflow, use `pull_request` with an always-running job that
-explicitly fails fork pull requests before checkout or review, as shown in the
-README quick start. Do not guard the entire job with a same-repository
-condition. For a trusted-base workflow that reviews forks, use the
+The canonical simple consumer workflow is the README quick start: use
+`pull_request` with an always-running job that explicitly fails fork pull
+requests before checkout or review. Do not guard the entire job with a
+same-repository condition. For a trusted-base workflow that reviews forks, use the
 `pull_request_target` pattern above and obey every trust-boundary restriction:
 every remote action pinned to a full commit SHA, read-only permissions,
 base-commit prompt, no execution of head-controlled code, and the secret scoped
-only to the Cacophony step.
+only to the Cacophony step. Reject unauthorized fork authors before checkout,
+and use per-pull-request concurrency to cancel superseded Azure-backed reviews.
 
 An external repository does not need the `examples/reviewers` copy or Cacophony
 documentation tests unless its maintainers want a local catalog.

@@ -25,10 +25,14 @@ Copy an established persona workflow and preserve:
 - `timeout-seconds: 600`;
 - `rate-limit-retries: 2`;
 - API key only on the pinned Cacophony step;
+- authorization before checkout that permits same-repository pull requests and
+  only owner, member, or collaborator fork authors;
+- per-pull-request concurrency with superseded runs canceled;
 - artifact upload skipped when the reviewer did not run.
 
-The trusted-base pattern may review fork pull requests because it never executes
-head-controlled code.
+The trusted-base pattern may review authorized fork pull requests because it
+never executes head-controlled code. That code trust boundary does not by
+itself authorize arbitrary fork authors to spend provider quota.
 
 Add:
 
