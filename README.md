@@ -335,7 +335,9 @@ See [Creating Cacophony agents](docs/creating-agents.md) for the complete
 prompt, workflow, validation, and stacked-rollout process. The repository-shared
 [`create-cacophony-agent` skill](.github/skills/create-cacophony-agent/SKILL.md)
 walks Copilot through either adding a sample persona here or installing a
-reviewer in another repository.
+reviewer in another repository. Legacy files under `examples/reviewers/` are
+pointer-only catalog entries for existing links; reviewer contracts live only
+under `.cacophony/agents/`.
 
 ### Gilfoyle the Security Architect
 

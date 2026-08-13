@@ -67,7 +67,8 @@ Create these matching files:
 
 The active prompt under `.cacophony/agents/` is the sole reviewer-contract
 source. README catalog entries link to that canonical file; do not create or
-manually synchronize a second prompt copy.
+manually synchronize a second prompt copy. Existing `examples/reviewers/`
+paths are compatibility pointers only and contain no prompt content.
 
 Add a README entry describing the lens, block prefix, and workflow.
 In every workflow created from this guide, pin each remote action reference to
