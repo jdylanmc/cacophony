@@ -82,3 +82,35 @@ test("Gilfoyle sample matches the bootstrapped security reviewer", async () => {
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.match(workflow, /name: cacophony-gilfoyle-security-architect/);
 });
+
+test("Solid Snake sample matches its independent architecture reviewer", async () => {
+  const activePrompt = await fs.promises.readFile(
+    ".cacophony/agents/solid-snake-architecture.md",
+    "utf8",
+  );
+  const samplePrompt = await fs.promises.readFile(
+    "examples/reviewers/solid-snake-architecture.md",
+    "utf8",
+  );
+  const workflow = await fs.promises.readFile(
+    ".github/workflows/solid-snake-architecture.yml",
+    "utf8",
+  );
+  const gilfoyleWorkflow = await fs.promises.readFile(
+    ".github/workflows/gilfoyle-security-architect.yml",
+    "utf8",
+  );
+
+  assert.equal(samplePrompt, activePrompt);
+  assert.match(activePrompt, /\[BLOCK: ARCHITECTURE\]/);
+  assert.match(activePrompt, /\[APPROVED\]/);
+  assert.match(activePrompt, /Single Responsibility Principle/);
+  assert.match(workflow, /pull_request_target:/);
+  assert.match(
+    workflow,
+    /prompt-file: \.cacophony\/agents\/solid-snake-architecture\.md/,
+  );
+  assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.match(workflow, /name: cacophony-solid-snake-architecture/);
+  assert.notEqual(workflow, gilfoyleWorkflow);
+});
