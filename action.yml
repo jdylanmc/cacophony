@@ -39,7 +39,7 @@ inputs:
 
 outputs:
   verdict:
-    description: "Review outcome: pass/warn/fail are findings-derived; inconclusive means no decision completed, always fails closed, and should be retried when quota is available; error is a framework failure."
+    description: "Terminal output value: pass/warn/fail are findings-derived; inconclusive means no reviewer decision completed, always fails closed, and should be retried when quota is available; error means framework failure."
   max-severity:
     description: Highest finding severity.
   report-json:

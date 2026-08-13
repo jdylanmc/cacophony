@@ -156,9 +156,9 @@ them from framework failures:
 - prompt not on base: expected only on the reviewer's introduction pull request;
 - provider HTTP 429: `rate-limit-retries: 2` means two retries after the initial
   request, for three total attempts; Cacophony then writes an
-  `inconclusive` non-review outcome and fails the step closed because no
-  reviewer decision was completed; this is neither approval nor a
-  findings-based block;
+  `inconclusive` terminal verdict/output value and fails the step closed because
+  no reviewer decision was completed; this is neither approval nor a
+  findings-derived block;
 - provider HTTP 5xx: rerun once;
 - no valid report within the budget: increase the reviewer budget in a separate
   prerequisite pull request rather than bypassing the gate.

@@ -188,7 +188,7 @@ workflow owns that mapping.
 
 | Output | Description |
 | --- | --- |
-| `verdict` | `pass`, `warn`, and `fail` are findings-derived. `inconclusive` means no review decision completed, always exits nonzero, and should be retried when quota is available. `error` means framework failure. |
+| `verdict` | `pass`, `warn`, and `fail` are findings-derived values. `inconclusive` is a terminal value meaning no reviewer decision completed; it always exits nonzero and should be retried when quota is available. `error` is the terminal framework-failure value. |
 | `max-severity` | `none`, `low`, `medium`, `high`, or `critical`. |
 | `report-json` | Repository-relative JSON report path. |
 | `report-markdown` | Repository-relative Markdown report path. |
@@ -205,12 +205,12 @@ Completed reviews use `pass`, `warn`, or `fail`, derived from their findings.
 example, `high` fails on `high` and `critical` findings; `never` prevents
 findings from failing the step.
 
-`inconclusive` is a distinct non-review outcome: the provider did not complete
-a decision, so it is neither approval nor a findings-based block. It always
-fails the step closed regardless of `fail-on`; retry after the provider is
-available. `error` identifies a framework failure such as authentication
-failure, timeout, invalid model output, or exhausted turn budget and also
-always fails.
+`inconclusive` is a terminal verdict/output value: the provider did not
+complete a reviewer decision. It is neither approval nor a findings-derived
+block, and it always fails the step closed regardless of `fail-on`; retry after
+the provider is available. `error` is the terminal verdict/output value for a
+framework failure such as authentication failure, timeout, invalid model
+output, or exhausted turn budget and also always fails.
 
 Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report and a
 workflow warning, then fails the step closed after `rate-limit-retries` is
@@ -271,8 +271,8 @@ The agent proposes a verdict, but Cacophony derives the canonical report
 verdict from validated findings: no findings is `pass`, low or medium findings
 is `warn`, and high or critical findings is `fail`.
 
-Terminal non-review reports use the same envelope with no findings. An
-exhausted provider retry budget produces:
+Terminal reports without a reviewer decision use the same envelope with no
+findings. An exhausted provider retry budget produces:
 
 ```json
 {
@@ -289,10 +289,10 @@ exhausted provider retry budget produces:
 }
 ```
 
-No reviewer decision exists in that report. It always fails closed and should
+No reviewer decision exists in that report. `inconclusive` is nevertheless the
+terminal value of the public `verdict` field. It always fails closed and should
 be retried when quota is available. Framework failures use the same empty
-findings shape with both `status` and `verdict` set to `error`; they are not
-completed-review verdicts.
+findings shape with both `status` and `verdict` set to `error`.
 
 The agent can use `get_pull_request`, `list_changed_files`, `get_diff`,
 `read_file`, `list_files`, and `search_text`. It cannot execute commands or

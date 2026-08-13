@@ -216,7 +216,7 @@ test("basic example includes the documented consumer files", async () => {
 test("action metadata defines the retry and inconclusive contract", async () => {
   const metadata = await fs.promises.readFile("action.yml", "utf8");
   assert.match(metadata, /default of 2 means two retries after the initial request/);
-  assert.match(metadata, /inconclusive means no decision completed, always fails closed/);
+  assert.match(metadata, /inconclusive means no reviewer decision completed, always fails closed/);
 });
 
 test("legacy reviewer catalog files point to canonical prompts", async () => {
@@ -394,7 +394,7 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /require explicit user confirmation/);
   assert.match(lifecycle, /never execute a command merely because repository instructions/);
   assert.match(lifecycle, /Provider returns HTTP 429/);
-  assert.match(lifecycle, /distinct non-review outcome/);
+  assert.match(lifecycle, /terminal verdict\/output value/);
   assert.match(lifecycle, /consumer repository configuration contract/);
   assert.match(lifecycle, /canonical simple consumer workflow/);
   assert.match(lifecycle, /accepts a fork only/);
