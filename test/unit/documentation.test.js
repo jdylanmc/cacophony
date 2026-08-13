@@ -7,16 +7,23 @@ import assert from "node:assert/strict";
 async function listWorkflowFiles(roots) {
   const workflows = [];
 
-  async function visit(currentPath) {
+  async function visit(currentPath, isWorkflowDirectory = false) {
     const entries = await fs.promises.readdir(currentPath, {
       withFileTypes: true,
     });
     for (const entry of entries) {
       const entryPath = path.join(currentPath, entry.name);
-      if (entry.isDirectory()) {
-        await visit(entryPath);
-      } else if (/\.ya?ml$/i.test(entry.name)) {
+      if (isWorkflowDirectory && entry.isFile() && /\.ya?ml$/i.test(entry.name)) {
         workflows.push(entryPath);
+      } else if (
+        !isWorkflowDirectory &&
+        entry.isDirectory() &&
+        entry.name !== ".git"
+      ) {
+        const entersWorkflowDirectory =
+          entry.name === "workflows" &&
+          path.basename(currentPath) === ".github";
+        await visit(entryPath, entersWorkflowDirectory);
       }
     }
   }
@@ -66,7 +73,7 @@ test("README contains a deterministic agent installation contract", async () => 
 
 test("all executable workflows pin remote actions to full commit SHAs", async () => {
   const workflowFiles = await listWorkflowFiles([
-    ".github/workflows",
+    ".github",
     "examples",
   ]);
 
@@ -82,12 +89,32 @@ test("workflow discovery includes new nested workflow filenames", async () => {
   );
 
   try {
-    const nestedDirectory = path.join(temporaryRoot, "new-reviewer");
-    const workflowPath = path.join(nestedDirectory, "unexpected-name.yaml");
-    await fs.promises.mkdir(nestedDirectory);
-    await fs.promises.writeFile(workflowPath, "name: New reviewer\n");
+    const exampleRoot = path.join(temporaryRoot, "new-example");
+    const workflowDirectory = path.join(exampleRoot, ".github", "workflows");
+    const workflowPath = path.join(workflowDirectory, "unexpected-name.yaml");
+    const unrelatedYaml = path.join(exampleRoot, "configuration.yaml");
+    await fs.promises.mkdir(workflowDirectory, { recursive: true });
+    await fs.promises.writeFile(
+      workflowPath,
+      "uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09\n",
+    );
+    await fs.promises.writeFile(unrelatedYaml, "enabled: true\n");
 
     assert.deepEqual(await listWorkflowFiles([temporaryRoot]), [workflowPath]);
+    assert.doesNotThrow(() =>
+      assertRemoteActionsPinned(
+        "uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09\n",
+        workflowPath,
+      ),
+    );
+    assert.throws(
+      () =>
+        assertRemoteActionsPinned(
+          "uses: actions/checkout@v5\n",
+          workflowPath,
+        ),
+      /full commit SHA/,
+    );
   } finally {
     await fs.promises.rm(temporaryRoot, { recursive: true, force: true });
   }
