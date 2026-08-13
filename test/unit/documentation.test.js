@@ -105,6 +105,13 @@ test("Solid Snake sample matches its independent architecture reviewer", async (
   assert.match(activePrompt, /\[BLOCK: ARCHITECTURE\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
   assert.match(activePrompt, /Single Responsibility Principle/);
+  assert.match(activePrompt, /Open\/Closed Principle/);
+  assert.match(activePrompt, /Liskov Substitution Principle/);
+  assert.match(activePrompt, /Interface Segregation Principle/);
+  assert.match(activePrompt, /Dependency Inversion Principle/);
+  assert.match(activePrompt, /PaymentProcessor/);
+  assert.match(activePrompt, /MockTestDatabase/);
+  assert.match(activePrompt, /IEmailNotifier/);
   assert.match(workflow, /pull_request_target:/);
   assert.match(
     workflow,
