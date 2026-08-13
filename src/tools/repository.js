@@ -544,22 +544,24 @@ export async function createRepositoryTools({
             if (buffer.includes(0)) {
               continue;
             }
-            const content = buffer.toString("utf8");
+            const query = Buffer.from(args.query, "utf8");
             let offset = 0;
             while (matches.length < MAX_SEARCH_RESULTS) {
-              const match = content.indexOf(args.query, offset);
+              const match = buffer.indexOf(query, offset);
               if (match === -1) {
                 break;
               }
               matches.push({
                 path: evidencePath,
-                offset: Buffer.byteLength(content.slice(0, match), "utf8"),
-                context: content.slice(
+                offset: match,
+                context: buffer
+                  .subarray(
                   Math.max(0, match - 250),
-                  match + args.query.length + 250,
-                ),
+                    match + query.length + 250,
+                  )
+                  .toString("utf8"),
               });
-              offset = match + args.query.length;
+              offset = match + query.length;
             }
             if (matches.length >= MAX_SEARCH_RESULTS) {
               return { matches, truncated: true };
