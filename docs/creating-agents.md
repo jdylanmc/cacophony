@@ -188,6 +188,10 @@ concurrency. The reusable workflow rejects other events, accepts
 same-repository pull requests, and accepts a fork only for an `OWNER`, `MEMBER`,
 or `COLLABORATOR` author before checkout.
 
+`examples/basic` demonstrates only the simple same-repository mode. Its direct
+action invocation is intentional and must not be copied as a trusted-base fork
+review workflow.
+
 An external repository does not need the `examples/reviewers` copy or Cacophony
 documentation tests unless its maintainers want a local catalog.
 
@@ -208,6 +212,9 @@ Also verify:
 - every remote action reference in each workflow created or modified by this
   process is a full commit SHA;
 - the API key appears only in `secrets`, never variables or committed files;
+- the workflow passes `rate-limit-retries` explicitly or relies on the
+  documented default of `2`, and exhausted HTTP 429 retries produce an
+  `inconclusive` report that fails closed;
 - existing reviewers run and their JSON artifacts contain completed structured
   results.
 

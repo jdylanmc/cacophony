@@ -59,7 +59,9 @@ fork attempts to use this simple workflow, but it does not authorize or review
 the fork. All actual fork review uses the trusted-base `pull_request_target`
 pattern in
 [`docs/creating-agents.md`](docs/creating-agents.md), including its author
-authorization and concurrency controls.
+authorization and concurrency controls. The checked-in
+[`examples/basic`](examples/basic/) directory mirrors this simple mode; it is
+not a trusted-base fork-review template.
 
 1. In the target repository, open **Settings > Secrets and variables > Actions**.
 2. Create the secret `CACOPHONY_AZURE_API_KEY`.
@@ -453,7 +455,10 @@ When asked to install Cacophony in a repository, perform these steps exactly:
    authorization before checkout, no execution of head-controlled code, and
    API-key mapping. Keep persona callers narrow and give each per-pull-request
    concurrency.
-10. Validate the resulting YAML syntax and report this expected tree:
+10. Confirm the workflow passes `rate-limit-retries` explicitly or relies on
+    the documented default of `2`, and that exhausted HTTP 429 retries produce
+    an `inconclusive` report that fails closed.
+11. Validate the resulting YAML syntax and report this expected tree:
 
     ```text
     .cacophony/

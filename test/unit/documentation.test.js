@@ -180,6 +180,10 @@ test("basic example includes the documented consumer files", async () => {
     "examples/basic/.github/workflows/cacophony.yml",
     "utf8",
   );
+  const documentation = await fs.promises.readFile(
+    "examples/basic/README.md",
+    "utf8",
+  );
   const prompt = await fs.promises.readFile(
     "examples/basic/.cacophony/agents/reviewer.md",
     "utf8",
@@ -204,6 +208,14 @@ test("basic example includes the documented consumer files", async () => {
   assert.match(workflow, /same-repository-only workflow does not review forks/);
   assert.match(workflow, /path: \.cacophony\/out\//);
   assert.match(prompt, /correctness defects/);
+  assert.match(documentation, /same-repository consumer example/);
+  assert.match(documentation, /intentionally not the trusted-base/);
+});
+
+test("action metadata defines the retry and inconclusive contract", async () => {
+  const metadata = await fs.promises.readFile("action.yml", "utf8");
+  assert.match(metadata, /default of 2 means two retries after the initial request/);
+  assert.match(metadata, /inconclusive means no decision completed, always fails closed/);
 });
 
 test("Hello World dogfood runs a model-generated joke prompt", async () => {
