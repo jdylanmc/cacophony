@@ -242,6 +242,8 @@ test("repository audit workflow runs all canonical adversaries sequentially", as
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /workflow_call:/);
   assert.match(workflow, /max-parallel: 1/);
+  assert.match(workflow, /default: 40/);
+  assert.match(workflow, /max-turns: \$\{\{ inputs\.max-turns \|\| 40 \}\}/);
   assert.match(workflow, /fail-fast: false/);
   assert.match(workflow, /agent: gilfoyle-security-architect/);
   assert.match(workflow, /agent: solid-snake-architecture/);
