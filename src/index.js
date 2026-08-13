@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   appendStepSummary,
@@ -39,7 +40,7 @@ async function main() {
     path.resolve(process.env.GITHUB_WORKSPACE || process.cwd()),
   );
   const actionPath = await fs.promises.realpath(
-    path.resolve(process.env.GITHUB_ACTION_PATH || workspaceRoot),
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
   );
   const apiKey = process.env.CACOPHONY_AZURE_API_KEY || "";
   let config;
