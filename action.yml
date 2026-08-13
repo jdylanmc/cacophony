@@ -39,7 +39,7 @@ inputs:
 
 outputs:
   verdict:
-    description: "Agent verdict: pass, warn, fail, inconclusive, or error."
+    description: "Review outcome: pass/warn/fail are findings-derived; inconclusive means no decision completed and fails closed; error is a framework failure."
   max-severity:
     description: Highest finding severity.
   report-json:

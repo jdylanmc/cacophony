@@ -166,10 +166,17 @@ export function createCompletedReport({
   };
 }
 
-export function createErrorReport({ error, config, context, startedAt }) {
+function createTerminalReport({
+  status,
+  verdict,
+  cause,
+  config,
+  context,
+  startedAt,
+}) {
   return {
     schemaVersion: "1.0",
-    status: "error",
+    status,
     agent: {
       id: config?.agentId ?? "cacophony",
       promptFile: config?.promptFile ?? null,
@@ -182,34 +189,33 @@ export function createErrorReport({ error, config, context, startedAt }) {
     startedAt,
     completedAt: new Date().toISOString(),
     execution: { turns: 0, toolCalls: 0 },
-    verdict: "error",
+    verdict,
     maxSeverity: "none",
-    summary: error instanceof Error ? error.message : String(error),
+    summary: cause instanceof Error ? cause.message : String(cause),
     findings: [],
   };
 }
 
-export function createInconclusiveReport({ reason, config, context, startedAt }) {
-  return {
-    schemaVersion: "1.0",
-    status: "inconclusive",
-    agent: {
-      id: config?.agentId ?? "cacophony",
-      promptFile: config?.promptFile ?? null,
-    },
-    provider: {
-      name: config?.provider ?? "unknown",
-      deployment: config?.deployment ?? "unknown",
-    },
-    pullRequest: context?.pullRequest ?? null,
+export function createErrorReport({ error, config, context, startedAt }) {
+  return createTerminalReport({
+    status: "error",
+    verdict: "error",
+    cause: error,
+    config,
+    context,
     startedAt,
-    completedAt: new Date().toISOString(),
-    execution: { turns: 0, toolCalls: 0 },
+  });
+}
+
+export function createInconclusiveReport({ reason, config, context, startedAt }) {
+  return createTerminalReport({
+    status: "inconclusive",
     verdict: "inconclusive",
-    maxSeverity: "none",
-    summary: reason instanceof Error ? reason.message : String(reason),
-    findings: [],
-  };
+    cause: reason,
+    config,
+    context,
+    startedAt,
+  });
 }
 
 function escapeMarkdown(value) {

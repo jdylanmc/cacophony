@@ -157,8 +157,9 @@ them from framework failures:
 - supported finding: remediate the code and rerun;
 - prompt not on base: expected only on the reviewer's introduction pull request;
 - provider HTTP 429: Cacophony retries twice by default, then writes an
-  inconclusive report and fails the step closed because no reviewer decision
-  was completed;
+  `inconclusive` non-review outcome and fails the step closed because no
+  reviewer decision was completed; this is neither approval nor a
+  findings-based block;
 - provider HTTP 5xx: rerun once;
 - no valid report within the budget: increase the reviewer budget in a separate
   prerequisite pull request rather than bypassing the gate.

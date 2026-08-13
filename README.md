@@ -152,7 +152,7 @@ variable.
 
 | Output | Description |
 | --- | --- |
-| `verdict` | `pass`, `warn`, `fail`, `inconclusive`, or `error`. |
+| `verdict` | `pass`, `warn`, and `fail` are findings-derived; `inconclusive` means no review decision completed; `error` means framework failure. |
 | `max-severity` | `none`, `low`, `medium`, `high`, or `critical`. |
 | `report-json` | Repository-relative JSON report path. |
 | `report-markdown` | Repository-relative Markdown report path. |
@@ -164,10 +164,17 @@ appended to the GitHub job summary, where findings and remediation render
 directly without downloading the artifact. Failure annotations include the
 agent's submitted summary instead of only a generic severity message.
 
-`fail-on` is an inclusive severity threshold. For example, `high` fails on
-`high` and `critical` findings. `never` prevents findings from failing the
-step. Framework errors such as authentication failure, timeout, invalid model
-output, or exhausted turn budget always fail.
+Completed reviews use `pass`, `warn`, or `fail`, derived from their findings.
+`fail-on` is an inclusive severity threshold for those completed reviews. For
+example, `high` fails on `high` and `critical` findings; `never` prevents
+findings from failing the step.
+
+`inconclusive` is a distinct non-review outcome: the provider did not complete
+a decision, so it is neither approval nor a findings-based block. It always
+fails the step closed regardless of `fail-on`; retry after the provider is
+available. `error` identifies a framework failure such as authentication
+failure, timeout, invalid model output, or exhausted turn budget and also
+always fails.
 
 Azure AI Foundry HTTP 429 throttling produces an `inconclusive` report and a
 workflow warning, then fails the step closed after `rate-limit-retries` is
@@ -176,8 +183,7 @@ Azure's `retry-after-ms`,
 `x-ms-retry-after-ms`, or `Retry-After` value as the base and multiply it by
 `2^retryIndex`. If Azure provides no delay, the base is one second. The total
 `timeout-seconds` deadline remains the hard ceiling. Inconclusive is not
-approval: repositories that require a completed reviewer decision should retry
-the run after quota is available.
+approval or a findings-based verdict; retry the run after quota is available.
 
 ## Report format
 

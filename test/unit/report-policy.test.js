@@ -6,6 +6,8 @@ import path from "node:path";
 
 import { shouldFail } from "../../src/policy/policy.js";
 import {
+  createErrorReport,
+  createInconclusiveReport,
   renderMarkdown,
   validateSubmission,
   writeReports,
@@ -80,6 +82,39 @@ test("policy maps severity thresholds and always fails framework errors", () => 
     ),
     true,
   );
+});
+
+test("terminal reports share one envelope with outcome-specific fields", () => {
+  const input = {
+    config: {
+      agentId: "reviewer",
+      promptFile: ".cacophony/agents/reviewer.md",
+      provider: "azure-foundry",
+      deployment: "review-model",
+    },
+    context: { pullRequest: { number: 7 } },
+    startedAt: "2026-01-01T00:00:00.000Z",
+  };
+  const errorReport = createErrorReport({
+    ...input,
+    error: new Error("framework failed"),
+  });
+  const inconclusiveReport = createInconclusiveReport({
+    ...input,
+    reason: new Error("provider unavailable"),
+  });
+
+  assert.deepEqual(Object.keys(errorReport), Object.keys(inconclusiveReport));
+  assert.deepEqual(errorReport.agent, inconclusiveReport.agent);
+  assert.deepEqual(errorReport.provider, inconclusiveReport.provider);
+  assert.deepEqual(errorReport.pullRequest, inconclusiveReport.pullRequest);
+  assert.deepEqual(errorReport.execution, inconclusiveReport.execution);
+  assert.equal(errorReport.status, "error");
+  assert.equal(errorReport.verdict, "error");
+  assert.equal(errorReport.summary, "framework failed");
+  assert.equal(inconclusiveReport.status, "inconclusive");
+  assert.equal(inconclusiveReport.verdict, "inconclusive");
+  assert.equal(inconclusiveReport.summary, "provider unavailable");
 });
 
 test("renderMarkdown derives readable output from canonical data", () => {
