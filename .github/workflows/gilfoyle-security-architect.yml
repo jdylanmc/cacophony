@@ -1,0 +1,37 @@
+name: Gilfoyle the Security Architect
+
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+
+jobs:
+  security-review:
+    runs-on: ubuntu-latest
+    env:
+      CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
+      CACOPHONY_AZURE_DEPLOYMENT: ${{ vars.CACOPHONY_AZURE_DEPLOYMENT }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Run Gilfoyle security review
+        id: gilfoyle
+        uses: jdylanmc/cacophony@a98e2924415fbe58324ce87e2800339614579503
+        with:
+          prompt-file: .cacophony/agents/gilfoyle-security-architect.md
+          endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
+          deployment: ${{ env.CACOPHONY_AZURE_DEPLOYMENT }}
+          fail-on: high
+        env:
+          CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
+
+      - name: Upload Gilfoyle report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: cacophony-gilfoyle-security-architect
+          path: .cacophony/out/gilfoyle-security-architect/
