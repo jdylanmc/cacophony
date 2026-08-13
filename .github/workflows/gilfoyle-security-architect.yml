@@ -25,6 +25,8 @@ jobs:
           prompt-file: .cacophony/agents/gilfoyle-security-architect.md
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
           deployment: ${{ env.CACOPHONY_AZURE_DEPLOYMENT }}
+          max-turns: 16
+          timeout-seconds: 600
           fail-on: high
         env:
           CACOPHONY_AZURE_API_KEY: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
