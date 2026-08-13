@@ -1,6 +1,32 @@
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
+
+async function listWorkflowFiles(roots) {
+  const workflows = [];
+
+  async function visit(currentPath) {
+    const entries = await fs.promises.readdir(currentPath, {
+      withFileTypes: true,
+    });
+    for (const entry of entries) {
+      const entryPath = path.join(currentPath, entry.name);
+      if (entry.isDirectory()) {
+        await visit(entryPath);
+      } else if (/\.ya?ml$/i.test(entry.name)) {
+        workflows.push(entryPath);
+      }
+    }
+  }
+
+  for (const root of roots) {
+    await visit(root);
+  }
+
+  return workflows.sort();
+}
 
 function assertRemoteActionsPinned(content, source) {
   const references = [...content.matchAll(/^\s*-?\s*uses:\s+([^\s#]+)/gm)].map(
@@ -31,25 +57,39 @@ test("README contains a deterministic agent installation contract", async () => 
     "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
     "actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4",
     "fetch-depth: 0",
-    "Do not use `pull_request_target`",
+    "Default to `pull_request`",
+    "Use `pull_request_target` only",
   ]) {
     assert.match(readme, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
 });
 
 test("all executable workflows pin remote actions to full commit SHAs", async () => {
-  const workflowFiles = [
-    ".github/workflows/ci.yml",
-    ".github/workflows/hello-world.yml",
-    ".github/workflows/gilfoyle-security-architect.yml",
-    ".github/workflows/solid-snake-architecture.yml",
-    ".github/workflows/glados-documentation-sentinel.yml",
-    "examples/basic/.github/workflows/cacophony.yml",
-  ];
+  const workflowFiles = await listWorkflowFiles([
+    ".github/workflows",
+    "examples",
+  ]);
 
   for (const file of workflowFiles) {
     const workflow = await fs.promises.readFile(file, "utf8");
     assertRemoteActionsPinned(workflow, file);
+  }
+});
+
+test("workflow discovery includes new nested workflow filenames", async () => {
+  const temporaryRoot = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), "cacophony-workflows-"),
+  );
+
+  try {
+    const nestedDirectory = path.join(temporaryRoot, "new-reviewer");
+    const workflowPath = path.join(nestedDirectory, "unexpected-name.yaml");
+    await fs.promises.mkdir(nestedDirectory);
+    await fs.promises.writeFile(workflowPath, "name: New reviewer\n");
+
+    assert.deepEqual(await listWorkflowFiles([temporaryRoot]), [workflowPath]);
+  } finally {
+    await fs.promises.rm(temporaryRoot, { recursive: true, force: true });
   }
 });
 

@@ -174,8 +174,9 @@ Configure:
 For a simple same-repository workflow, use `pull_request` plus a fork guard as
 shown in the README quick start. For a trusted-base workflow, use the
 `pull_request_target` pattern above and obey every trust-boundary restriction:
-pinned remote action, read-only permissions, base-commit prompt, no execution
-of head-controlled code, and the secret scoped only to the Cacophony step.
+every remote action pinned to a full commit SHA, read-only permissions,
+base-commit prompt, no execution of head-controlled code, and the secret scoped
+only to the Cacophony step.
 
 An external repository does not need the `examples/reviewers` copy or Cacophony
 documentation tests unless its maintainers want a local catalog.

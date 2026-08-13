@@ -344,7 +344,11 @@ When asked to install Cacophony in a repository, perform these steps exactly:
 8. Add Upload Artifact pinned to the documented full commit SHA with
    `if: always()` and path
    `.cacophony/out/`.
-9. Do not use `pull_request_target`.
+9. Default to `pull_request`. Use `pull_request_target` only for the documented
+   trusted-base pattern with a same-repository guard, every remote action
+   pinned to a full commit SHA, a base-commit prompt, read-only permissions, no
+   execution of head-controlled code, and the API key scoped only to the
+   Cacophony step.
 10. Validate the resulting YAML syntax and report this expected tree:
 
     ```text
