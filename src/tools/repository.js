@@ -542,7 +542,7 @@ export async function createRepositoryTools({
           for (const [evidencePath, metadata] of selected) {
             const buffer = await fs.promises.readFile(metadata.file);
             if (buffer.includes(0)) {
-              continue;
+              throw new Error(`binary evidence files cannot be searched: ${evidencePath}`);
             }
             const query = Buffer.from(args.query, "utf8");
             let offset = 0;
