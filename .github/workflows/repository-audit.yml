@@ -7,7 +7,7 @@ on:
       max-turns:
         required: false
         type: number
-        default: 20
+        default: 40
       timeout-seconds:
         required: false
         type: number
@@ -70,7 +70,7 @@ jobs:
           workspace-directory: audit-target
           endpoint: ${{ env.CACOPHONY_AZURE_ENDPOINT }}
           deployment: ${{ matrix.deployment }}
-          max-turns: ${{ inputs.max-turns || 20 }}
+          max-turns: ${{ inputs.max-turns || 40 }}
           timeout-seconds: ${{ inputs.timeout-seconds || 1800 }}
           rate-limit-retries: ${{ inputs.rate-limit-retries || 2 }}
           fail-on: low

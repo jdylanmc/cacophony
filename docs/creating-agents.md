@@ -23,7 +23,9 @@ Before editing files, decide:
 - **Remediation format:** the concrete numbered steps every finding requires;
 - **Model deployment:** the Azure deployment name to declare directly in this
   reviewer's workflow;
-- **Budget:** start complex reviewers at 20 turns and 600 seconds.
+- **Pull-request budget:** start complex pull-request reviewers at 20 turns and
+  600 seconds. Repository-wide audits use the reusable audit workflow's
+  separate 40-turn, 1800-second budget.
 
 One reviewer should own one lens. More persona does not compensate for an
 ambiguous responsibility.
@@ -93,8 +95,9 @@ Before checkout, the reusable workflow rejects any other event, accepts
 same-repository pull requests, and accepts fork pull requests only when
 `author_association` is `OWNER`, `MEMBER`, or `COLLABORATOR`.
 
-Each reviewer gets an independent thin caller so GitHub schedules all
-established reviewers in parallel:
+Each pull-request reviewer gets an independent thin caller so GitHub schedules
+all established reviewers in parallel. This template intentionally retains the
+20-turn pull-request budget; it is not the repository-wide audit workflow:
 
 ```yaml
 name: <Reviewer name>

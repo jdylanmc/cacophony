@@ -245,7 +245,7 @@ executes repository code.
 | `review-scope` | No | `pull-request` | `pull-request` for event review or `repository` for a full checked-out repository audit. |
 | `workspace-directory` | No | `.` | Repository-relative checkout directory to inspect. |
 | `evidence-files` | No | | Multiline workspace-relative paths to structured evidence produced before the review. |
-| `max-turns` | No | `8` | Model turns, from 1 through 20. |
+| `max-turns` | No | `8` | Model turns, from 1 through 50. Pull request personas use 20; the full repository audit uses 40. |
 | `timeout-seconds` | No | `300` | Total deadline, including retry waits, from 30 through 1800 seconds. |
 | `rate-limit-retries` | No | `2` | Retries after the initial HTTP 429 request, from 0 through 10; `2` means three total attempts. |
 | `fail-on` | No | `high` | `low`, `medium`, `high`, `critical`, or `never`. |

@@ -18,5 +18,6 @@ One reviewer owns one lens.
 If the user says they will provide the prompt, stop rather than inventing it.
 
 Use 20 turns, 600 seconds, and `rate-limit-retries: 2` as the default budget for
-a nontrivial persona. That retry setting means two retries after the initial
-request, for three total attempts.
+a nontrivial pull-request persona. Repository-wide audits use their reusable
+workflow's separate 40-turn, 1800-second budget. That retry setting means two
+retries after the initial request, for three total attempts.

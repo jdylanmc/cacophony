@@ -272,6 +272,7 @@ test("action metadata defines the retry and inconclusive contract", async () => 
   assert.match(metadata, /repository for a full checkout audit/);
   assert.match(metadata, /evidence-files:/);
   assert.match(metadata, /structured evidence files/);
+  assert.match(metadata, /Maximum model turns, from 1 through 50/);
 });
 
 test("repository audit workflow runs all canonical adversaries sequentially", async () => {
@@ -282,6 +283,8 @@ test("repository audit workflow runs all canonical adversaries sequentially", as
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /workflow_call:/);
   assert.match(workflow, /max-parallel: 1/);
+  assert.match(workflow, /default: 40/);
+  assert.match(workflow, /max-turns: \$\{\{ inputs\.max-turns \|\| 40 \}\}/);
   assert.match(workflow, /fail-fast: false/);
   assert.match(workflow, /agent: gilfoyle-security-architect/);
   assert.match(workflow, /agent: solid-snake-architecture/);
@@ -473,6 +476,7 @@ test("agent creation guide and shared skill capture the stacked workflow", async
   assert.match(lifecycle, /workflow this skill creates/);
   assert.match(lifecycle, /shared reusable workflow/);
   assert.match(lifecycle, /three total attempts/);
+  assert.match(lifecycle, /Repository-wide audits[\s\S]*40-turn/);
   assert.match(
     lifecycle,
     /caller declares `azure-api-key: \$\{\{ secrets\.CACOPHONY_AZURE_API_KEY \}\}`/,
