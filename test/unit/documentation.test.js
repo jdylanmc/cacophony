@@ -246,8 +246,11 @@ test("repository audit workflow runs all canonical adversaries sequentially", as
   assert.match(workflow, /agent: solid-snake-architecture/);
   assert.match(workflow, /agent: glados-documentation-sentinel/);
   assert.match(workflow, /review-scope: repository/);
+  assert.match(workflow, /workspace-directory: audit-target/);
   assert.match(workflow, /fail-on: low/);
-  assert.match(workflow, /uses: \.\//);
+  assert.match(workflow, /name: Require the default branch/);
+  assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
+  assert.doesNotMatch(workflow, /uses: \.\/\s*$/m);
   assert.match(workflow, /CACOPHONY_AZURE_API_KEY/);
   assert.match(workflow, /cacophony-repository-audit-\$\{\{ matrix\.agent \}\}/);
 });

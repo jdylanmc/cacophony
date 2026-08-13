@@ -182,10 +182,13 @@ adversaries sequentially to reduce provider throttling:
 2. Solid Snake with `gpt-5.6-sol`;
 3. GLaDOS with `gpt-5.4-mini`.
 
-Each reviewer receives only full-repository read and search tools. Any finding
-severity fails its matrix job, while `fail-fast: false` ensures all three
-reports are uploaded as separate artifacts. Run it from the Actions tab with
-**Run workflow**, or call it from another workflow in this repository:
+The workflow accepts only the default branch, checks it out as audit data, and
+runs an independently pinned Cacophony action implementation. The Azure key is
+never exposed to code from the commit under audit. Each reviewer receives only
+full-repository read and search tools. Any finding severity fails its matrix
+job, while `fail-fast: false` ensures all three reports are uploaded as separate
+artifacts. Run it from the Actions tab with **Run workflow**, or call it from
+another workflow in this repository:
 
 ```yaml
 jobs:
@@ -209,6 +212,7 @@ executes repository code.
 | `deployment` | Yes | | Model deployment name. |
 | `provider` | No | `azure-foundry` | Provider adapter. |
 | `review-scope` | No | `pull-request` | `pull-request` for event review or `repository` for a full checked-out repository audit. |
+| `workspace-directory` | No | `.` | Repository-relative checkout directory to inspect. |
 | `max-turns` | No | `8` | Model turns, from 1 through 20. |
 | `timeout-seconds` | No | `300` | Total deadline, including retry waits, from 30 through 1800 seconds. |
 | `rate-limit-retries` | No | `2` | Retries after the initial HTTP 429 request, from 0 through 10; `2` means three total attempts. |
