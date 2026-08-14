@@ -439,14 +439,40 @@ test("Solid Snake canonical prompt configures its architecture reviewer", async 
 
   assert.match(activePrompt, /\[BLOCK: ARCHITECTURE\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
-  assert.match(activePrompt, /Single Responsibility Principle/);
-  assert.match(activePrompt, /Open\/Closed Principle/);
-  assert.match(activePrompt, /Liskov Substitution Principle/);
-  assert.match(activePrompt, /Interface Segregation Principle/);
-  assert.match(activePrompt, /Dependency Inversion Principle/);
-  assert.match(activePrompt, /PaymentProcessor/);
-  assert.match(activePrompt, /MockTestDatabase/);
-  assert.match(activePrompt, /IEmailNotifier/);
+  for (const criterion of [
+    "Single responsibility",
+    "Dependency inversion and boundary leaks",
+    "Interface segregation",
+    "Open/closed",
+    "Liskov substitution",
+  ]) {
+    assert.equal(
+      (activePrompt.match(new RegExp(`\\*\\*${criterion}\\.\\*\\*`, "g")) ?? [])
+        .length,
+      1,
+      `${criterion} criterion must appear exactly once`,
+    );
+  }
+  assert.match(
+    activePrompt,
+    /Open\/closed\.\*\* Report stable dispatch or policy code that must be repeatedly\s+modified only when repository evidence establishes recurring extension\s+pressure and the smallest extension mechanism consistent with existing\s+repository conventions would materially reduce change risk/,
+  );
+  assert.doesNotMatch(
+    activePrompt,
+    /existing extension requirement|established extension point/,
+  );
+  for (const genericExample of [
+    "CheckoutPage",
+    "PaymentProcessor",
+    "MockTestDatabase",
+    "IUserActions",
+    "SendGridClient",
+    "IEmailNotifier",
+  ]) {
+    assert.doesNotMatch(activePrompt, new RegExp(genericExample));
+  }
+  assert.doesNotMatch(activePrompt, /The advanced codes of SOLID/);
+  assert.doesNotMatch(activePrompt, /\*\*Protocol:\*\*|\*\*Battlefield defection:\*\*|\*\*Tactical execution:\*\*/);
   assert.match(
     activePrompt,
     /\*\*Pull request scope:\*\* inspect the diff and enough surrounding code/,
@@ -463,7 +489,30 @@ test("Solid Snake canonical prompt configures its architecture reviewer", async 
     activePrompt,
     /Do not call pull-request-only tools,\s+inspect a diff, or require change provenance/,
   );
-  assert.match(activePrompt, /Hold the reviewed design to these five tactical definitions/);
+  assert.match(activePrompt, /Do not demand abstractions for their own sake/);
+  assert.match(activePrompt, /## Code-comms intelligence/);
+  assert.match(
+    activePrompt,
+    /Identify the violated responsibility, dependency boundary, interface, or\s+behavioral contract and the concrete impact to remove/,
+  );
+  assert.match(
+    activePrompt,
+    /For ownership or coupling findings,\s+name the interface, function, module, injection point, or existing\s+abstraction that should own the behavior/,
+  );
+  assert.match(
+    activePrompt,
+    /For substitution findings, state\s+the exact input, output, failure, side-effect, or baseline behavior to\s+restore/,
+  );
+  assert.match(
+    activePrompt,
+    /affected callers, implementations, or composition-boundary changes\s+while preserving narrow contracts and avoiding unnecessary abstraction/,
+  );
+  assert.match(
+    activePrompt,
+    /focused tests that prove the repaired responsibility, boundary, or\s+behavioral contract/,
+  );
+  assert.match(activePrompt, /numbered code-comms remediation plan/);
+  assert.doesNotMatch(activePrompt, /must move|execute the extraction|extraction plan/);
   assert.match(activePrompt, /If and only if the reviewed design is cohesive/);
   assert.doesNotMatch(activePrompt, /If and only if the changed design is cohesive/);
   assert.match(workflow, /pull_request_target:/);
