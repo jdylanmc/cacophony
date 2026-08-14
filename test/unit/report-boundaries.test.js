@@ -6,14 +6,15 @@ async function read(file) {
   return fs.promises.readFile(file, "utf8");
 }
 
-test("report consumers depend on the narrow model, renderer, and writer boundaries", async () => {
-  const [runner, inputs, policy, index, model, renderer, writer] =
+test("report consumers depend on narrow model, path-policy, renderer, and writer boundaries", async () => {
+  const [runner, inputs, policy, index, model, pathPolicy, renderer, writer] =
     await Promise.all([
       read("src/runner/review.js"),
       read("src/inputs.js"),
       read("src/policy/policy.js"),
       read("src/index.js"),
       read("src/reports/model.js"),
+      read("src/reports/path-policy.js"),
       read("src/reports/renderer.js"),
       read("src/reports/writer.js"),
     ]);
@@ -29,10 +30,15 @@ test("report consumers depend on the narrow model, renderer, and writer boundari
   assert.doesNotMatch(writer, /reports\/(?:model|renderer)\.js/);
 
   assert.match(index, /reports\/model\.js/);
+  assert.match(index, /reports\/path-policy\.js/);
   assert.match(index, /reports\/renderer\.js/);
   assert.match(index, /reports\/writer\.js/);
   assert.match(
     index,
-    /writeReports\(report, markdown, workspace, outputDirectory\)/,
+    /resolveReportDirectory\(\s*workspace,\s*outputDirectory,\s*report\.agent\.id/,
   );
+  assert.match(index, /writeReports\(report, markdown, reportDirectory\)/);
+  assert.match(pathPolicy, /fs\.promises\.realpath/);
+  assert.match(pathPolicy, /fs\.promises\.mkdir/);
+  assert.doesNotMatch(writer, /realpath|mkdir|outputDirectory|workspace/);
 });
