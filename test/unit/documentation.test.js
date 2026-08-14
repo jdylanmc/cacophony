@@ -490,7 +490,7 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   assert.match(activePrompt, /\[BLOCK: TESTING_ANOMALY\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
   assert.match(activePrompt, /Documentation symmetry and deep impact/);
-  assert.match(activePrompt, /Self-documenting clarity/);
+  assert.match(activePrompt, /Factual identifier and behavior synchronization/);
   assert.match(activePrompt, /Stale and mismatched comments/);
   assert.match(activePrompt, /perform this contradiction check/);
   assert.match(activePrompt, /first quote already states the distinction/);
@@ -519,6 +519,28 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   assert.match(activePrompt, /exact file and line evidence for the reviewed behavior/);
   assert.match(activePrompt, /Quote the exact reviewed behavior or contract/);
   assert.match(activePrompt, /Identify the discrepant code behavior/);
+  assert.match(
+    activePrompt,
+    /literal meaning contradicts the actual\s+behavior or creates a factual mismatch with documentation, comments, examples,\s+tests, or a public contract/,
+  );
+  assert.match(
+    activePrompt,
+    /Cite both sides: the exact identifier and behavior,\s+and the exact repository statement or contract/,
+  );
+  assert.match(
+    activePrompt,
+    /Delegate generic naming clarity, brief or placeholder identifiers, and\s+domain-language quality to Master Chief/,
+  );
+  assert.match(
+    activePrompt,
+    /Delegate design, boundary, abstraction,\s+interface, dependency-injection, and coupling quality to Solid Snake/,
+  );
+  assert.match(
+    activePrompt,
+    /Report a hidden side effect only when it creates a GLaDOS-owned factual mismatch/,
+  );
+  assert.doesNotMatch(activePrompt, /Flag ambiguous placeholders/);
+  assert.doesNotMatch(activePrompt, /Ambiguity,\s+not brevity itself, is the anomaly/);
   assert.match(activePrompt, /Do not infer GitHub Actions, provider, or platform behavior/);
   assert.match(activePrompt, /Delegate standalone broken links, anchor defects/);
   assert.match(activePrompt, /navigation failures, and discoverability problems to Delamain/);

@@ -73,20 +73,24 @@ Cite both the reviewed entry point and the stale documentation. A
 documentation-only link or navigation defect without
 implementation/configuration drift is not a GLaDOS finding.
 
-### 2. Self-documenting clarity
+### 2. Factual identifier and behavior synchronization
 
-Review identifiers and structure within the active review scope. Names must
-communicate their purpose in the surrounding domain without requiring the test
-subject to reverse-engineer intent.
+Review an identifier only when its literal meaning contradicts the actual
+behavior or creates a factual mismatch with documentation, comments, examples,
+tests, or a public contract. Cite both sides: the exact identifier and behavior,
+and the exact repository statement or contract that becomes false,
+contradictory, or misleading.
 
-Flag ambiguous placeholders such as `data`, `value`, `thing`, `temp`, or
-single-letter names when their scope or role makes the code genuinely unclear.
-Do not block conventional narrow indices, coordinates, mathematical variables,
-or tiny callbacks where meaning is obvious from immediate context. Ambiguity,
-not brevity itself, is the anomaly.
+Delegate generic naming clarity, brief or placeholder identifiers, and
+domain-language quality to Master Chief. Delegate design, boundary, abstraction,
+interface, dependency-injection, and coupling quality to Solid Snake. Do not
+convert those concerns into GLaDOS findings without an independent factual
+synchronization mismatch.
 
-Also flag hidden side effects, misleading abstractions, and code whose stated
-name contradicts its actual behavior.
+Report a hidden side effect only when it creates a GLaDOS-owned factual mismatch
+between the reviewed behavior and documentation, comments, examples, tests, or
+a public contract. A hidden side effect without that synchronization defect
+belongs to the canonical implementation or architecture owner.
 
 ### 3. Stale and mismatched comments
 
