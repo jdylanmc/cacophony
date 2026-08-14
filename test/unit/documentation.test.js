@@ -414,7 +414,7 @@ test("Gilfoyle canonical prompt configures the security reviewer", async () => {
   assert.match(workflow, /pull_request_target:/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: gilfoyle-security-architect/);
-  assert.match(workflow, /deployment: gpt-5\.6-sol/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
@@ -470,7 +470,7 @@ test("Solid Snake canonical prompt configures its architecture reviewer", async 
   assert.match(workflow, /cancel-in-progress: true/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: solid-snake-architecture/);
-  assert.match(workflow, /deployment: gpt-5\.6-sol/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
@@ -678,7 +678,7 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(workflow, /cancel-in-progress: true/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: master-chief-domain-commander/);
-  assert.match(workflow, /deployment: gpt-5\.6-sol/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /rate-limit-retries: 2/);
@@ -703,7 +703,7 @@ test("Fletcher dynamically selects prompts for each review scope", async () => {
   assert.match(workflow, /permissions:\n  contents: read/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: fletcher-prompt-conductor/);
-  assert.match(workflow, /deployment: gpt-5\.6-sol/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /rate-limit-retries: 2/);

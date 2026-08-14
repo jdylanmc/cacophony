@@ -10,12 +10,12 @@ const expectedAgents = [
   {
     name: "Gilfoyle security audit",
     agent: "gilfoyle-security-architect",
-    deployment: "gpt-5.6-sol",
+    deployment: "gpt-5.4-mini",
   },
   {
     name: "Solid Snake architecture audit",
     agent: "solid-snake-architecture",
-    deployment: "gpt-5.6-sol",
+    deployment: "gpt-5.4-mini",
   },
   {
     name: "GLaDOS documentation audit",
@@ -25,12 +25,12 @@ const expectedAgents = [
   {
     name: "Master Chief domain audit",
     agent: "master-chief-domain-commander",
-    deployment: "gpt-5.6-sol",
+    deployment: "gpt-5.4-mini",
   },
   {
     name: "Fletcher prompt audit",
     agent: "fletcher-prompt-conductor",
-    deployment: "gpt-5.6-sol",
+    deployment: "gpt-5.4-mini",
   },
   {
     name: "Delamain documentation custody audit",
@@ -69,6 +69,22 @@ test("repository audit catalog is unique and covers every canonical prompt", asy
       .sort(),
     expectedAgents.map(({ agent }) => `${agent}.md`).sort(),
   );
+});
+
+test("pull request workflows use the repository audit catalog deployment", async () => {
+  for (const { agent, deployment } of expectedAgents) {
+    const workflow = await fs.promises.readFile(
+      `.github/workflows/${agent}.yml`,
+      "utf8",
+    );
+    const matches = [...workflow.matchAll(/^\s+deployment:\s+(\S+)\s*$/gm)];
+    assert.equal(
+      matches.length,
+      1,
+      `${agent} must declare exactly one reviewer deployment`,
+    );
+    assert.equal(matches[0][1], deployment, `${agent} deployment drifted`);
+  }
 });
 
 test("repository audit selector CLI writes a matrix and fails closed", async (t) => {
