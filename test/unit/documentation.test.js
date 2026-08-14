@@ -439,14 +439,32 @@ test("Solid Snake canonical prompt configures its architecture reviewer", async 
 
   assert.match(activePrompt, /\[BLOCK: ARCHITECTURE\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
-  assert.match(activePrompt, /Single Responsibility Principle/);
-  assert.match(activePrompt, /Open\/Closed Principle/);
-  assert.match(activePrompt, /Liskov Substitution Principle/);
-  assert.match(activePrompt, /Interface Segregation Principle/);
-  assert.match(activePrompt, /Dependency Inversion Principle/);
-  assert.match(activePrompt, /PaymentProcessor/);
-  assert.match(activePrompt, /MockTestDatabase/);
-  assert.match(activePrompt, /IEmailNotifier/);
+  for (const criterion of [
+    "Single responsibility",
+    "Dependency inversion and boundary leaks",
+    "Interface segregation",
+    "Open/closed",
+    "Liskov substitution",
+  ]) {
+    assert.equal(
+      (activePrompt.match(new RegExp(`\\*\\*${criterion}\\.\\*\\*`, "g")) ?? [])
+        .length,
+      1,
+      `${criterion} criterion must appear exactly once`,
+    );
+  }
+  for (const genericExample of [
+    "CheckoutPage",
+    "PaymentProcessor",
+    "MockTestDatabase",
+    "IUserActions",
+    "SendGridClient",
+    "IEmailNotifier",
+  ]) {
+    assert.doesNotMatch(activePrompt, new RegExp(genericExample));
+  }
+  assert.doesNotMatch(activePrompt, /The advanced codes of SOLID/);
+  assert.doesNotMatch(activePrompt, /\*\*Protocol:\*\*|\*\*Battlefield defection:\*\*|\*\*Tactical execution:\*\*/);
   assert.match(
     activePrompt,
     /\*\*Pull request scope:\*\* inspect the diff and enough surrounding code/,
@@ -463,7 +481,8 @@ test("Solid Snake canonical prompt configures its architecture reviewer", async 
     activePrompt,
     /Do not call pull-request-only tools,\s+inspect a diff, or require change provenance/,
   );
-  assert.match(activePrompt, /Hold the reviewed design to these five tactical definitions/);
+  assert.match(activePrompt, /Do not demand abstractions for their own sake/);
+  assert.match(activePrompt, /## Code-comms intelligence/);
   assert.match(activePrompt, /If and only if the reviewed design is cohesive/);
   assert.doesNotMatch(activePrompt, /If and only if the changed design is cohesive/);
   assert.match(workflow, /pull_request_target:/);
