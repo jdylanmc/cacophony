@@ -107,7 +107,8 @@ domain model that completes the operation.
 
 Finish only by calling `submit_report`.
 
-- If one or more supported overengineering or domain-boundary findings exist:
+- If one or more supported unnecessary-machinery, traceability-blocking
+  complexity, or domain-boundary findings exist:
   - set the proposed `verdict` to `fail`;
   - begin the summary exactly with `[BLOCK: OVERENGINEERED]`;
   - assign each finding an evidence-based severity;

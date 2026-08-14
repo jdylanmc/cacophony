@@ -525,6 +525,10 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(activePrompt, /reviewed implementation contains unneeded machinery/);
   assert.match(activePrompt, /reviewed complexity creates ambiguous behavior/);
   assert.match(activePrompt, /If and only if the reviewed implementation is mission-essential/);
+  assert.match(
+    activePrompt,
+    /If one or more supported unnecessary-machinery, traceability-blocking\s+complexity, or domain-boundary findings exist/,
+  );
   const sharedMasterChiefRules = activePrompt.slice(
     activePrompt.indexOf("Every finding must cite"),
   );
@@ -552,7 +556,7 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(workflow, /fail-on: high/);
 });
 
-test("Fletcher dynamically selects prompts for each review scope", async (t) => {
+test("Fletcher dynamically selects prompts for each review scope", async () => {
   const prompt = await fs.promises.readFile(
     ".cacophony/agents/fletcher-prompt-conductor.md",
     "utf8",
@@ -610,23 +614,6 @@ test("Fletcher dynamically selects prompts for each review scope", async (t) => 
     assert.doesNotMatch(repositoryScope, new RegExp(file.replaceAll(".", "\\.")));
   }
   assert.doesNotMatch(repositoryScope, /gpt-\d|deployment:/);
-
-  const fixture = await fs.promises.mkdtemp(
-    path.join(process.cwd(), ".fletcher-prompt-fixture-"),
-  );
-  t.after(() => fs.promises.rm(fixture, { recursive: true, force: true }));
-  const fixturePromptDirectory = path.join(fixture, ".cacophony", "agents");
-  await fs.promises.mkdir(fixturePromptDirectory, { recursive: true });
-  await Promise.all(
-    [...canonicalPromptFiles, "future-reviewer.md"].map((file) =>
-      fs.promises.writeFile(path.join(fixturePromptDirectory, file), "# Prompt\n"),
-    ),
-  );
-  assert.ok(
-    (await fs.promises.readdir(fixturePromptDirectory))
-      .filter((file) => file.endsWith(".md"))
-      .includes("future-reviewer.md"),
-  );
   assert.match(
     prompt,
     /domain overlap,\s+conflicting directives, and unclear cross-prompt ownership/,
