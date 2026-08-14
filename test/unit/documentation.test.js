@@ -310,7 +310,7 @@ test("action metadata defines the retry and inconclusive contract", async () => 
   assert.match(metadata, /repository for a full checkout audit/);
   assert.match(metadata, /evidence-files:/);
   assert.match(metadata, /structured evidence files/);
-  assert.match(metadata, /Maximum model turns, from 1 through 20/);
+  assert.match(metadata, /Maximum model turns, from 1 through 40/);
   assert.match(metadata, /lets reviewers warn when more turns are needed/);
   assert.match(metadata, /reserves the final turn for submit_report/);
 });

@@ -46,6 +46,11 @@ test("readInputs accepts repository audit scope", () => {
   assert.equal(result.reviewScope, "repository");
 });
 
+test("readInputs accepts the maximum turn budget", () => {
+  const result = readInputs(validEnv({ "INPUT_MAX-TURNS": "40" }));
+  assert.equal(result.maxTurns, 40);
+});
+
 test("readInputs rejects prompts outside .cacophony", () => {
   assert.throws(
     () => readInputs(validEnv({ "INPUT_PROMPT-FILE": "prompts/review.md" })),
@@ -59,8 +64,8 @@ test("readInputs rejects traversal and invalid bounds", () => {
     /under \.cacophony/,
   );
   assert.throws(
-    () => readInputs(validEnv({ "INPUT_MAX-TURNS": "21" })),
-    /between 1 and 20/,
+    () => readInputs(validEnv({ "INPUT_MAX-TURNS": "41" })),
+    /between 1 and 40/,
   );
   assert.throws(
     () => readInputs(validEnv({ "INPUT_FAIL-ON": "none" })),
