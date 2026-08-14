@@ -15,7 +15,7 @@ jobs:
     uses: ./.github/workflows/cacophony-review.yml
     with:
       agent-slug: master-chief-domain-commander
-      deployment: gpt-5.6-sol
+      deployment: gpt-5.4-mini
       max-turns: 20
       timeout-seconds: 600
       rate-limit-retries: 2

@@ -34,9 +34,8 @@ Their prompts live under `.cacophony/agents/`, and their workflows run
 independently on pull requests.
 
 The built-in dogfood workflows require `CACOPHONY_AZURE_API_KEY`,
-`CACOPHONY_AZURE_ENDPOINT`, and endpoint deployments named `gpt-5.4-mini`
-(GLaDOS and Delamain) and `gpt-5.6-sol` (Gilfoyle, Solid Snake, Master Chief,
-and Fletcher).
+`CACOPHONY_AZURE_ENDPOINT`, and an endpoint deployment named `gpt-5.4-mini`
+for all six reviewers.
 
 This repository's pull-request dogfood personas are thin
 `pull_request_target` callers of `.github/workflows/cacophony-review.yml`. For
@@ -213,11 +212,11 @@ callers. It audits the full checked-out commit rather than a pull request diff
 and runs the complete shipped example-agent suite sequentially on the same
 default-branch SHA to reduce Azure throttling. The full suite is exactly:
 
-1. Gilfoyle with `gpt-5.6-sol`;
-2. Solid Snake with `gpt-5.6-sol`;
+1. Gilfoyle with `gpt-5.4-mini`;
+2. Solid Snake with `gpt-5.4-mini`;
 3. GLaDOS with `gpt-5.4-mini`.
-4. Master Chief with `gpt-5.6-sol`;
-5. Fletcher with `gpt-5.6-sol`;
+4. Master Chief with `gpt-5.4-mini`;
+5. Fletcher with `gpt-5.4-mini`;
 6. Delamain with `gpt-5.4-mini`.
 
 Leave `agent-filter` empty to run all six. Before the final full suite, dispatch
@@ -425,7 +424,7 @@ strategy:
       - agent: correctness
         deployment: gpt-5.4-mini
       - agent: security
-        deployment: gpt-5.6-sol
+        deployment: gpt-5.4-mini
       - agent: maintainability
         deployment: gpt-5.4-mini
 
@@ -467,7 +466,7 @@ exploitation paths, requires exact evidence and numbered remediation, and uses
 
 This repository dogfoods the reviewer through
 `.github/workflows/gilfoyle-security-architect.yml`. The thin caller declares
-`gpt-5.6-sol` and delegates the shared trusted-base review sequence to
+`gpt-5.4-mini` and delegates the shared trusted-base review sequence to
 `.github/workflows/cacophony-review.yml`.
 
 ### Solid Snake, SOLID Architecture Operative
@@ -481,7 +480,7 @@ numbered code-comms extraction steps; clean changes use `[APPROVED]`.
 `.github/workflows/solid-snake-architecture.yml` runs independently from
 Gilfoyle on the same pull request event, so GitHub schedules both reviews in
 parallel and uploads separate artifacts. Snake's thin caller declares
-`gpt-5.6-sol`; the shared reusable workflow owns the trusted checkout, pinned
+`gpt-5.4-mini`; the shared reusable workflow owns the trusted checkout, pinned
 action, and base-commit prompt loading.
 
 ### GLaDOS, Documentation Synchronization Sentinel
@@ -530,7 +529,7 @@ remediation orders; mission-essential changes use `[APPROVED]`.
 
 `.github/workflows/master-chief-domain-commander.yml` is an independent thin
 caller, so the persona reviewers run in parallel and upload separate artifacts.
-Master Chief declares `gpt-5.6-sol` with the established 20-turn, 600-second
+Master Chief declares `gpt-5.4-mini` with the established 20-turn, 600-second
 pull-request budget.
 
 ### Fletcher, Prompt Conductor
@@ -545,7 +544,7 @@ checks domain overlap and cross-prompt ownership. Supported defects use
 `[APPROVED]`.
 
 `.github/workflows/fletcher-prompt-conductor.yml` is a thin trusted-base caller
-using `gpt-5.6-sol`, the standard 20-turn pull-request budget, and the shared
+using `gpt-5.4-mini`, the standard 20-turn pull-request budget, and the shared
 reusable review workflow. Its top-level `pull_request_target.paths` filter is
 exactly `.cacophony/agents/**`, so GitHub schedules Fletcher only when the pull
 request adds, changes, renames, or deletes an agent-prompt path. Code-only and

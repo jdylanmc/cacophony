@@ -6,12 +6,12 @@ const canonicalAgents = Object.freeze([
   Object.freeze({
     name: "Gilfoyle security audit",
     agent: "gilfoyle-security-architect",
-    deployment: "gpt-5.6-sol",
+    deployment: "gpt-5.4-mini",
   }),
   Object.freeze({
     name: "Solid Snake architecture audit",
     agent: "solid-snake-architecture",
-    deployment: "gpt-5.6-sol",
+    deployment: "gpt-5.4-mini",
   }),
   Object.freeze({
     name: "GLaDOS documentation audit",
@@ -21,12 +21,12 @@ const canonicalAgents = Object.freeze([
   Object.freeze({
     name: "Master Chief domain audit",
     agent: "master-chief-domain-commander",
-    deployment: "gpt-5.6-sol",
+    deployment: "gpt-5.4-mini",
   }),
   Object.freeze({
     name: "Fletcher prompt audit",
     agent: "fletcher-prompt-conductor",
-    deployment: "gpt-5.6-sol",
+    deployment: "gpt-5.4-mini",
   }),
   Object.freeze({
     name: "Delamain documentation custody audit",
