@@ -372,6 +372,17 @@ test("documentation distinguishes pull-request review from repository audit", as
     repositorySkill,
     /pull-request worker as the owner of repository-wide audits/,
   );
+  assert.match(
+    readme,
+    /checks out the trusted default-branch commit and executes\s+only the repository-local read-only agent-selection script before invoking the\s+independently pinned Cacophony action/,
+  );
+  assert.match(
+    readme,
+    /does not execute code from an\s+untrusted audited checkout or pull-request content/,
+  );
+  for (const content of [readme, guide, repositorySkill]) {
+    assert.doesNotMatch(content, /never\s+executes repository code/);
+  }
 });
 test("Gilfoyle canonical prompt configures the security reviewer", async () => {
   const activePrompt = await fs.promises.readFile(
