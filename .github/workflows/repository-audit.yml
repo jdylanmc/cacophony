@@ -81,7 +81,7 @@ jobs:
 
       - name: Run ${{ matrix.name }}
         id: audit
-        uses: jdylanmc/cacophony@fe0dcb82dc5db181d7926e0a55718b47ac25f27d
+        uses: jdylanmc/cacophony@b9e0f303a765524e8876979b3edbb676bcefbdcb
         with:
           prompt-file: .cacophony/agents/${{ matrix.agent }}.md
           review-scope: repository
