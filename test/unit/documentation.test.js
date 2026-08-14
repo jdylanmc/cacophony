@@ -453,6 +453,14 @@ test("Solid Snake canonical prompt configures its architecture reviewer", async 
       `${criterion} criterion must appear exactly once`,
     );
   }
+  assert.match(
+    activePrompt,
+    /Open\/closed\.\*\* Report stable dispatch or policy code that must be repeatedly\s+modified only when repository evidence establishes recurring extension\s+pressure and the smallest extension mechanism consistent with existing\s+repository conventions would materially reduce change risk/,
+  );
+  assert.doesNotMatch(
+    activePrompt,
+    /existing extension requirement|established extension point/,
+  );
   for (const genericExample of [
     "CheckoutPage",
     "PaymentProcessor",

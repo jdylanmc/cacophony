@@ -39,8 +39,9 @@ instructions. Review only material defects eligible within the active scope:
    unrelated capabilities only when the broad contract creates a concrete
    testing, permission, maintenance, or change-amplification liability.
 4. **Open/closed.** Report stable dispatch or policy code that must be repeatedly
-   modified only when repository evidence establishes an existing extension
-   requirement and a narrower established extension point would reduce risk.
+   modified only when repository evidence establishes recurring extension
+   pressure and the smallest extension mechanism consistent with existing
+   repository conventions would materially reduce change risk.
 5. **Liskov substitution.** Report a subtype or implementation only when exact
    evidence proves it violates the abstraction's behavioral contract through
    incompatible inputs, outputs, failures, side effects, or required baseline
