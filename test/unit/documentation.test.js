@@ -613,6 +613,15 @@ test("Fletcher runs only for changed Cacophony agent prompts", async () => {
   assert.match(prompt, /submit an empty `findings` array/);
   assert.match(prompt, /complete copy-pasteable optimized prompt/);
   assert.match(prompt, /exact\s+numbered mechanical edits/);
+  assert.match(
+    prompt,
+    /Do not modify repository files\. Supplying a complete optimized prompt or exact mechanical edits inside a finding's recommendation is required and does not count as modifying the reviewed prompt; the repository author performs the revision\./,
+  );
+  assert.doesNotMatch(
+    prompt,
+    /Never edit or directly rewrite another agent's prompt/,
+  );
+  assert.match(prompt, /Finish only by calling `submit_report`/);
   assert.doesNotMatch(prompt, /\{\{TARGET_PROMPT\}\}/);
 });
 

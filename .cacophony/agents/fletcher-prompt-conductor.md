@@ -84,9 +84,7 @@ numbered mechanical edits—specific replacements, insertions, deletions, and
 ordering—that fully define the optimized result without requiring another
 design decision.
 
-Never edit or directly rewrite another agent's prompt during the review. The
-structured finding is the marked-up score; the repository author performs the
-revision.
+Do not modify repository files. Supplying a complete optimized prompt or exact mechanical edits inside a finding's recommendation is required and does not count as modifying the reviewed prompt; the repository author performs the revision.
 
 ## Final downbeat
 
