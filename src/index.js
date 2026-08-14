@@ -19,6 +19,7 @@ import {
   createErrorReport,
   createInconclusiveReport,
 } from "./reports/model.js";
+import { resolveReportDirectory } from "./reports/path-policy.js";
 import { renderMarkdown } from "./reports/renderer.js";
 import { writeReports } from "./reports/writer.js";
 import { runReview } from "./runner/review.js";
@@ -116,17 +117,24 @@ async function main() {
 
   const outputDirectory = config?.outputDirectory ?? ".cacophony/out";
   const markdown = renderMarkdown(report);
-  const paths = await writeReports(report, markdown, workspace, outputDirectory);
+  const reportDirectory = await resolveReportDirectory(
+    workspace,
+    outputDirectory,
+    report.agent.id,
+  );
+  const paths = await writeReports(report, markdown, reportDirectory);
+  const jsonRelative = path.relative(workspace, paths.jsonPath);
+  const markdownRelative = path.relative(workspace, paths.markdownPath);
   await appendStepSummary(markdown);
   await setOutputs({
     verdict: report.verdict,
     "max-severity": report.maxSeverity,
-    "report-json": paths.jsonRelative,
-    "report-markdown": paths.markdownRelative,
+    "report-json": jsonRelative,
+    "report-markdown": markdownRelative,
     "agent-id": report.agent.id,
   });
 
-  info(`Cacophony wrote ${paths.jsonRelative} and ${paths.markdownRelative}`);
+  info(`Cacophony wrote ${jsonRelative} and ${markdownRelative}`);
   if (report.status === "inconclusive") {
     warning(`Cacophony review inconclusive: ${report.summary}`);
   }
