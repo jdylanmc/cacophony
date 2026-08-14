@@ -131,6 +131,7 @@ test("trusted-base persona workflows are narrow reusable callers", async () => {
     ".github/workflows/solid-snake-architecture.yml",
     ".github/workflows/master-chief-domain-commander.yml",
     ".github/workflows/fletcher-prompt-conductor.yml",
+    ".github/workflows/delamain-documentation-custodian.yml",
   ];
 
   for (const file of callers) {
@@ -385,6 +386,11 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   assert.match(activePrompt, /verbose test log, JUnit XML/);
   assert.match(activePrompt, /breaks an existing unit\s+test/);
   assert.match(activePrompt, /Do not infer GitHub Actions, provider, or platform behavior/);
+  assert.match(activePrompt, /Delegate standalone broken links, anchor defects/);
+  assert.match(activePrompt, /navigation failures, and discoverability problems to Delamain/);
+  assert.match(activePrompt, /changed implementation or configuration\s+moves, removes, or renames a documented public entry point/);
+  assert.match(activePrompt, /documentation-only link\s+or navigation defect/);
+  assert.match(activePrompt, /Standalone broken links and navigation mechanics\s+remain Delamain's domain/);
   assert.match(workflow, /pull_request_target:/);
   assert.match(workflow, /cancel-in-progress: true/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
@@ -500,6 +506,10 @@ test("Delamain canonical prompt configures its documentation custodian", async (
   assert.match(activePrompt, /inputs or outputs, schemas, workflows, public contracts/);
   assert.match(activePrompt, /every implementation-to-documentation factual comparison to\s+GLaDOS/);
   assert.match(activePrompt, /Do not report those defects/);
+  assert.match(activePrompt, /sole owner of standalone broken links, anchors, path casing/);
+  assert.match(activePrompt, /moves, removes, or renames a documented public entry point/);
+  assert.match(activePrompt, /delegate that synchronization\s+defect to GLaDOS/);
+  assert.match(activePrompt, /Do not convert the resulting stale reference/);
   assert.match(activePrompt, /onboarding discoverability/);
   assert.match(activePrompt, /heading hierarchy/);
   assert.match(activePrompt, /list and table structure/);
@@ -532,23 +542,11 @@ test("Delamain canonical prompt configures its documentation custodian", async (
     /\{\{(?:EXISTING_DOCUMENTATION|GIT_DIFF|[A-Z0-9_]+)\}\}/,
   );
 
-  assert.match(workflow, /pull_request_target:/);
-  assert.match(workflow, /permissions:\s*\n\s+contents: read/);
-  assert.match(workflow, /cancel-in-progress: true/);
-  assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: delamain-documentation-custodian/);
   assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /rate-limit-retries: 2/);
-  assert.match(workflow, /fail-on: high/);
-  assert.match(
-    workflow,
-    /azure-api-key: \$\{\{ secrets\.CACOPHONY_AZURE_API_KEY \}\}/,
-  );
-  assert.doesNotMatch(workflow, /actions\/checkout@/);
-  assert.doesNotMatch(workflow, /jdylanmc\/cacophony@/);
-  assert.doesNotMatch(workflow, /CACOPHONY_AZURE_API_KEY:/);
   assert.match(readme, /### Delamain, Documentation Custodian/);
   assert.match(
     readme,
@@ -560,6 +558,9 @@ test("Delamain canonical prompt configures its documentation custodian", async (
   );
   assert.match(readme, /navigation and discoverability/);
   assert.match(readme, /Factual implementation and configuration synchronization remains GLaDOS's/);
+  assert.match(readme, /Delamain alone owns standalone broken links, anchors, path casing/);
+  assert.match(readme, /Standalone link and navigation mechanics\s+belong to Delamain/);
+  assert.match(readme, /changed implementation or\s+configuration moves or removes a documented public entry point/);
   const delamainCatalog = readme.slice(
     readme.indexOf("### Delamain, Documentation Custodian"),
     readme.indexOf("### Master Chief, Domain Commander"),

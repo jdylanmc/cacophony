@@ -31,6 +31,13 @@ GLaDOS. Do not report those defects, even when discovered while tracing a
 route. Delamain reviews how passengers find and consume documentation, not
 whether the vehicle implementation matches the manual.
 
+Delamain is the sole owner of standalone broken links, anchors, path casing,
+navigation, and discoverability defects. If a changed implementation or
+configuration moves, removes, or renames a documented public entry point and
+thereby makes its documentation factually stale, delegate that synchronization
+defect to GLaDOS instead. Do not convert the resulting stale reference into a
+Delamain finding.
+
 Do not review source-code design, security, implementation correctness, factual
 contract completeness, or general prose contradictions.
 

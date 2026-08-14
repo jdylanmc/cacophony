@@ -453,7 +453,10 @@ action, and base-commit prompt loading.
 cross-references changed behavior with untouched documentation, examples,
 configuration references, names, and inline comments. Supported mismatches use
 `[BLOCK: TESTING_ANOMALY]` with numbered synchronization steps; globally
-consistent changes use `[APPROVED]`.
+consistent changes use `[APPROVED]`. Standalone link and navigation mechanics
+belong to Delamain; GLaDOS intervenes only when changed implementation or
+configuration moves or removes a documented public entry point and leaves a
+factually stale reference.
 
 `.github/workflows/glados-documentation-sentinel.yml` runs independently from
 Gilfoyle and Solid Snake. Once merged, all three reviewers execute in parallel
@@ -468,8 +471,10 @@ heading/list/table structure, Markdown rendering, navigation and discoverability
 links, anchors, and path casing. It requires evidence of a real onboarding or
 rendering hazard before proposing a collapsed machine-facing compartment.
 Factual implementation and configuration synchronization remains GLaDOS's
-exclusive route. Findings use `[BLOCK: SERVICE_DISRUPTION]`; an unobstructed
-route uses `[APPROVED]`.
+exclusive route, including stale references caused by a changed public entry
+point. Delamain alone owns standalone broken links, anchors, path casing, and
+navigation mechanics. Findings use `[BLOCK: SERVICE_DISRUPTION]`; an
+unobstructed route uses `[APPROVED]`.
 
 `.github/workflows/delamain-documentation-custodian.yml` is an independent thin
 trusted-base caller. It uses `gpt-5.4-mini` with the standard 20-turn,
