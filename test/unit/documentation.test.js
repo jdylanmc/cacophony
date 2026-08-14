@@ -279,24 +279,58 @@ test("action metadata defines the retry and inconclusive contract", async () => 
   assert.match(metadata, /reserves the final turn for submit_report/);
 });
 
-test("repository audit workflow runs all canonical adversaries sequentially", async () => {
+test("repository audit workflow wires guarded selection before sequential fan-out", async () => {
   const workflow = await fs.promises.readFile(
     ".github/workflows/repository-audit.yml",
     "utf8",
   );
+  assert.doesNotMatch(workflow, /hello[- ]world/i);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /workflow_call:/);
+  assert.equal((workflow.match(/^\s{6}agent-filter:$/gm) ?? []).length, 2);
+  assert.match(workflow, /name: Validate agent filter/);
+  assert.match(workflow, /run: node scripts\/select-repository-audit-agents\.mjs/);
+  assert.match(workflow, /AGENT_FILTER: \$\{\{ inputs\.agent-filter \}\}/);
+  assert.doesNotMatch(workflow, /catalog=|jq |case "\$AGENT_FILTER"/);
+  assert.match(workflow, /needs: validate-agent-filter/);
+  assert.match(
+    workflow,
+    /matrix: \$\{\{ fromJSON\(needs\.validate-agent-filter\.outputs\.matrix\) \}\}/,
+  );
   assert.match(workflow, /max-parallel: 1/);
   assert.match(workflow, /default: 20/);
+  assert.match(workflow, /default: 1800/);
+  assert.match(workflow, /default: 2/);
   assert.match(workflow, /max-turns: \$\{\{ inputs\.max-turns \|\| 20 \}\}/);
+  assert.match(
+    workflow,
+    /timeout-seconds: \$\{\{ inputs\.timeout-seconds \|\| 1800 \}\}/,
+  );
+  assert.match(
+    workflow,
+    /rate-limit-retries: \$\{\{ inputs\.rate-limit-retries \|\| 2 \}\}/,
+  );
   assert.match(workflow, /fail-fast: false/);
-  assert.match(workflow, /agent: gilfoyle-security-architect/);
-  assert.match(workflow, /agent: solid-snake-architecture/);
-  assert.match(workflow, /agent: glados-documentation-sentinel/);
   assert.match(workflow, /review-scope: repository/);
   assert.match(workflow, /workspace-directory: audit-target/);
   assert.match(workflow, /fail-on: low/);
-  assert.match(workflow, /name: Require the default branch/);
+  assert.equal(
+    (workflow.match(/name: Require the default branch/g) ?? []).length,
+    1,
+  );
+  const validationJob = workflow.slice(
+    workflow.indexOf("  validate-agent-filter:"),
+    workflow.indexOf("\n  audit:"),
+  );
+  const auditJob = workflow.slice(workflow.indexOf("\n  audit:"));
+  assert.match(validationJob, /name: Require the default branch/);
+  assert.match(validationJob, /REF_NAME: \$\{\{ github\.ref_name \}\}/);
+  assert.ok(
+    validationJob.indexOf("name: Require the default branch") <
+      validationJob.indexOf("select-repository-audit-agents.mjs"),
+  );
+  assert.doesNotMatch(auditJob, /Require the default branch|REF_NAME:/);
+  assert.match(auditJob, /needs: validate-agent-filter/);
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.doesNotMatch(workflow, /uses: \.\/\s*$/m);
   assert.match(workflow, /CACOPHONY_AZURE_API_KEY/);
@@ -457,6 +491,51 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(activePrompt, /Code Complete/);
   assert.match(activePrompt, /Ubiquitous Language/);
   assert.match(activePrompt, /Cacophony's supplied read-only tools/);
+  assert.match(activePrompt, /In pull request scope/);
+  assert.match(activePrompt, /In repository scope/);
+  assert.match(
+    activePrompt,
+    /pull request scope, inspect the diff and enough surrounding implementation\s+or configuration context/,
+  );
+  assert.match(
+    activePrompt,
+    /repository scope, inspect\s+implementation and configuration surfaces/,
+  );
+  assert.match(activePrompt, /only YAGNI violations, executional\s+complexity, and domain-model boundaries/);
+  assert.match(activePrompt, /only those same three areas/);
+  assert.match(
+    activePrompt,
+    /Do\s+not review documentation, prompts, security, or general correctness/,
+  );
+  assert.match(
+    activePrompt,
+    /unnecessary-complexity, traceability, maintenance, or domain-model impact/,
+  );
+  assert.match(
+    activePrompt,
+    /Master Chief owns unnecessary machinery, traceability-blocking control-flow\s+complexity, and misplaced or distorted domain rules/,
+  );
+  assert.match(
+    activePrompt,
+    /Delegate general SOLID,\s+interface design, dependency injection, and coupling concerns to Solid Snake/,
+  );
+  assert.match(activePrompt, /Delegate every other domain to its canonical owner/);
+  assert.match(activePrompt, /demonstrated current requirements/);
+  assert.match(activePrompt, /reviewed behavior/);
+  assert.match(activePrompt, /reviewed implementation contains unneeded machinery/);
+  assert.match(activePrompt, /reviewed complexity creates ambiguous behavior/);
+  assert.match(activePrompt, /If and only if the reviewed implementation is mission-essential/);
+  assert.match(
+    activePrompt,
+    /If one or more supported unnecessary-machinery, traceability-blocking\s+complexity, or domain-boundary findings exist/,
+  );
+  const sharedMasterChiefRules = activePrompt.slice(
+    activePrompt.indexOf("Every finding must cite"),
+  );
+  assert.doesNotMatch(
+    sharedMasterChiefRules,
+    /current change|changed behavior|pull request adds|added complexity|If and only if the change/,
+  );
   assert.match(activePrompt, /exact file and line\s+evidence/);
   assert.match(activePrompt, /exact numbered steps/);
   assert.match(activePrompt, /\[BLOCK: OVERENGINEERED\]/);
@@ -477,7 +556,7 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(workflow, /fail-on: high/);
 });
 
-test("Fletcher runs only for changed Cacophony agent prompts", async () => {
+test("Fletcher dynamically selects prompts for each review scope", async () => {
   const prompt = await fs.promises.readFile(
     ".cacophony/agents/fletcher-prompt-conductor.md",
     "utf8",
@@ -504,18 +583,64 @@ test("Fletcher runs only for changed Cacophony agent prompts", async () => {
 
   assert.match(prompt, /volatile, hyper-demanding, brilliantly ruthless/);
   assert.match(prompt, /tempo, score, rehearsal, and\s+perfection metaphors/);
-  assert.match(prompt, /Audit only Cacophony agent prompts changed by this pull request/);
-  assert.match(prompt, /addition, modification, rename, or\s+deletion/);
-  assert.match(prompt, /Ignore every other changed file except a workflow or configuration file/);
+  assert.match(
+    prompt,
+    /\*\*Pull request scope:\*\* audit only Cacophony agent prompts changed by this\s+pull request/,
+  );
+  assert.match(prompt, /addition,\s+modification, rename, or deletion/);
+  assert.match(
+    prompt,
+    /Ignore every other changed\s+file except a workflow or configuration file/,
+  );
   assert.match(prompt, /Never review\s+application source, tests, or unrelated documentation/);
   assert.match(prompt, /list_changed_files/);
   assert.match(prompt, /get_diff/);
+  assert.match(
+    prompt,
+    /\*\*Repository scope:\*\* enumerate and read every `\.md` file under\s+`\.cacophony\/agents\/`/,
+  );
+  assert.match(
+    prompt,
+    /Derive the target set only from that directory's contents; do not import\s+workflow or deployment catalog metadata/,
+  );
+  assert.doesNotMatch(prompt, /complete canonical set/);
+  const repositoryScope = prompt.slice(
+    prompt.indexOf("- **Repository scope:**"),
+    prompt.indexOf("\n\nNever review"),
+  );
+  const canonicalPromptFiles = (await fs.promises.readdir(".cacophony/agents"))
+    .filter((file) => file.endsWith(".md"));
+  for (const file of canonicalPromptFiles) {
+    assert.doesNotMatch(repositoryScope, new RegExp(file.replaceAll(".", "\\.")));
+  }
+  assert.doesNotMatch(repositoryScope, /gpt-\d|deployment:/);
+  assert.match(
+    prompt,
+    /domain overlap,\s+conflicting directives, and unclear cross-prompt ownership/,
+  );
+  assert.doesNotMatch(prompt, /canonical set/);
+  assert.match(
+    prompt,
+    /Do not call\s+pull-request-only tools or limit the audit to changed files in repository\s+scope/,
+  );
+  assert.match(prompt, /exact review-scope file and line\s+evidence/);
+  assert.doesNotMatch(prompt, /exact changed-file and line\s+evidence/);
+  assert.match(prompt, /exact audited prompt path and line evidence/);
   assert.match(prompt, /submit_report/);
   assert.match(prompt, /\[BLOCK: PROMPT\] - /);
   assert.match(prompt, /set the summary exactly to `\[APPROVED\]`/);
   assert.match(prompt, /submit an empty `findings` array/);
   assert.match(prompt, /complete copy-pasteable optimized prompt/);
   assert.match(prompt, /exact\s+numbered mechanical edits/);
+  assert.match(
+    prompt,
+    /Do not modify repository files\. Supplying a complete optimized prompt or exact mechanical edits inside a finding's recommendation is required and does not count as modifying the reviewed prompt; the repository author performs the revision\./,
+  );
+  assert.doesNotMatch(
+    prompt,
+    /Never edit or directly rewrite another agent's prompt/,
+  );
+  assert.match(prompt, /Finish only by calling `submit_report`/);
   assert.doesNotMatch(prompt, /\{\{TARGET_PROMPT\}\}/);
 });
 
@@ -531,6 +656,33 @@ test("Delamain canonical prompt configures its documentation custodian", async (
   );
 
   assert.match(activePrompt, /Lead Repository Custodian and Onboarding Assistant/);
+  assert.match(activePrompt, /In pull request scope/);
+  assert.match(activePrompt, /In repository\s+scope/);
+  assert.match(activePrompt, /inspect the complete documentation surface/);
+  assert.match(
+    activePrompt,
+    /implementation or configuration\s+within the active review scope moves, removes, or renames/,
+  );
+  assert.match(
+    activePrompt,
+    /README and documentation visible layers within the active review scope/,
+  );
+  assert.match(
+    activePrompt,
+    /human setup or feature section within the active review scope/,
+  );
+  assert.match(
+    activePrompt,
+    /Inspect documentation within the active review scope/,
+  );
+  assert.match(activePrompt, /the reviewed file and line/);
+  const sharedDelamainRules = activePrompt.slice(
+    activePrompt.indexOf("Your domain is"),
+  );
+  assert.doesNotMatch(
+    sharedDelamainRules,
+    /changed implementation|changed README|changed human|changed and affected|the changed file/,
+  );
   assert.match(activePrompt, /Passenger Cabin Baseline/);
   assert.match(activePrompt, /Isolated Engine Blocks/);
   assert.match(activePrompt, /Total Fleet Symmetry/);
@@ -543,9 +695,12 @@ test("Delamain canonical prompt configures its documentation custodian", async (
   assert.match(activePrompt, /every implementation-to-documentation factual comparison to\s+GLaDOS/);
   assert.match(activePrompt, /Do not report those defects/);
   assert.match(activePrompt, /sole owner of standalone broken links, anchors, path casing/);
-  assert.match(activePrompt, /moves, removes, or renames a documented public entry point/);
-  assert.match(activePrompt, /delegate that synchronization\s+defect to GLaDOS/);
-  assert.match(activePrompt, /Do not convert the resulting stale reference/);
+  assert.match(
+    activePrompt,
+    /moves, removes, or renames a documented public\s+entry point/,
+  );
+  assert.match(activePrompt, /delegate that\s+synchronization defect to GLaDOS/);
+  assert.match(activePrompt, /Do not convert the resulting stale\s+reference/);
   assert.match(activePrompt, /onboarding discoverability/);
   assert.match(activePrompt, /heading hierarchy/);
   assert.match(activePrompt, /list and table structure/);

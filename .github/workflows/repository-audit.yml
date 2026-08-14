@@ -2,8 +2,19 @@ name: Reusable Repository Audit
 
 on:
   workflow_dispatch:
+    inputs:
+      agent-filter:
+        description: Canonical agent slug to run; leave empty for the full suite
+        required: false
+        type: string
+        default: ""
   workflow_call:
     inputs:
+      agent-filter:
+        description: Canonical agent slug to run; leave empty for the full suite
+        required: false
+        type: string
+        default: ""
       max-turns:
         required: false
         type: number
@@ -24,25 +35,11 @@ permissions:
   contents: read
 
 jobs:
-  audit:
-    name: ${{ matrix.name }}
+  validate-agent-filter:
+    name: Validate agent filter
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        include:
-          - name: Gilfoyle security audit
-            agent: gilfoyle-security-architect
-            deployment: gpt-5.6-sol
-          - name: Solid Snake architecture audit
-            agent: solid-snake-architecture
-            deployment: gpt-5.6-sol
-          - name: GLaDOS documentation audit
-            agent: glados-documentation-sentinel
-            deployment: gpt-5.4-mini
-    env:
-      CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
+    outputs:
+      matrix: ${{ steps.selection.outputs.matrix }}
     steps:
       - name: Require the default branch
         shell: bash
@@ -57,13 +54,34 @@ jobs:
 
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          persist-credentials: false
+
+      - name: Select canonical agents
+        id: selection
+        env:
+          AGENT_FILTER: ${{ inputs.agent-filter }}
+        run: node scripts/select-repository-audit-agents.mjs
+
+  audit:
+    name: ${{ matrix.name }}
+    needs: validate-agent-filter
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.validate-agent-filter.outputs.matrix) }}
+    env:
+      CACOPHONY_AZURE_ENDPOINT: ${{ vars.CACOPHONY_AZURE_ENDPOINT }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
           path: audit-target
           fetch-depth: 0
           persist-credentials: false
 
       - name: Run ${{ matrix.name }}
         id: audit
-        uses: jdylanmc/cacophony@2c282f4a5edd216b99e7a81bca02692fc2cc5c5d
+        uses: jdylanmc/cacophony@501d6349b1fcb35eaa92b688a91a7c9b7eb69b41
         with:
           prompt-file: .cacophony/agents/${{ matrix.agent }}.md
           review-scope: repository
