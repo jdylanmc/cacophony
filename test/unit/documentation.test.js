@@ -112,6 +112,11 @@ test("marketplace releases follow successful current-main CI", async () => {
   assert.match(workflow, /gh release create/);
   assert.match(workflow, /--generate-notes/);
   assert.match(workflow, /refs\/tags\/\$\{tag\}/);
+  assert.doesNotMatch(workflow, /git\/ref\/tags/);
+  assert.ok(
+    workflow.indexOf("Require the current main commit") <
+      workflow.indexOf("uses: actions/checkout@"),
+  );
   assert.ok(
     workflow.indexOf("Create or verify immutable release tag") <
       workflow.indexOf("Create GitHub release"),

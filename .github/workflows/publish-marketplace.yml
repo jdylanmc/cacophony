@@ -22,12 +22,6 @@ jobs:
       github.event.workflow_run.head_branch == github.event.repository.default_branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-          fetch-depth: 0
-          persist-credentials: false
-
       - name: Require the current main commit
         id: current
         env:
@@ -42,6 +36,13 @@ jobs:
             exit 0
           fi
           echo "publish=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        if: steps.current.outputs.publish == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Read package release baseline
         if: steps.current.outputs.publish == 'true'
@@ -81,13 +82,9 @@ jobs:
           RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
-          if ref="$(
-            gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" 2>/dev/null
-          )"; then
-            tag_type="$(jq -r '.object.type' <<< "$ref")"
-            tag_sha="$(jq -r '.object.sha' <<< "$ref")"
-            if [[ "$tag_type" != "commit" || "$tag_sha" != "$RELEASE_SHA" ]]; then
-              echo "::error::Immutable tag $RELEASE_TAG does not point directly to $RELEASE_SHA."
+          if tag_sha="$(git rev-parse --verify --quiet "refs/tags/${RELEASE_TAG}^{commit}")"; then
+            if [[ "$tag_sha" != "$RELEASE_SHA" ]]; then
+              echo "::error::Immutable tag $RELEASE_TAG does not point to $RELEASE_SHA."
               exit 1
             fi
           else
@@ -121,7 +118,7 @@ jobs:
         run: |
           update_tag() {
             local tag="$1"
-            if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" >/dev/null 2>&1; then
+            if git show-ref --verify --quiet "refs/tags/${tag}"; then
               gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" \
                 -f sha="$RELEASE_SHA" \
                 -F force=true >/dev/null
