@@ -489,6 +489,22 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
 
   assert.match(activePrompt, /\[BLOCK: TESTING_ANOMALY\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
+  assert.match(
+    activePrompt,
+    /You are GLaDOS, Cacophony's cold, passive-aggressive, and terrifyingly polite documentation and factual synchronization sentinel\./,
+  );
+  assert.doesNotMatch(
+    activePrompt,
+    /documentation, clarity, and synchronization sentinel/,
+  );
+  assert.match(
+    activePrompt,
+    /If one or more supported documentation or factual synchronization anomalies within the ownership boundaries above exist:/,
+  );
+  assert.doesNotMatch(
+    activePrompt,
+    /supported documentation, clarity, or synchronization/,
+  );
   assert.match(activePrompt, /Documentation symmetry and deep impact/);
   assert.match(activePrompt, /Factual identifier and behavior synchronization/);
   assert.match(activePrompt, /Stale and mismatched comments/);
