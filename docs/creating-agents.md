@@ -105,6 +105,17 @@ caller of `.github/workflows/cacophony-review.yml`. It independently owns its
 action pin, default-branch checkout into `audit-target`, API-key mapping on the
 audit action step, and `cacophony-repository-audit-<agent>` artifacts.
 
+The shipped repository-audit suite is exactly Gilfoyle, Solid Snake, GLaDOS,
+Master Chief, Fletcher, and Delamain. Its empty `agent-filter` runs all six
+sequentially on one default-branch SHA. An exact canonical slug runs only that
+agent, and an unknown non-empty slug fails in the validation job before any
+secret-bearing audit job starts. Run
+`agent-filter: fletcher-prompt-conductor` before a final full-suite audit so
+Fletcher can inspect every canonical prompt, their domain overlap, and
+cross-prompt ownership. This repository-scope contract is distinct from
+Fletcher's path-gated pull-request caller, which reviews only changed prompt
+files.
+
 Each pull-request reviewer gets an independent thin caller so GitHub schedules
 all established reviewers in parallel. This template intentionally retains the
 20-turn pull-request budget; it is not the repository-wide audit workflow:

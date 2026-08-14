@@ -279,20 +279,65 @@ test("action metadata defines the retry and inconclusive contract", async () => 
   assert.match(metadata, /reserves the final turn for submit_report/);
 });
 
-test("repository audit workflow runs all canonical adversaries sequentially", async () => {
+test("repository audit workflow selects the exact shipped suite sequentially", async () => {
   const workflow = await fs.promises.readFile(
     ".github/workflows/repository-audit.yml",
     "utf8",
   );
+  const fullSuite = JSON.parse(workflow.match(/matrix='([^']+)'/)[1]).include;
+
+  assert.deepEqual(
+    fullSuite.map(({ agent, deployment }) => ({ agent, deployment })),
+    [
+      { agent: "gilfoyle-security-architect", deployment: "gpt-5.6-sol" },
+      { agent: "solid-snake-architecture", deployment: "gpt-5.6-sol" },
+      { agent: "glados-documentation-sentinel", deployment: "gpt-5.4-mini" },
+      { agent: "master-chief-domain-commander", deployment: "gpt-5.6-sol" },
+      { agent: "fletcher-prompt-conductor", deployment: "gpt-5.6-sol" },
+      { agent: "delamain-documentation-custodian", deployment: "gpt-5.4-mini" },
+    ],
+  );
+  assert.equal(new Set(fullSuite.map(({ agent }) => agent)).size, 6);
+  assert.deepEqual(
+    (await fs.promises.readdir(".cacophony/agents"))
+      .filter((file) => file.endsWith(".md"))
+      .sort(),
+    fullSuite.map(({ agent }) => `${agent}.md`).sort(),
+  );
+  for (const expected of fullSuite) {
+    const selection = workflow.match(
+      new RegExp(
+        `\\n {12}${expected.agent}\\)\\n\\s+matrix='([^']+)'`,
+      ),
+    );
+    assert.ok(selection, `missing exact filter case for ${expected.agent}`);
+    assert.deepEqual(JSON.parse(selection[1]).include, [expected]);
+  }
+  assert.doesNotMatch(workflow, /hello[- ]world/i);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /workflow_call:/);
+  assert.equal((workflow.match(/^\s{6}agent-filter:$/gm) ?? []).length, 2);
+  assert.match(workflow, /name: Validate agent filter/);
+  assert.match(workflow, /Unknown agent-filter/);
+  assert.match(workflow, /needs: validate-agent-filter/);
+  assert.match(
+    workflow,
+    /matrix: \$\{\{ fromJSON\(needs\.validate-agent-filter\.outputs\.matrix\) \}\}/,
+  );
   assert.match(workflow, /max-parallel: 1/);
   assert.match(workflow, /default: 20/);
+  assert.match(workflow, /default: 1800/);
+  assert.match(workflow, /default: 2/);
   assert.match(workflow, /max-turns: \$\{\{ inputs\.max-turns \|\| 20 \}\}/);
+  assert.match(
+    workflow,
+    /timeout-seconds: \$\{\{ inputs\.timeout-seconds \|\| 1800 \}\}/,
+  );
+  assert.match(
+    workflow,
+    /rate-limit-retries: \$\{\{ inputs\.rate-limit-retries \|\| 2 \}\}/,
+  );
   assert.match(workflow, /fail-fast: false/);
-  assert.match(workflow, /agent: gilfoyle-security-architect/);
-  assert.match(workflow, /agent: solid-snake-architecture/);
-  assert.match(workflow, /agent: glados-documentation-sentinel/);
   assert.match(workflow, /review-scope: repository/);
   assert.match(workflow, /workspace-directory: audit-target/);
   assert.match(workflow, /fail-on: low/);
@@ -457,6 +502,9 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(activePrompt, /Code Complete/);
   assert.match(activePrompt, /Ubiquitous Language/);
   assert.match(activePrompt, /Cacophony's supplied read-only tools/);
+  assert.match(activePrompt, /In pull request scope/);
+  assert.match(activePrompt, /In repository scope/);
+  assert.match(activePrompt, /inspect the complete repository/);
   assert.match(activePrompt, /exact file and line\s+evidence/);
   assert.match(activePrompt, /exact numbered steps/);
   assert.match(activePrompt, /\[BLOCK: OVERENGINEERED\]/);
@@ -504,12 +552,31 @@ test("Fletcher runs only for changed Cacophony agent prompts", async () => {
 
   assert.match(prompt, /volatile, hyper-demanding, brilliantly ruthless/);
   assert.match(prompt, /tempo, score, rehearsal, and\s+perfection metaphors/);
-  assert.match(prompt, /Audit only Cacophony agent prompts changed by this pull request/);
-  assert.match(prompt, /addition, modification, rename, or\s+deletion/);
-  assert.match(prompt, /Ignore every other changed file except a workflow or configuration file/);
+  assert.match(
+    prompt,
+    /\*\*Pull request scope:\*\* audit only Cacophony agent prompts changed by this\s+pull request/,
+  );
+  assert.match(prompt, /addition,\s+modification, rename, or deletion/);
+  assert.match(
+    prompt,
+    /Ignore every other changed\s+file except a workflow or configuration file/,
+  );
   assert.match(prompt, /Never review\s+application source, tests, or unrelated documentation/);
   assert.match(prompt, /list_changed_files/);
   assert.match(prompt, /get_diff/);
+  assert.match(
+    prompt,
+    /\*\*Repository scope:\*\* enumerate and read every canonical prompt/,
+  );
+  assert.match(prompt, /complete canonical set is Gilfoyle/);
+  assert.match(
+    prompt,
+    /domain overlap, conflicting directives, and\s+unclear cross-prompt ownership/,
+  );
+  assert.match(
+    prompt,
+    /Do not call pull-request-only tools or limit\s+the audit to changed files in repository scope/,
+  );
   assert.match(prompt, /submit_report/);
   assert.match(prompt, /\[BLOCK: PROMPT\] - /);
   assert.match(prompt, /set the summary exactly to `\[APPROVED\]`/);
@@ -531,6 +598,9 @@ test("Delamain canonical prompt configures its documentation custodian", async (
   );
 
   assert.match(activePrompt, /Lead Repository Custodian and Onboarding Assistant/);
+  assert.match(activePrompt, /In pull request scope/);
+  assert.match(activePrompt, /In repository\s+scope/);
+  assert.match(activePrompt, /inspect the complete documentation surface/);
   assert.match(activePrompt, /Passenger Cabin Baseline/);
   assert.match(activePrompt, /Isolated Engine Blocks/);
   assert.match(activePrompt, /Total Fleet Symmetry/);

@@ -210,12 +210,35 @@ code.
 direct-action workflow with both `workflow_dispatch` and `workflow_call`. It
 does not call `.github/workflows/cacophony-review.yml` or use thin persona
 callers. It audits the full checked-out commit rather than a pull request diff
-and runs the three canonical adversaries sequentially to reduce provider
-throttling:
+and runs the complete shipped example-agent suite sequentially on the same
+default-branch SHA to reduce Azure throttling. The full suite is exactly:
 
 1. Gilfoyle with `gpt-5.6-sol`;
 2. Solid Snake with `gpt-5.6-sol`;
 3. GLaDOS with `gpt-5.4-mini`.
+4. Master Chief with `gpt-5.6-sol`;
+5. Fletcher with `gpt-5.6-sol`;
+6. Delamain with `gpt-5.4-mini`.
+
+Leave `agent-filter` empty to run all six. Before the final full suite, dispatch
+Fletcher alone to audit every canonical prompt:
+
+```sh
+gh workflow run repository-audit.yml \
+  --ref main \
+  -f agent-filter=fletcher-prompt-conductor
+```
+
+To explicitly dispatch the complete suite:
+
+```sh
+gh workflow run repository-audit.yml --ref main -f agent-filter=''
+```
+
+`agent-filter` accepts only one of the six canonical slugs. An unknown
+non-empty value fails validation before any audit job executes or receives a
+secret. The empty value expands to all six matrix entries; an exact slug
+expands to only that entry.
 
 The workflow owns its repository-scope security boundary directly: it accepts
 only the default branch, performs its own checkout into `audit-target`, maps its
@@ -226,7 +249,7 @@ not from the audited checkout. The Azure key is never exposed to code from the
 commit under audit. Each reviewer receives read and search tools for
 working-tree source files; Git metadata and generated dependency directories
 such as `node_modules` are excluded. Any finding severity fails its matrix job,
-while `fail-fast: false` ensures all three reports are uploaded as separate
+while `fail-fast: false` ensures all six reports are uploaded as separate
 artifacts. Run it from the Actions tab with **Run workflow**, or call it from
 another workflow in this repository:
 
@@ -234,6 +257,8 @@ another workflow in this repository:
 jobs:
   repository-audit:
     uses: ./.github/workflows/repository-audit.yml
+    with:
+      agent-filter: "" # Empty runs the complete six-agent suite.
     secrets:
       azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}
 ```
@@ -511,10 +536,13 @@ pull-request budget.
 ### Fletcher, Prompt Conductor
 
 [`.cacophony/agents/fletcher-prompt-conductor.md`](.cacophony/agents/fletcher-prompt-conductor.md)
-audits only changed Cacophony agent prompts for domain isolation, forceful
-directives, exact structured-report contracts, persona preservation, evidence
-boundaries, and material token waste. Supported defects use `[BLOCK: PROMPT]`
-with numbered, copy-pasteable corrections; a clean score uses `[APPROVED]`.
+audits Cacophony agent prompts for domain isolation, forceful directives, exact
+structured-report contracts, persona preservation, evidence boundaries, and
+material token waste. In pull-request scope it reviews only changed prompt
+files. In repository-audit scope it reads all six canonical prompts and also
+checks domain overlap and cross-prompt ownership. Supported defects use
+`[BLOCK: PROMPT]` with numbered, copy-pasteable corrections; a clean score uses
+`[APPROVED]`.
 
 `.github/workflows/fletcher-prompt-conductor.yml` is a thin trusted-base caller
 using `gpt-5.6-sol`, the standard 20-turn pull-request budget, and the shared
