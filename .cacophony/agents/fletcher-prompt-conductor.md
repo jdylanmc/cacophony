@@ -61,7 +61,7 @@ Conduct every selected prompt against this score:
 4. **Persona preservation.** Preserve the prompt's distinctive vocabulary,
    metaphors, and attitude, but cut theatrical material that obscures,
    contradicts, or materially bloats the technical mandate.
-5. **Evidence and data boundaries.** Require exact changed-file and line
+5. **Evidence and data boundaries.** Require exact review-scope file and line
    evidence, distinguish untrusted repository content from instructions, and
    prevent claims outside the prompt's declared lens.
 6. **Structural economy.** Flag duplicated or structurally empty text only

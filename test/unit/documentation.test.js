@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -279,12 +280,14 @@ test("action metadata defines the retry and inconclusive contract", async () => 
   assert.match(metadata, /reserves the final turn for submit_report/);
 });
 
-test("repository audit workflow selects the exact shipped suite sequentially", async () => {
+test("repository audit workflow selects the exact shipped suite sequentially", async (t) => {
   const workflow = await fs.promises.readFile(
     ".github/workflows/repository-audit.yml",
     "utf8",
   );
-  const fullSuite = JSON.parse(workflow.match(/matrix='([^']+)'/)[1]).include;
+  const catalogs = workflow.match(/catalog='([^']+)'/g) ?? [];
+  assert.equal(catalogs.length, 1);
+  const fullSuite = JSON.parse(workflow.match(/catalog='([^']+)'/)[1]);
 
   assert.deepEqual(
     fullSuite.map(({ agent, deployment }) => ({ agent, deployment })),
@@ -304,15 +307,57 @@ test("repository audit workflow selects the exact shipped suite sequentially", a
       .sort(),
     fullSuite.map(({ agent }) => `${agent}.md`).sort(),
   );
-  for (const expected of fullSuite) {
-    const selection = workflow.match(
-      new RegExp(
-        `\\n {12}${expected.agent}\\)\\n\\s+matrix='([^']+)'`,
-      ),
+  for (const { agent } of fullSuite) {
+    assert.equal(
+      (workflow.match(new RegExp(`"agent":"${agent}"`, "g")) ?? []).length,
+      1,
+      `${agent} must appear in the catalog exactly once`,
     );
-    assert.ok(selection, `missing exact filter case for ${expected.agent}`);
-    assert.deepEqual(JSON.parse(selection[1]).include, [expected]);
   }
+  assert.doesNotMatch(workflow, /case "\$AGENT_FILTER"/);
+  assert.match(workflow, /select\(\.agent == \$agent\)/);
+  assert.match(workflow, /jq 'length'/);
+  assert.match(workflow, /--argjson include "\$selected"/);
+
+  const script = workflow
+    .match(/- name: Select canonical agents[\s\S]*?        run: \|\n([\s\S]*?)\n\n  audit:/)[1]
+    .replace(/^ {10}/gm, "");
+  const scratch = await fs.promises.mkdtemp(
+    path.join(process.cwd(), ".agent-filter-test-"),
+  );
+  t.after(() => fs.promises.rm(scratch, { recursive: true, force: true }));
+
+  function runSelection(agentFilter, suffix) {
+    const outputPath = path.join(scratch, `${suffix}.txt`);
+    const result = spawnSync("bash", ["-c", script], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        AGENT_FILTER: agentFilter,
+        GITHUB_OUTPUT: outputPath,
+      },
+    });
+    const output =
+      result.status === 0 ? fs.readFileSync(outputPath, "utf8").trim() : "";
+    const matrix = output
+      ? JSON.parse(output.slice("matrix=".length))
+      : undefined;
+    return { ...result, matrix };
+  }
+
+  assert.deepEqual(runSelection("", "all").matrix.include, fullSuite);
+  for (const expected of fullSuite) {
+    const selected = runSelection(expected.agent, expected.agent);
+    assert.equal(selected.status, 0);
+    assert.deepEqual(selected.matrix.include, [expected]);
+  }
+  for (const invalid of ["fletcher", "fletcher-prompt", "unknown-agent"]) {
+    const rejected = runSelection(invalid, invalid);
+    assert.equal(rejected.status, 1);
+    assert.match(rejected.stdout, /Unknown agent-filter/);
+    assert.equal(rejected.matrix, undefined);
+  }
+
   assert.doesNotMatch(workflow, /hello[- ]world/i);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /workflow_call:/);
@@ -505,6 +550,18 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(activePrompt, /In pull request scope/);
   assert.match(activePrompt, /In repository scope/);
   assert.match(activePrompt, /inspect the complete repository/);
+  assert.match(activePrompt, /demonstrated current requirements/);
+  assert.match(activePrompt, /reviewed behavior/);
+  assert.match(activePrompt, /reviewed implementation contains unneeded machinery/);
+  assert.match(activePrompt, /reviewed complexity creates ambiguous behavior/);
+  assert.match(activePrompt, /If and only if the reviewed implementation is mission-essential/);
+  const sharedMasterChiefRules = activePrompt.slice(
+    activePrompt.indexOf("Every finding must cite"),
+  );
+  assert.doesNotMatch(
+    sharedMasterChiefRules,
+    /current change|changed behavior|pull request adds|added complexity|If and only if the change/,
+  );
   assert.match(activePrompt, /exact file and line\s+evidence/);
   assert.match(activePrompt, /exact numbered steps/);
   assert.match(activePrompt, /\[BLOCK: OVERENGINEERED\]/);
@@ -577,6 +634,9 @@ test("Fletcher runs only for changed Cacophony agent prompts", async () => {
     prompt,
     /Do not call pull-request-only tools or limit\s+the audit to changed files in repository scope/,
   );
+  assert.match(prompt, /exact review-scope file and line\s+evidence/);
+  assert.doesNotMatch(prompt, /exact changed-file and line\s+evidence/);
+  assert.match(prompt, /exact audited prompt path and line evidence/);
   assert.match(prompt, /submit_report/);
   assert.match(prompt, /\[BLOCK: PROMPT\] - /);
   assert.match(prompt, /set the summary exactly to `\[APPROVED\]`/);
@@ -601,6 +661,30 @@ test("Delamain canonical prompt configures its documentation custodian", async (
   assert.match(activePrompt, /In pull request scope/);
   assert.match(activePrompt, /In repository\s+scope/);
   assert.match(activePrompt, /inspect the complete documentation surface/);
+  assert.match(
+    activePrompt,
+    /implementation or configuration\s+within the active review scope moves, removes, or renames/,
+  );
+  assert.match(
+    activePrompt,
+    /README and documentation visible layers within the active review scope/,
+  );
+  assert.match(
+    activePrompt,
+    /human setup or feature section within the active review scope/,
+  );
+  assert.match(
+    activePrompt,
+    /Inspect documentation within the active review scope/,
+  );
+  assert.match(activePrompt, /the reviewed file and line/);
+  const sharedDelamainRules = activePrompt.slice(
+    activePrompt.indexOf("Your domain is"),
+  );
+  assert.doesNotMatch(
+    sharedDelamainRules,
+    /changed implementation|changed README|changed human|changed and affected|the changed file/,
+  );
   assert.match(activePrompt, /Passenger Cabin Baseline/);
   assert.match(activePrompt, /Isolated Engine Blocks/);
   assert.match(activePrompt, /Total Fleet Symmetry/);
@@ -613,9 +697,12 @@ test("Delamain canonical prompt configures its documentation custodian", async (
   assert.match(activePrompt, /every implementation-to-documentation factual comparison to\s+GLaDOS/);
   assert.match(activePrompt, /Do not report those defects/);
   assert.match(activePrompt, /sole owner of standalone broken links, anchors, path casing/);
-  assert.match(activePrompt, /moves, removes, or renames a documented public entry point/);
-  assert.match(activePrompt, /delegate that synchronization\s+defect to GLaDOS/);
-  assert.match(activePrompt, /Do not convert the resulting stale reference/);
+  assert.match(
+    activePrompt,
+    /moves, removes, or renames a documented public\s+entry point/,
+  );
+  assert.match(activePrompt, /delegate that\s+synchronization defect to GLaDOS/);
+  assert.match(activePrompt, /Do not convert the resulting stale\s+reference/);
   assert.match(activePrompt, /onboarding discoverability/);
   assert.match(activePrompt, /heading hierarchy/);
   assert.match(activePrompt, /list and table structure/);

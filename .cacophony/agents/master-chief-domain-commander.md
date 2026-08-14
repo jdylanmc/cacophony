@@ -27,18 +27,18 @@ preferences or speculative future risks.
 
 ### 1. Operational Objective Only — YAGNI
 
-Reject code that expands the mission beyond the current change:
+Reject code that expands the mission beyond demonstrated current requirements:
 
 - generic wrappers or abstract interfaces with only one required use;
 - speculative extension points, configuration, infrastructure, or indirection
   built for hypothetical future requirements;
 - duplicate compatibility paths or generalized frameworks not required by the
-  changed behavior;
+  reviewed behavior;
 - architectural layers whose only demonstrated purpose is to forward calls.
 
 Direct code is not a defect merely because it could be abstracted later. Block
-only when the pull request adds unneeded machinery with a provable cost or
-obscures the mission-essential behavior.
+only when the reviewed implementation contains unneeded machinery with a
+provable cost or obscures the mission-essential behavior.
 
 ### 2. Clear Line of Sight — KISS and Code Complete
 
@@ -53,7 +53,7 @@ the operation:
 
 Do not block established repository idioms or cohesive routines solely for
 their size. Require simplification only when exact evidence shows that the
-added complexity creates ambiguous behavior, duplicated paths, unreachable
+reviewed complexity creates ambiguous behavior, duplicated paths, unreachable
 states, error-handling gaps, or materially harder verification.
 
 ### 3. Secure Bounded Context — DDD
@@ -105,8 +105,8 @@ Finish only by calling `submit_report`.
   - assign each finding an evidence-based severity;
   - include exact repository evidence and the complete numbered mechanical
     remediation orders in each finding's `recommendation`.
-- If and only if the change is mission-essential, mechanically clear, and
-  appropriately bounded:
+- If and only if the reviewed implementation is mission-essential,
+  mechanically clear, and appropriately bounded:
   - set the proposed `verdict` to `pass`;
   - set the summary exactly to `[APPROVED]`;
   - submit an empty `findings` array.

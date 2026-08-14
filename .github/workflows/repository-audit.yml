@@ -47,33 +47,17 @@ jobs:
         env:
           AGENT_FILTER: ${{ inputs.agent-filter }}
         run: |
-          case "$AGENT_FILTER" in
-            "")
-              matrix='{"include":[{"name":"Gilfoyle security audit","agent":"gilfoyle-security-architect","deployment":"gpt-5.6-sol"},{"name":"Solid Snake architecture audit","agent":"solid-snake-architecture","deployment":"gpt-5.6-sol"},{"name":"GLaDOS documentation audit","agent":"glados-documentation-sentinel","deployment":"gpt-5.4-mini"},{"name":"Master Chief domain audit","agent":"master-chief-domain-commander","deployment":"gpt-5.6-sol"},{"name":"Fletcher prompt audit","agent":"fletcher-prompt-conductor","deployment":"gpt-5.6-sol"},{"name":"Delamain documentation custody audit","agent":"delamain-documentation-custodian","deployment":"gpt-5.4-mini"}]}'
-              ;;
-            gilfoyle-security-architect)
-              matrix='{"include":[{"name":"Gilfoyle security audit","agent":"gilfoyle-security-architect","deployment":"gpt-5.6-sol"}]}'
-              ;;
-            solid-snake-architecture)
-              matrix='{"include":[{"name":"Solid Snake architecture audit","agent":"solid-snake-architecture","deployment":"gpt-5.6-sol"}]}'
-              ;;
-            glados-documentation-sentinel)
-              matrix='{"include":[{"name":"GLaDOS documentation audit","agent":"glados-documentation-sentinel","deployment":"gpt-5.4-mini"}]}'
-              ;;
-            master-chief-domain-commander)
-              matrix='{"include":[{"name":"Master Chief domain audit","agent":"master-chief-domain-commander","deployment":"gpt-5.6-sol"}]}'
-              ;;
-            fletcher-prompt-conductor)
-              matrix='{"include":[{"name":"Fletcher prompt audit","agent":"fletcher-prompt-conductor","deployment":"gpt-5.6-sol"}]}'
-              ;;
-            delamain-documentation-custodian)
-              matrix='{"include":[{"name":"Delamain documentation custody audit","agent":"delamain-documentation-custodian","deployment":"gpt-5.4-mini"}]}'
-              ;;
-            *)
+          catalog='[{"name":"Gilfoyle security audit","agent":"gilfoyle-security-architect","deployment":"gpt-5.6-sol"},{"name":"Solid Snake architecture audit","agent":"solid-snake-architecture","deployment":"gpt-5.6-sol"},{"name":"GLaDOS documentation audit","agent":"glados-documentation-sentinel","deployment":"gpt-5.4-mini"},{"name":"Master Chief domain audit","agent":"master-chief-domain-commander","deployment":"gpt-5.6-sol"},{"name":"Fletcher prompt audit","agent":"fletcher-prompt-conductor","deployment":"gpt-5.6-sol"},{"name":"Delamain documentation custody audit","agent":"delamain-documentation-custodian","deployment":"gpt-5.4-mini"}]'
+          selected="$catalog"
+          if [[ -n "$AGENT_FILTER" ]]; then
+            selected="$(jq -c --arg agent "$AGENT_FILTER" \
+              '[.[] | select(.agent == $agent)]' <<< "$catalog")"
+            if [[ "$(jq 'length' <<< "$selected")" -ne 1 ]]; then
               echo "::error::Unknown agent-filter '$AGENT_FILTER'. Use a canonical agent slug or leave it empty."
               exit 1
-              ;;
-          esac
+            fi
+          fi
+          matrix="$(jq -cn --argjson include "$selected" '{include: $include}')"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
   audit:
