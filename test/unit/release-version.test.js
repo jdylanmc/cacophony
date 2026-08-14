@@ -34,6 +34,17 @@ test("a newer package baseline starts a new release line", () => {
   });
 });
 
+test("a retry reuses the release tag already pointing at the current commit", () => {
+  assert.deepEqual(
+    selectReleaseVersion("0.1.0", ["v0.1.0", "v0.1.1"], ["v0.1.1"]),
+    {
+      tag: "v0.1.1",
+      majorTag: "v0",
+      minorTag: "v0.1",
+    },
+  );
+});
+
 test("prerelease and malformed versions fail closed", () => {
   for (const invalid of ["", "1", "v1.2", "v1.2.3-beta.1", "latest"]) {
     assert.throws(
@@ -63,6 +74,7 @@ test("the selector CLI writes GitHub outputs", async (t) => {
         ...process.env,
         BASE_VERSION: "0.1.0",
         RELEASE_TAGS: "v0.1.0\nv0.1.1",
+        CURRENT_RELEASE_TAGS: "",
         GITHUB_OUTPUT: outputPath,
       },
     },

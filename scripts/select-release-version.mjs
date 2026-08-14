@@ -32,8 +32,30 @@ function formatVersion(version) {
   return `${version.major}.${version.minor}.${version.patch}`;
 }
 
-export function selectReleaseVersion(baseVersion, releaseTags = []) {
+function formatSelection(version) {
+  return {
+    tag: `v${formatVersion(version)}`,
+    majorTag: `v${version.major}`,
+    minorTag: `v${version.major}.${version.minor}`,
+  };
+}
+
+export function selectReleaseVersion(
+  baseVersion,
+  releaseTags = [],
+  currentReleaseTags = [],
+) {
   const base = parseVersion(baseVersion, "BASE_VERSION");
+  const current = currentReleaseTags
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .map((tag) => parseVersion(tag, `Current release tag ${tag}`))
+    .sort(compareVersions)
+    .at(-1);
+  if (current) {
+    return formatSelection(current);
+  }
+
   const published = releaseTags
     .map((tag) => tag.trim())
     .filter(Boolean)
@@ -50,17 +72,14 @@ export function selectReleaseVersion(baseVersion, releaseTags = []) {
     throw new Error("The next patch version exceeds JavaScript's safe integer range.");
   }
 
-  return {
-    tag: `v${formatVersion(selected)}`,
-    majorTag: `v${selected.major}`,
-    minorTag: `v${selected.major}.${selected.minor}`,
-  };
+  return formatSelection(selected);
 }
 
 function runCli() {
   const selection = selectReleaseVersion(
     process.env.BASE_VERSION ?? "",
     (process.env.RELEASE_TAGS ?? "").split("\n"),
+    (process.env.CURRENT_RELEASE_TAGS ?? "").split("\n"),
   );
   const output = [
     `tag=${selection.tag}`,

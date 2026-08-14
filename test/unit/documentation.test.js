@@ -108,9 +108,14 @@ test("marketplace releases follow successful current-main CI", async () => {
   assert.match(workflow, /permissions:\s*\n\s+contents: write/);
   assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /scripts\/select-release-version\.mjs/);
+  assert.match(workflow, /Create or verify immutable release tag/);
   assert.match(workflow, /gh release create/);
   assert.match(workflow, /--generate-notes/);
   assert.match(workflow, /refs\/tags\/\$\{tag\}/);
+  assert.ok(
+    workflow.indexOf("Create or verify immutable release tag") <
+      workflow.indexOf("Create GitHub release"),
+  );
   assert.match(readme, /## Releases and GitHub Marketplace/);
   assert.match(readme, /initial Marketplace enrollment/);
   assert.match(readme, /Publish this Action to the GitHub Marketplace/);

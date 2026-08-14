@@ -52,11 +52,16 @@ jobs:
       - name: List semantic release tags
         if: steps.current.outputs.publish == 'true'
         id: tags
+        env:
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           {
             echo "release-tags<<CACOPHONY_TAGS"
             git tag --list 'v[0-9]*.[0-9]*.[0-9]*'
             echo "CACOPHONY_TAGS"
+            echo "current-release-tags<<CACOPHONY_CURRENT_TAGS"
+            git tag --points-at "$RELEASE_SHA" --list 'v[0-9]*.[0-9]*.[0-9]*'
+            echo "CACOPHONY_CURRENT_TAGS"
           } >> "$GITHUB_OUTPUT"
 
       - name: Select semantic release
@@ -65,24 +70,31 @@ jobs:
         env:
           BASE_VERSION: ${{ steps.package.outputs.version }}
           RELEASE_TAGS: ${{ steps.tags.outputs.release-tags }}
-          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          CURRENT_RELEASE_TAGS: ${{ steps.tags.outputs.current-release-tags }}
         run: |
-          existing_tag="$(
-            git tag --points-at "$RELEASE_SHA" --list 'v[0-9]*.[0-9]*.[0-9]*' \
-              --sort=-v:refname | head -n 1
-          )"
-          if [[ -n "$existing_tag" ]]; then
-            version="${existing_tag#v}"
-            major="${version%%.*}"
-            remainder="${version#*.}"
-            minor="${remainder%%.*}"
-            echo "tag=$existing_tag" >> "$GITHUB_OUTPUT"
-            echo "major-tag=v$major" >> "$GITHUB_OUTPUT"
-            echo "minor-tag=v$major.$minor" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
           node scripts/select-release-version.mjs
+
+      - name: Create or verify immutable release tag
+        if: steps.current.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if ref="$(
+            gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" 2>/dev/null
+          )"; then
+            tag_type="$(jq -r '.object.type' <<< "$ref")"
+            tag_sha="$(jq -r '.object.sha' <<< "$ref")"
+            if [[ "$tag_type" != "commit" || "$tag_sha" != "$RELEASE_SHA" ]]; then
+              echo "::error::Immutable tag $RELEASE_TAG does not point directly to $RELEASE_SHA."
+              exit 1
+            fi
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref="refs/tags/${RELEASE_TAG}" \
+              -f sha="$RELEASE_SHA" >/dev/null
+          fi
 
       - name: Create GitHub release
         if: steps.current.outputs.publish == 'true'
@@ -95,7 +107,6 @@ jobs:
             echo "Release $RELEASE_TAG already exists."
           else
             gh release create "$RELEASE_TAG" \
-              --target "$RELEASE_SHA" \
               --title "$RELEASE_TAG" \
               --generate-notes
           fi
