@@ -535,6 +535,10 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
     ".github/workflows/glados-documentation-sentinel.yml",
     "utf8",
   );
+  const delamainPrompt = await fs.promises.readFile(
+    ".cacophony/agents/delamain-documentation-custodian.md",
+    "utf8",
+  );
 
   assert.match(activePrompt, /\[BLOCK: TESTING_ANOMALY\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
@@ -569,7 +573,19 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   );
   assert.match(
     activePrompt,
-    /\*\*Repository scope:\*\* inspect the complete in-scope implementation,\s+configuration, tests, comments, examples, and documentation/,
+    /\*\*Repository scope:\*\* inspect the complete in-scope implementation, configuration, tests, comments, examples, and documentation for current factual synchronization defects/,
+  );
+  assert.match(
+    activePrompt,
+    /Report only when repository evidence shows that implementation or configuration makes a documented fact false, stale, or misleading/,
+  );
+  assert.match(
+    activePrompt,
+    /Do not report standalone broken links, anchors, path-casing, navigation, discoverability, or naming-quality issues; those remain Delamain's domain/,
+  );
+  assert.match(
+    delamainPrompt,
+    /sole owner of standalone broken links, anchors, path casing,\s+navigation, and discoverability/,
   );
   assert.match(
     activePrompt,
