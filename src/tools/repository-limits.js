@@ -1,0 +1,8 @@
+export const MAX_FILE_BYTES = 200_000;
+export const MAX_DIFF_BYTES = 500_000;
+export const MAX_SEARCH_BYTES = 5_000_000;
+export const MAX_EVIDENCE_FILE_BYTES = 10_000_000;
+export const MAX_TOTAL_EVIDENCE_BYTES = 20_000_000;
+export const MAX_EVIDENCE_READ_BYTES = 200_000;
+export const MAX_LIST_ENTRIES = 1_000;
+export const MAX_SEARCH_RESULTS = 100;
