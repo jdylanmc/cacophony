@@ -552,7 +552,7 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(workflow, /fail-on: high/);
 });
 
-test("Fletcher runs only for changed Cacophony agent prompts", async () => {
+test("Fletcher dynamically selects prompts for each review scope", async (t) => {
   const prompt = await fs.promises.readFile(
     ".cacophony/agents/fletcher-prompt-conductor.md",
     "utf8",
@@ -593,16 +593,48 @@ test("Fletcher runs only for changed Cacophony agent prompts", async () => {
   assert.match(prompt, /get_diff/);
   assert.match(
     prompt,
-    /\*\*Repository scope:\*\* enumerate and read every canonical prompt/,
-  );
-  assert.match(prompt, /complete canonical set is Gilfoyle/);
-  assert.match(
-    prompt,
-    /domain overlap, conflicting directives, and\s+unclear cross-prompt ownership/,
+    /\*\*Repository scope:\*\* enumerate and read every `\.md` file under\s+`\.cacophony\/agents\/`/,
   );
   assert.match(
     prompt,
-    /Do not call pull-request-only tools or limit\s+the audit to changed files in repository scope/,
+    /Derive the target set only from that directory's contents; do not import\s+workflow or deployment catalog metadata/,
+  );
+  assert.doesNotMatch(prompt, /complete canonical set/);
+  const repositoryScope = prompt.slice(
+    prompt.indexOf("- **Repository scope:**"),
+    prompt.indexOf("\n\nNever review"),
+  );
+  const canonicalPromptFiles = (await fs.promises.readdir(".cacophony/agents"))
+    .filter((file) => file.endsWith(".md"));
+  for (const file of canonicalPromptFiles) {
+    assert.doesNotMatch(repositoryScope, new RegExp(file.replaceAll(".", "\\.")));
+  }
+  assert.doesNotMatch(repositoryScope, /gpt-\d|deployment:/);
+
+  const fixture = await fs.promises.mkdtemp(
+    path.join(process.cwd(), ".fletcher-prompt-fixture-"),
+  );
+  t.after(() => fs.promises.rm(fixture, { recursive: true, force: true }));
+  const fixturePromptDirectory = path.join(fixture, ".cacophony", "agents");
+  await fs.promises.mkdir(fixturePromptDirectory, { recursive: true });
+  await Promise.all(
+    [...canonicalPromptFiles, "future-reviewer.md"].map((file) =>
+      fs.promises.writeFile(path.join(fixturePromptDirectory, file), "# Prompt\n"),
+    ),
+  );
+  assert.ok(
+    (await fs.promises.readdir(fixturePromptDirectory))
+      .filter((file) => file.endsWith(".md"))
+      .includes("future-reviewer.md"),
+  );
+  assert.match(
+    prompt,
+    /domain overlap,\s+conflicting directives, and unclear cross-prompt ownership/,
+  );
+  assert.doesNotMatch(prompt, /canonical set/);
+  assert.match(
+    prompt,
+    /Do not call\s+pull-request-only tools or limit the audit to changed files in repository\s+scope/,
   );
   assert.match(prompt, /exact review-scope file and line\s+evidence/);
   assert.doesNotMatch(prompt, /exact changed-file and line\s+evidence/);

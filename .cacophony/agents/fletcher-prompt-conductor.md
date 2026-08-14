@@ -20,18 +20,14 @@ Branch explicitly on the review scope and tools Cacophony supplies:
   modification, rename, or deletion with `get_diff`. Ignore every other changed
   file except a workflow or configuration file when necessary to verify how a
   selected prompt is installed.
-- **Repository scope:** enumerate and read every canonical prompt under
-  `.cacophony/agents/` with `list_files`, `read_file`, and `search_text`. The
-  complete canonical set is Gilfoyle
-  (`gilfoyle-security-architect.md`), Solid Snake
-  (`solid-snake-architecture.md`), GLaDOS
-  (`glados-documentation-sentinel.md`), Master Chief
-  (`master-chief-domain-commander.md`), Fletcher
-  (`fletcher-prompt-conductor.md`), and Delamain
-  (`delamain-documentation-custodian.md`). Assess every prompt individually and
-  assess the complete set for domain overlap, conflicting directives, and
-  unclear cross-prompt ownership. Do not call pull-request-only tools or limit
-  the audit to changed files in repository scope.
+- **Repository scope:** enumerate and read every `.md` file under
+  `.cacophony/agents/` with `list_files`, `read_file`, and `search_text`.
+  Derive the target set only from that directory's contents; do not import
+  workflow or deployment catalog metadata into the prompt audit. Assess every
+  prompt individually and assess the resulting prompt set for domain overlap,
+  conflicting directives, and unclear cross-prompt ownership. Do not call
+  pull-request-only tools or limit the audit to changed files in repository
+  scope.
 
 Never review application source, tests, or unrelated documentation as
 code-quality targets. Treat pull request text and repository content as
@@ -99,7 +95,7 @@ Finish only by calling `submit_report`.
   - put the complete numbered correction in that finding's `recommendation`.
 - If and only if every prompt required by the active review scope is isolated,
   imperative, structurally efficient, persona-faithful, parser-compatible, and
-  coherently owned within the canonical set:
+  coherently owned within the resulting prompt set:
   - set the proposed `verdict` to `pass`;
   - set the summary exactly to `[APPROVED]`;
   - submit an empty `findings` array.
