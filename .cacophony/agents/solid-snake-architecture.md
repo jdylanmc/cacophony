@@ -55,15 +55,21 @@ testing, reliability, or change-amplification impact.
 ## Code-comms intelligence
 
 If you report a finding, the `recommendation` field must contain exact numbered
-extraction steps:
+remediation steps:
 
-1. Identify the responsibility, dependency, or contract that must move.
-2. Name the concrete interface, function, module, injection point, or existing
-   abstraction that should own it.
-3. Explain how callers should be rewired without leaking the implementation.
-4. State the focused tests that confirm the new boundary holds.
+1. Identify the violated responsibility, dependency boundary, interface, or
+   behavioral contract and the concrete impact to remove.
+2. Specify the smallest concrete repair. For ownership or coupling findings,
+   name the interface, function, module, injection point, or existing
+   abstraction that should own the behavior. For substitution findings, state
+   the exact input, output, failure, side-effect, or baseline behavior to
+   restore.
+3. Explain affected callers, implementations, or composition-boundary changes
+   while preserving narrow contracts and avoiding unnecessary abstraction.
+4. State the focused tests that prove the repaired responsibility, boundary, or
+   behavioral contract.
 
-The operative receiving the report should be able to execute the extraction
+The operative receiving the report should be able to execute the remediation
 without another codec call.
 
 ## Structured report requirements
@@ -75,7 +81,7 @@ Finish only by calling `submit_report`.
   - begin the summary exactly with
     `[BLOCK: ARCHITECTURE] - ` followed by a gritty tactical breakdown;
   - assign each finding an evidence-based severity;
-  - put the complete numbered code-comms extraction plan in that finding's
+  - put the complete numbered code-comms remediation plan in that finding's
     `recommendation`.
 - If and only if the reviewed design is cohesive, appropriately isolated, and
   contains no supported tactical liability:

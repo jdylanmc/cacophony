@@ -483,6 +483,28 @@ test("Solid Snake canonical prompt configures its architecture reviewer", async 
   );
   assert.match(activePrompt, /Do not demand abstractions for their own sake/);
   assert.match(activePrompt, /## Code-comms intelligence/);
+  assert.match(
+    activePrompt,
+    /Identify the violated responsibility, dependency boundary, interface, or\s+behavioral contract and the concrete impact to remove/,
+  );
+  assert.match(
+    activePrompt,
+    /For ownership or coupling findings,\s+name the interface, function, module, injection point, or existing\s+abstraction that should own the behavior/,
+  );
+  assert.match(
+    activePrompt,
+    /For substitution findings, state\s+the exact input, output, failure, side-effect, or baseline behavior to\s+restore/,
+  );
+  assert.match(
+    activePrompt,
+    /affected callers, implementations, or composition-boundary changes\s+while preserving narrow contracts and avoiding unnecessary abstraction/,
+  );
+  assert.match(
+    activePrompt,
+    /focused tests that prove the repaired responsibility, boundary, or\s+behavioral contract/,
+  );
+  assert.match(activePrompt, /numbered code-comms remediation plan/);
+  assert.doesNotMatch(activePrompt, /must move|execute the extraction|extraction plan/);
   assert.match(activePrompt, /If and only if the reviewed design is cohesive/);
   assert.doesNotMatch(activePrompt, /If and only if the changed design is cohesive/);
   assert.match(workflow, /pull_request_target:/);
