@@ -387,10 +387,34 @@ test("Gilfoyle canonical prompt configures the security reviewer", async () => {
   assert.match(activePrompt, /\[APPROVED\]/);
   assert.match(activePrompt, /CodeQL Static Analysis Results Interchange Format/);
   assert.match(activePrompt, /untrusted supporting evidence/);
+  assert.match(activePrompt, /lead application security reviewer\s+for the active review scope/);
+  assert.match(
+    activePrompt,
+    /\*\*Pull request scope:\*\* inspect the diff and necessary surrounding code/,
+  );
+  assert.match(
+    activePrompt,
+    /\*\*Repository scope:\*\* inspect the complete in-scope source, configuration,\s+dependency, secret-handling, and workflow security surfaces/,
+  );
+  assert.match(
+    activePrompt,
+    /current\s+exploitable vulnerabilities supported by repository evidence/,
+  );
+  assert.match(
+    activePrompt,
+    /Do not call\s+pull-request-only tools, inspect a diff, or require change provenance/,
+  );
+  assert.match(activePrompt, /In pull request scope, corroborate each relevant result/);
+  assert.match(activePrompt, /In repository scope, corroborate each result/);
+  assert.match(
+    activePrompt,
+    /Do not\s+review general correctness, architecture, documentation quality, test coverage,\s+or maintainability unless the cited defect is part of a concrete exploitation\s+path/,
+  );
+  assert.doesNotMatch(activePrompt, /lead application security reviewer\s+for this pull request/);
   assert.match(workflow, /pull_request_target:/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: gilfoyle-security-architect/);
-  assert.match(workflow, /deployment: gpt-5\.6-sol/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
@@ -415,19 +439,87 @@ test("Solid Snake canonical prompt configures its architecture reviewer", async 
 
   assert.match(activePrompt, /\[BLOCK: ARCHITECTURE\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
-  assert.match(activePrompt, /Single Responsibility Principle/);
-  assert.match(activePrompt, /Open\/Closed Principle/);
-  assert.match(activePrompt, /Liskov Substitution Principle/);
-  assert.match(activePrompt, /Interface Segregation Principle/);
-  assert.match(activePrompt, /Dependency Inversion Principle/);
-  assert.match(activePrompt, /PaymentProcessor/);
-  assert.match(activePrompt, /MockTestDatabase/);
-  assert.match(activePrompt, /IEmailNotifier/);
+  for (const criterion of [
+    "Single responsibility",
+    "Dependency inversion and boundary leaks",
+    "Interface segregation",
+    "Open/closed",
+    "Liskov substitution",
+  ]) {
+    assert.equal(
+      (activePrompt.match(new RegExp(`\\*\\*${criterion}\\.\\*\\*`, "g")) ?? [])
+        .length,
+      1,
+      `${criterion} criterion must appear exactly once`,
+    );
+  }
+  assert.match(
+    activePrompt,
+    /Open\/closed\.\*\* Report stable dispatch or policy code that must be repeatedly\s+modified only when repository evidence establishes recurring extension\s+pressure and the smallest extension mechanism consistent with existing\s+repository conventions would materially reduce change risk/,
+  );
+  assert.doesNotMatch(
+    activePrompt,
+    /existing extension requirement|established extension point/,
+  );
+  for (const genericExample of [
+    "CheckoutPage",
+    "PaymentProcessor",
+    "MockTestDatabase",
+    "IUserActions",
+    "SendGridClient",
+    "IEmailNotifier",
+  ]) {
+    assert.doesNotMatch(activePrompt, new RegExp(genericExample));
+  }
+  assert.doesNotMatch(activePrompt, /The advanced codes of SOLID/);
+  assert.doesNotMatch(activePrompt, /\*\*Protocol:\*\*|\*\*Battlefield defection:\*\*|\*\*Tactical execution:\*\*/);
+  assert.match(
+    activePrompt,
+    /\*\*Pull request scope:\*\* inspect the diff and enough surrounding code/,
+  );
+  assert.match(
+    activePrompt,
+    /\*\*Repository scope:\*\* inspect the complete in-scope implementation and\s+configuration surfaces/,
+  );
+  assert.match(
+    activePrompt,
+    /current material SOLID or boundary defects\s+supported by repository evidence/,
+  );
+  assert.match(
+    activePrompt,
+    /Do not call pull-request-only tools,\s+inspect a diff, or require change provenance/,
+  );
+  assert.match(activePrompt, /Do not demand abstractions for their own sake/);
+  assert.match(activePrompt, /## Code-comms intelligence/);
+  assert.match(
+    activePrompt,
+    /Identify the violated responsibility, dependency boundary, interface, or\s+behavioral contract and the concrete impact to remove/,
+  );
+  assert.match(
+    activePrompt,
+    /For ownership or coupling findings,\s+name the interface, function, module, injection point, or existing\s+abstraction that should own the behavior/,
+  );
+  assert.match(
+    activePrompt,
+    /For substitution findings, state\s+the exact input, output, failure, side-effect, or baseline behavior to\s+restore/,
+  );
+  assert.match(
+    activePrompt,
+    /affected callers, implementations, or composition-boundary changes\s+while preserving narrow contracts and avoiding unnecessary abstraction/,
+  );
+  assert.match(
+    activePrompt,
+    /focused tests that prove the repaired responsibility, boundary, or\s+behavioral contract/,
+  );
+  assert.match(activePrompt, /numbered code-comms remediation plan/);
+  assert.doesNotMatch(activePrompt, /must move|execute the extraction|extraction plan/);
+  assert.match(activePrompt, /If and only if the reviewed design is cohesive/);
+  assert.doesNotMatch(activePrompt, /If and only if the changed design is cohesive/);
   assert.match(workflow, /pull_request_target:/);
   assert.match(workflow, /cancel-in-progress: true/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: solid-snake-architecture/);
-  assert.match(workflow, /deployment: gpt-5\.6-sol/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /rate-limit-retries: 2/);
   assert.match(workflow, /timeout-seconds: 600/);
@@ -443,11 +535,31 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
     ".github/workflows/glados-documentation-sentinel.yml",
     "utf8",
   );
+  const delamainPrompt = await fs.promises.readFile(
+    ".cacophony/agents/delamain-documentation-custodian.md",
+    "utf8",
+  );
 
   assert.match(activePrompt, /\[BLOCK: TESTING_ANOMALY\]/);
   assert.match(activePrompt, /\[APPROVED\]/);
+  assert.match(
+    activePrompt,
+    /You are GLaDOS, Cacophony's cold, passive-aggressive, and terrifyingly polite documentation and factual synchronization sentinel\./,
+  );
+  assert.doesNotMatch(
+    activePrompt,
+    /documentation, clarity, and synchronization sentinel/,
+  );
+  assert.match(
+    activePrompt,
+    /If one or more supported documentation or factual synchronization anomalies within the ownership boundaries above exist:/,
+  );
+  assert.doesNotMatch(
+    activePrompt,
+    /supported documentation, clarity, or synchronization/,
+  );
   assert.match(activePrompt, /Documentation symmetry and deep impact/);
-  assert.match(activePrompt, /Self-documenting clarity/);
+  assert.match(activePrompt, /Factual identifier and behavior synchronization/);
   assert.match(activePrompt, /Stale and mismatched comments/);
   assert.match(activePrompt, /perform this contradiction check/);
   assert.match(activePrompt, /first quote already states the distinction/);
@@ -455,10 +567,92 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   assert.match(activePrompt, /guard that rejects a documented unsupported mode confirms/);
   assert.match(activePrompt, /verbose test log, JUnit XML/);
   assert.match(activePrompt, /breaks an existing unit\s+test/);
+  assert.match(
+    activePrompt,
+    /\*\*Pull request scope:\*\* inspect the diff, then search the broader repository/,
+  );
+  assert.match(
+    activePrompt,
+    /\*\*Repository scope:\*\* inspect the complete in-scope implementation, configuration, tests, comments, examples, and documentation for current factual synchronization defects/,
+  );
+  assert.match(
+    activePrompt,
+    /Report only when repository evidence shows that implementation or configuration makes a documented fact false, stale, or misleading/,
+  );
+  assert.match(
+    activePrompt,
+    /Do not report standalone broken links, anchors, path-casing, navigation, discoverability, or naming-quality issues; those remain Delamain's domain/,
+  );
+  assert.match(
+    delamainPrompt,
+    /sole owner of standalone broken links, anchors, path casing,\s+navigation, and discoverability/,
+  );
+  assert.match(
+    activePrompt,
+    /In repository scope, block current test,\s+implementation, or documented-contract discrepancies/,
+  );
+  assert.match(activePrompt, /reviewed tests, implementation, and documented contract/);
+  assert.match(activePrompt, /Cross-reference every reviewed public behavior/);
+  assert.match(
+    activePrompt,
+    /In repository scope, report current discrepancies supported by\s+repository evidence without requiring change provenance/,
+  );
+  assert.match(activePrompt, /exact file and line evidence for the reviewed behavior/);
+  assert.match(activePrompt, /Quote the exact reviewed behavior or contract/);
+  assert.match(activePrompt, /Identify the discrepant code behavior/);
+  assert.match(
+    activePrompt,
+    /\*\*Direct identifier contradiction\.\*\* Report an identifier when its literal\s+claim is false for the named implementation behavior/,
+  );
+  assert.match(
+    activePrompt,
+    /The identifier itself is the conflicting repository\s+statement; no separate documentation, comment, example, test, or public\s+contract is required/,
+  );
+  assert.match(
+    activePrompt,
+    /\*\*Cross-artifact synchronization mismatch\.\*\* Report an identifier when the\s+identifier and implementation behavior make a separate documentation\s+statement, comment, example, test, or public contract false, contradictory,\s+or misleading/,
+  );
+  assert.match(
+    activePrompt,
+    /Cite the exact identifier and behavior plus that exact\s+separate conflicting artifact/,
+  );
+  assert.match(
+    activePrompt,
+    /For either path, state the two incompatible factual claims in one sentence/,
+  );
+  assert.match(
+    activePrompt,
+    /Do\s+not report subjective awkwardness, preferred naming, or wording that is merely\s+less clear than an alternative/,
+  );
+  assert.match(
+    activePrompt,
+    /Delegate generic naming clarity, brief or placeholder identifiers, and\s+domain-language quality to Master Chief/,
+  );
+  assert.match(
+    activePrompt,
+    /Delegate design, boundary, abstraction,\s+interface, dependency-injection, and coupling quality to Solid Snake/,
+  );
+  assert.match(
+    activePrompt,
+    /Report a hidden side effect only through the cross-artifact synchronization\s+mismatch path/,
+  );
+  assert.match(
+    activePrompt,
+    /For a direct identifier\s+contradiction, the identifier definition or use is that artifact and no\s+separate third artifact is required/,
+  );
+  assert.match(
+    activePrompt,
+    /For a documentation omission, cite the\s+contract that establishes the required fact and the exact documentation\s+location where that fact is missing/,
+  );
+  assert.doesNotMatch(activePrompt, /Flag ambiguous placeholders/);
+  assert.doesNotMatch(activePrompt, /Ambiguity,\s+not brevity itself, is the anomaly/);
   assert.match(activePrompt, /Do not infer GitHub Actions, provider, or platform behavior/);
   assert.match(activePrompt, /Delegate standalone broken links, anchor defects/);
   assert.match(activePrompt, /navigation failures, and discoverability problems to Delamain/);
-  assert.match(activePrompt, /changed implementation or configuration\s+moves, removes, or renames a documented public entry point/);
+  assert.match(
+    activePrompt,
+    /implementation or configuration within\s+the active review scope moves, removes, or renames a documented public entry\s+point/,
+  );
   assert.match(activePrompt, /documentation-only link\s+or navigation defect/);
   assert.match(activePrompt, /Standalone broken links and navigation mechanics\s+remain Delamain's domain/);
   assert.match(workflow, /pull_request_target:/);
@@ -549,7 +743,7 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(workflow, /cancel-in-progress: true/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: master-chief-domain-commander/);
-  assert.match(workflow, /deployment: gpt-5\.6-sol/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /rate-limit-retries: 2/);
@@ -574,7 +768,7 @@ test("Fletcher dynamically selects prompts for each review scope", async () => {
   assert.match(workflow, /permissions:\n  contents: read/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: fletcher-prompt-conductor/);
-  assert.match(workflow, /deployment: gpt-5\.6-sol/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
   assert.match(workflow, /max-turns: 20/);
   assert.match(workflow, /timeout-seconds: 600/);
   assert.match(workflow, /rate-limit-retries: 2/);
