@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -280,90 +279,19 @@ test("action metadata defines the retry and inconclusive contract", async () => 
   assert.match(metadata, /reserves the final turn for submit_report/);
 });
 
-test("repository audit workflow selects the exact shipped suite sequentially", async (t) => {
+test("repository audit workflow wires guarded selection before sequential fan-out", async () => {
   const workflow = await fs.promises.readFile(
     ".github/workflows/repository-audit.yml",
     "utf8",
   );
-  const catalogs = workflow.match(/catalog='([^']+)'/g) ?? [];
-  assert.equal(catalogs.length, 1);
-  const fullSuite = JSON.parse(workflow.match(/catalog='([^']+)'/)[1]);
-
-  assert.deepEqual(
-    fullSuite.map(({ agent, deployment }) => ({ agent, deployment })),
-    [
-      { agent: "gilfoyle-security-architect", deployment: "gpt-5.6-sol" },
-      { agent: "solid-snake-architecture", deployment: "gpt-5.6-sol" },
-      { agent: "glados-documentation-sentinel", deployment: "gpt-5.4-mini" },
-      { agent: "master-chief-domain-commander", deployment: "gpt-5.6-sol" },
-      { agent: "fletcher-prompt-conductor", deployment: "gpt-5.6-sol" },
-      { agent: "delamain-documentation-custodian", deployment: "gpt-5.4-mini" },
-    ],
-  );
-  assert.equal(new Set(fullSuite.map(({ agent }) => agent)).size, 6);
-  assert.deepEqual(
-    (await fs.promises.readdir(".cacophony/agents"))
-      .filter((file) => file.endsWith(".md"))
-      .sort(),
-    fullSuite.map(({ agent }) => `${agent}.md`).sort(),
-  );
-  for (const { agent } of fullSuite) {
-    assert.equal(
-      (workflow.match(new RegExp(`"agent":"${agent}"`, "g")) ?? []).length,
-      1,
-      `${agent} must appear in the catalog exactly once`,
-    );
-  }
-  assert.doesNotMatch(workflow, /case "\$AGENT_FILTER"/);
-  assert.match(workflow, /select\(\.agent == \$agent\)/);
-  assert.match(workflow, /jq 'length'/);
-  assert.match(workflow, /--argjson include "\$selected"/);
-
-  const script = workflow
-    .match(/- name: Select canonical agents[\s\S]*?        run: \|\n([\s\S]*?)\n\n  audit:/)[1]
-    .replace(/^ {10}/gm, "");
-  const scratch = await fs.promises.mkdtemp(
-    path.join(process.cwd(), ".agent-filter-test-"),
-  );
-  t.after(() => fs.promises.rm(scratch, { recursive: true, force: true }));
-
-  function runSelection(agentFilter, suffix) {
-    const outputPath = path.join(scratch, `${suffix}.txt`);
-    const result = spawnSync("bash", ["-c", script], {
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        AGENT_FILTER: agentFilter,
-        GITHUB_OUTPUT: outputPath,
-      },
-    });
-    const output =
-      result.status === 0 ? fs.readFileSync(outputPath, "utf8").trim() : "";
-    const matrix = output
-      ? JSON.parse(output.slice("matrix=".length))
-      : undefined;
-    return { ...result, matrix };
-  }
-
-  assert.deepEqual(runSelection("", "all").matrix.include, fullSuite);
-  for (const expected of fullSuite) {
-    const selected = runSelection(expected.agent, expected.agent);
-    assert.equal(selected.status, 0);
-    assert.deepEqual(selected.matrix.include, [expected]);
-  }
-  for (const invalid of ["fletcher", "fletcher-prompt", "unknown-agent"]) {
-    const rejected = runSelection(invalid, invalid);
-    assert.equal(rejected.status, 1);
-    assert.match(rejected.stdout, /Unknown agent-filter/);
-    assert.equal(rejected.matrix, undefined);
-  }
-
   assert.doesNotMatch(workflow, /hello[- ]world/i);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /workflow_call:/);
   assert.equal((workflow.match(/^\s{6}agent-filter:$/gm) ?? []).length, 2);
   assert.match(workflow, /name: Validate agent filter/);
-  assert.match(workflow, /Unknown agent-filter/);
+  assert.match(workflow, /run: node scripts\/select-repository-audit-agents\.mjs/);
+  assert.match(workflow, /AGENT_FILTER: \$\{\{ inputs\.agent-filter \}\}/);
+  assert.doesNotMatch(workflow, /catalog=|jq |case "\$AGENT_FILTER"/);
   assert.match(workflow, /needs: validate-agent-filter/);
   assert.match(
     workflow,
@@ -386,7 +314,23 @@ test("repository audit workflow selects the exact shipped suite sequentially", a
   assert.match(workflow, /review-scope: repository/);
   assert.match(workflow, /workspace-directory: audit-target/);
   assert.match(workflow, /fail-on: low/);
-  assert.match(workflow, /name: Require the default branch/);
+  assert.equal(
+    (workflow.match(/name: Require the default branch/g) ?? []).length,
+    1,
+  );
+  const validationJob = workflow.slice(
+    workflow.indexOf("  validate-agent-filter:"),
+    workflow.indexOf("\n  audit:"),
+  );
+  const auditJob = workflow.slice(workflow.indexOf("\n  audit:"));
+  assert.match(validationJob, /name: Require the default branch/);
+  assert.match(validationJob, /REF_NAME: \$\{\{ github\.ref_name \}\}/);
+  assert.ok(
+    validationJob.indexOf("name: Require the default branch") <
+      validationJob.indexOf("select-repository-audit-agents.mjs"),
+  );
+  assert.doesNotMatch(auditJob, /Require the default branch|REF_NAME:/);
+  assert.match(auditJob, /needs: validate-agent-filter/);
   assert.match(workflow, /uses: jdylanmc\/cacophony@[a-f0-9]{40}/);
   assert.doesNotMatch(workflow, /uses: \.\/\s*$/m);
   assert.match(workflow, /CACOPHONY_AZURE_API_KEY/);
@@ -549,7 +493,33 @@ test("Master Chief canonical prompt configures its domain reviewer", async () =>
   assert.match(activePrompt, /Cacophony's supplied read-only tools/);
   assert.match(activePrompt, /In pull request scope/);
   assert.match(activePrompt, /In repository scope/);
-  assert.match(activePrompt, /inspect the complete repository/);
+  assert.match(
+    activePrompt,
+    /pull request scope, inspect the diff and enough surrounding implementation\s+or configuration context/,
+  );
+  assert.match(
+    activePrompt,
+    /repository scope, inspect\s+implementation and configuration surfaces/,
+  );
+  assert.match(activePrompt, /only YAGNI violations, executional\s+complexity, and domain-model boundaries/);
+  assert.match(activePrompt, /only those same three areas/);
+  assert.match(
+    activePrompt,
+    /Do\s+not review documentation, prompts, security, or general correctness/,
+  );
+  assert.match(
+    activePrompt,
+    /unnecessary-complexity, traceability, maintenance, or domain-model impact/,
+  );
+  assert.match(
+    activePrompt,
+    /Master Chief owns unnecessary machinery, traceability-blocking control-flow\s+complexity, and misplaced or distorted domain rules/,
+  );
+  assert.match(
+    activePrompt,
+    /Delegate general SOLID,\s+interface design, dependency injection, and coupling concerns to Solid Snake/,
+  );
+  assert.match(activePrompt, /Delegate every other domain to its canonical owner/);
   assert.match(activePrompt, /demonstrated current requirements/);
   assert.match(activePrompt, /reviewed behavior/);
   assert.match(activePrompt, /reviewed implementation contains unneeded machinery/);
