@@ -11,8 +11,14 @@ The active prompt is the sole reviewer-contract source. Link the README catalog
 entry to `.cacophony/agents/<slug>.md`; do not create a second prompt copy.
 
 Create a thin caller of `.github/workflows/cacophony-review.yml`. Keep shared
-authorization, checkout, prompt availability, action invocation, secret
-scoping, and artifact logic exclusively in that reusable workflow.
+pull-request authorization, merge-ref checkout, prompt availability, action
+invocation, secret scoping, and artifact logic in that reusable workflow.
+
+Do not treat the pull-request worker as the owner of repository-wide audits.
+`.github/workflows/repository-audit.yml` is a separate repository-owned
+direct-action mode with independent action pinning, default-branch checkout,
+secret scoping, and per-agent artifacts. A persona caller must not call or copy
+that audit workflow.
 
 The caller preserves:
 

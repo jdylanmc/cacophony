@@ -28,9 +28,11 @@ Verify:
 8. the agent has a sufficient turn and timeout budget;
 9. `rate-limit-retries: 2` is understood as two retries after the initial
    request, for three total attempts;
-10. Cacophony repository personas call the shared reusable workflow instead of
-    copying its security-sensitive steps;
-11. `git diff --check` passes.
+10. Cacophony pull-request personas call the shared reusable workflow instead
+    of copying its pull-request security-sensitive steps;
+11. repository-wide audit remains a separate direct-action workflow with its
+    own pinning, default-branch checkout, secret scoping, and artifacts;
+12. `git diff --check` passes.
 
 Inside a trusted Cacophony checkout, the fixed validation commands are:
 
