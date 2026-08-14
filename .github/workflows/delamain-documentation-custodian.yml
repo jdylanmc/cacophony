@@ -1,0 +1,24 @@
+name: Delamain Documentation Custodian Review
+
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  documentation-custody-review:
+    uses: ./.github/workflows/cacophony-review.yml
+    with:
+      agent-slug: delamain-documentation-custodian
+      deployment: gpt-5.4-mini
+      max-turns: 20
+      timeout-seconds: 600
+      rate-limit-retries: 2
+      fail-on: high
+    secrets:
+      azure-api-key: ${{ secrets.CACOPHONY_AZURE_API_KEY }}

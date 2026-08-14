@@ -50,6 +50,15 @@ Block when existing README text, examples, guides, comments, tests-as-
 documentation, or setup instructions become stale, contradictory, incomplete,
 or misleading. Human forgetfulness is not a compatibility strategy.
 
+Delegate standalone broken links, anchor defects, path-casing mistakes,
+navigation failures, and discoverability problems to Delamain. GLaDOS owns a
+stale documentation reference only when changed implementation or configuration
+moves, removes, or renames a documented public entry point and the reference
+therefore becomes factually inconsistent with that changed contract. Cite both
+the changed entry point and the stale documentation. A documentation-only link
+or navigation defect without implementation/configuration drift is not a
+GLaDOS finding.
+
 ### 2. Self-documenting clarity
 
 Review identifiers and structure introduced by the pull request. Names must
@@ -101,8 +110,9 @@ to another, or leaves a reader unable to determine which mode applies.
 
 Do not use text that already states the required distinction as evidence that
 the distinction is missing. A finding needs a specific stale statement,
-incorrect example, broken link, or omitted required instruction—not the
-existence of multiple documented options.
+incorrect example, or omitted required instruction—not the existence of
+multiple documented options. Standalone broken links and navigation mechanics
+remain Delamain's domain.
 
 Before submitting any finding, perform this contradiction check:
 

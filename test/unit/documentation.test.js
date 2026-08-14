@@ -131,6 +131,7 @@ test("trusted-base persona workflows are narrow reusable callers", async () => {
     ".github/workflows/solid-snake-architecture.yml",
     ".github/workflows/master-chief-domain-commander.yml",
     ".github/workflows/fletcher-prompt-conductor.yml",
+    ".github/workflows/delamain-documentation-custodian.yml",
   ];
 
   for (const file of callers) {
@@ -385,6 +386,11 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   assert.match(activePrompt, /verbose test log, JUnit XML/);
   assert.match(activePrompt, /breaks an existing unit\s+test/);
   assert.match(activePrompt, /Do not infer GitHub Actions, provider, or platform behavior/);
+  assert.match(activePrompt, /Delegate standalone broken links, anchor defects/);
+  assert.match(activePrompt, /navigation failures, and discoverability problems to Delamain/);
+  assert.match(activePrompt, /changed implementation or configuration\s+moves, removes, or renames a documented public entry point/);
+  assert.match(activePrompt, /documentation-only link\s+or navigation defect/);
+  assert.match(activePrompt, /Standalone broken links and navigation mechanics\s+remain Delamain's domain/);
   assert.match(workflow, /pull_request_target:/);
   assert.match(workflow, /cancel-in-progress: true/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
@@ -475,6 +481,91 @@ test("Fletcher runs only for changed Cacophony agent prompts", async () => {
   assert.match(prompt, /complete copy-pasteable optimized prompt/);
   assert.match(prompt, /exact\s+numbered mechanical edits/);
   assert.doesNotMatch(prompt, /\{\{TARGET_PROMPT\}\}/);
+});
+
+test("Delamain canonical prompt configures its documentation custodian", async () => {
+  const activePrompt = await fs.promises.readFile(
+    ".cacophony/agents/delamain-documentation-custodian.md",
+    "utf8",
+  );
+  const readme = await fs.promises.readFile("README.md", "utf8");
+  const workflow = await fs.promises.readFile(
+    ".github/workflows/delamain-documentation-custodian.yml",
+    "utf8",
+  );
+
+  assert.match(activePrompt, /Lead Repository Custodian and Onboarding Assistant/);
+  assert.match(activePrompt, /Passenger Cabin Baseline/);
+  assert.match(activePrompt, /Isolated Engine Blocks/);
+  assert.match(activePrompt, /Total Fleet Symmetry/);
+  assert.match(activePrompt, /progressive disclosure/);
+  assert.match(activePrompt, /Do not mechanically require a `<details>` block/);
+  assert.match(activePrompt, /actual mixed human\/machine context/);
+  assert.match(activePrompt, /GLaDOS exclusively owns factual synchronization/);
+  assert.match(activePrompt, /Delegate stale environment variables, action/);
+  assert.match(activePrompt, /inputs or outputs, schemas, workflows, public contracts/);
+  assert.match(activePrompt, /every implementation-to-documentation factual comparison to\s+GLaDOS/);
+  assert.match(activePrompt, /Do not report those defects/);
+  assert.match(activePrompt, /sole owner of standalone broken links, anchors, path casing/);
+  assert.match(activePrompt, /moves, removes, or renames a documented public entry point/);
+  assert.match(activePrompt, /delegate that synchronization\s+defect to GLaDOS/);
+  assert.match(activePrompt, /Do not convert the resulting stale reference/);
+  assert.match(activePrompt, /onboarding discoverability/);
+  assert.match(activePrompt, /heading hierarchy/);
+  assert.match(activePrompt, /list and table structure/);
+  assert.match(activePrompt, /Markdown rendering/);
+  assert.match(activePrompt, /links and anchors/);
+  assert.match(activePrompt, /path casing/);
+  assert.match(activePrompt, /Do not review source-code design, security, implementation correctness/);
+  assert.doesNotMatch(activePrompt, /documented public or configuration contract changed/);
+  assert.doesNotMatch(activePrompt, /Corroborate every contract claim/);
+  assert.doesNotMatch(activePrompt, /code\/configuration contracts whose documentation is now stale/);
+  assert.doesNotMatch(activePrompt, /synchronized contract text/);
+  assert.doesNotMatch(activePrompt, /contract comparison/);
+  assert.match(activePrompt, /precise matrix\s+coordinates/);
+  assert.match(activePrompt, /exact numbered navigation steps/);
+  assert.match(activePrompt, /Cacophony's supplied read-only tools/);
+  assert.match(activePrompt, /Finish only by calling `submit_report`/);
+  assert.match(activePrompt, /begin the summary exactly with `\[BLOCK: SERVICE_DISRUPTION\]`/);
+  assert.match(activePrompt, /set the summary exactly to `\[APPROVED\]`/);
+  assert.match(activePrompt, /set the proposed `verdict` to `fail`/);
+  assert.match(activePrompt, /set the proposed `verdict` to `pass`/);
+  assert.match(activePrompt, /empty `findings` array/);
+  assert.match(activePrompt, /valued passenger/);
+  assert.match(activePrompt, /optimal trajectory/);
+  assert.match(activePrompt, /road hazards/);
+  assert.match(activePrompt, /spatial clutter/);
+  assert.match(activePrompt, /Dispatch remediation protocol/);
+  assert.match(activePrompt, /Excelsior-level/);
+  assert.doesNotMatch(
+    activePrompt,
+    /\{\{(?:EXISTING_DOCUMENTATION|GIT_DIFF|[A-Z0-9_]+)\}\}/,
+  );
+
+  assert.match(workflow, /agent-slug: delamain-documentation-custodian/);
+  assert.match(workflow, /deployment: gpt-5\.4-mini/);
+  assert.match(workflow, /max-turns: 20/);
+  assert.match(workflow, /timeout-seconds: 600/);
+  assert.match(workflow, /rate-limit-retries: 2/);
+  assert.match(readme, /### Delamain, Documentation Custodian/);
+  assert.match(
+    readme,
+    /\.cacophony\/agents\/delamain-documentation-custodian\.md/,
+  );
+  assert.match(
+    readme,
+    /\.github\/workflows\/delamain-documentation-custodian\.yml/,
+  );
+  assert.match(readme, /navigation and discoverability/);
+  assert.match(readme, /Factual implementation and configuration synchronization remains GLaDOS's/);
+  assert.match(readme, /Delamain alone owns standalone broken links, anchors, path casing/);
+  assert.match(readme, /Standalone link and navigation mechanics\s+belong to Delamain/);
+  assert.match(readme, /changed implementation or\s+configuration moves or removes a documented public entry point/);
+  const delamainCatalog = readme.slice(
+    readme.indexOf("### Delamain, Documentation Custodian"),
+    readme.indexOf("### Master Chief, Domain Commander"),
+  );
+  assert.doesNotMatch(delamainCatalog, /documented configuration contracts/);
 });
 
 test("agent creation guide and shared skill capture the stacked workflow", async () => {
