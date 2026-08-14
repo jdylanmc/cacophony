@@ -1,0 +1,133 @@
+name: Publish Marketplace Release
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-marketplace-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release successful main
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the current main commit
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          current_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${DEFAULT_BRANCH}" --jq .sha)"
+          if [[ "$RELEASE_SHA" != "$current_sha" ]]; then
+            echo "Skipping stale successful commit $RELEASE_SHA; main is $current_sha."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        if: steps.current.outputs.publish == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Read package release baseline
+        if: steps.current.outputs.publish == 'true'
+        id: package
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: List semantic release tags
+        if: steps.current.outputs.publish == 'true'
+        id: tags
+        env:
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          {
+            echo "release-tags<<CACOPHONY_TAGS"
+            git tag --list 'v[0-9]*.[0-9]*.[0-9]*'
+            echo "CACOPHONY_TAGS"
+            echo "current-release-tags<<CACOPHONY_CURRENT_TAGS"
+            git tag --points-at "$RELEASE_SHA" --list 'v[0-9]*.[0-9]*.[0-9]*'
+            echo "CACOPHONY_CURRENT_TAGS"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Select semantic release
+        if: steps.current.outputs.publish == 'true'
+        id: version
+        env:
+          BASE_VERSION: ${{ steps.package.outputs.version }}
+          RELEASE_TAGS: ${{ steps.tags.outputs.release-tags }}
+          CURRENT_RELEASE_TAGS: ${{ steps.tags.outputs.current-release-tags }}
+        run: |
+          node scripts/select-release-version.mjs
+
+      - name: Create or verify immutable release tag
+        if: steps.current.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if tag_sha="$(git rev-parse --verify --quiet "refs/tags/${RELEASE_TAG}^{commit}")"; then
+            if [[ "$tag_sha" != "$RELEASE_SHA" ]]; then
+              echo "::error::Immutable tag $RELEASE_TAG does not point to $RELEASE_SHA."
+              exit 1
+            fi
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref="refs/tags/${RELEASE_TAG}" \
+              -f sha="$RELEASE_SHA" >/dev/null
+          fi
+
+      - name: Create GitHub release
+        if: steps.current.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists."
+          else
+            gh release create "$RELEASE_TAG" \
+              --title "$RELEASE_TAG" \
+              --generate-notes
+          fi
+
+      - name: Update floating version tags
+        if: steps.current.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          MAJOR_TAG: ${{ steps.version.outputs.major-tag }}
+          MINOR_TAG: ${{ steps.version.outputs.minor-tag }}
+        run: |
+          update_tag() {
+            local tag="$1"
+            if git show-ref --verify --quiet "refs/tags/${tag}"; then
+              gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" \
+                -f sha="$RELEASE_SHA" \
+                -F force=true >/dev/null
+            else
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+                -f ref="refs/tags/${tag}" \
+                -f sha="$RELEASE_SHA" >/dev/null
+            fi
+          }
+
+          update_tag "$MAJOR_TAG"
+          update_tag "$MINOR_TAG"

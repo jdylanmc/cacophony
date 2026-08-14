@@ -91,6 +91,42 @@ test("all executable workflows pin remote actions to full commit SHAs", async ()
   }
 });
 
+test("marketplace releases follow successful current-main CI", async () => {
+  const workflow = await fs.promises.readFile(
+    ".github/workflows/publish-marketplace.yml",
+    "utf8",
+  );
+  const readme = await fs.promises.readFile("README.md", "utf8");
+
+  assert.match(workflow, /workflow_run:/);
+  assert.match(workflow, /workflows:\s*\n\s+- CI/);
+  assert.match(workflow, /conclusion == 'success'/);
+  assert.match(
+    workflow,
+    /head_branch == github\.event\.repository\.default_branch/,
+  );
+  assert.match(workflow, /permissions:\s*\n\s+contents: write/);
+  assert.match(workflow, /persist-credentials: false/);
+  assert.match(workflow, /scripts\/select-release-version\.mjs/);
+  assert.match(workflow, /Create or verify immutable release tag/);
+  assert.match(workflow, /gh release create/);
+  assert.match(workflow, /--generate-notes/);
+  assert.match(workflow, /refs\/tags\/\$\{tag\}/);
+  assert.doesNotMatch(workflow, /git\/ref\/tags/);
+  assert.ok(
+    workflow.indexOf("Require the current main commit") <
+      workflow.indexOf("uses: actions/checkout@"),
+  );
+  assert.ok(
+    workflow.indexOf("Create or verify immutable release tag") <
+      workflow.indexOf("Create GitHub release"),
+  );
+  assert.match(readme, /## Releases and GitHub Marketplace/);
+  assert.match(readme, /initial Marketplace enrollment/);
+  assert.match(readme, /Publish this Action to the GitHub Marketplace/);
+  assert.match(readme, /jdylanmc\/cacophony@v0/);
+});
+
 test("reusable trusted-base workflow owns provider security policy", async () => {
   const shared = await fs.promises.readFile(
     ".github/workflows/cacophony-review.yml",

@@ -26,6 +26,30 @@ steps, matrix jobs, or separate workflows.
 Cacophony itself has no runtime package dependencies, install step, build step,
 or generated distribution bundle.
 
+## Releases and GitHub Marketplace
+
+Every successful Continuous Integration (CI) run for the current `main` commit
+triggers `.github/workflows/publish-marketplace.yml`. The workflow creates the
+next patch release from the stable semantic version in `package.json`, generates
+release notes, and advances the matching floating major and minor tags. It skips
+successful runs for stale `main` commits and reuses an existing release tag when
+the same commit is retried.
+
+GitHub does not expose the initial Marketplace enrollment through its API. The
+repository owner must therefore perform one bootstrap step after the first
+automated release:
+
+1. Open the generated release on GitHub and choose **Edit**.
+2. Accept the GitHub Marketplace Developer Agreement if prompted.
+3. Select **Publish this Action to the GitHub Marketplace**.
+4. Choose the **Code quality** primary category and publish the update.
+
+After that one-time enrollment, each GitHub release created from a successful
+`main` commit updates the existing Marketplace listing automatically. Consumers
+can pin an immutable release such as `jdylanmc/cacophony@v0.1.0`, or follow the
+latest compatible release with `jdylanmc/cacophony@v0` or
+`jdylanmc/cacophony@v0.1`.
+
 ## Repository dogfood
 
 The repository dogfoods Cacophony through its six canonical adversarial
