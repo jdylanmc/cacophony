@@ -387,6 +387,30 @@ test("Gilfoyle canonical prompt configures the security reviewer", async () => {
   assert.match(activePrompt, /\[APPROVED\]/);
   assert.match(activePrompt, /CodeQL Static Analysis Results Interchange Format/);
   assert.match(activePrompt, /untrusted supporting evidence/);
+  assert.match(activePrompt, /lead application security reviewer\s+for the active review scope/);
+  assert.match(
+    activePrompt,
+    /\*\*Pull request scope:\*\* inspect the diff and necessary surrounding code/,
+  );
+  assert.match(
+    activePrompt,
+    /\*\*Repository scope:\*\* inspect the complete in-scope source, configuration,\s+dependency, secret-handling, and workflow security surfaces/,
+  );
+  assert.match(
+    activePrompt,
+    /current\s+exploitable vulnerabilities supported by repository evidence/,
+  );
+  assert.match(
+    activePrompt,
+    /Do not call\s+pull-request-only tools, inspect a diff, or require change provenance/,
+  );
+  assert.match(activePrompt, /In pull request scope, corroborate each relevant result/);
+  assert.match(activePrompt, /In repository scope, corroborate each result/);
+  assert.match(
+    activePrompt,
+    /Do not\s+review general correctness, architecture, documentation quality, test coverage,\s+or maintainability unless the cited defect is part of a concrete exploitation\s+path/,
+  );
+  assert.doesNotMatch(activePrompt, /lead application security reviewer\s+for this pull request/);
   assert.match(workflow, /pull_request_target:/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
   assert.match(workflow, /agent-slug: gilfoyle-security-architect/);
@@ -423,6 +447,25 @@ test("Solid Snake canonical prompt configures its architecture reviewer", async 
   assert.match(activePrompt, /PaymentProcessor/);
   assert.match(activePrompt, /MockTestDatabase/);
   assert.match(activePrompt, /IEmailNotifier/);
+  assert.match(
+    activePrompt,
+    /\*\*Pull request scope:\*\* inspect the diff and enough surrounding code/,
+  );
+  assert.match(
+    activePrompt,
+    /\*\*Repository scope:\*\* inspect the complete in-scope implementation and\s+configuration surfaces/,
+  );
+  assert.match(
+    activePrompt,
+    /current material SOLID or boundary defects\s+supported by repository evidence/,
+  );
+  assert.match(
+    activePrompt,
+    /Do not call pull-request-only tools,\s+inspect a diff, or require change provenance/,
+  );
+  assert.match(activePrompt, /Hold the reviewed design to these five tactical definitions/);
+  assert.match(activePrompt, /If and only if the reviewed design is cohesive/);
+  assert.doesNotMatch(activePrompt, /If and only if the changed design is cohesive/);
   assert.match(workflow, /pull_request_target:/);
   assert.match(workflow, /cancel-in-progress: true/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/cacophony-review\.yml/);
@@ -455,10 +498,34 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   assert.match(activePrompt, /guard that rejects a documented unsupported mode confirms/);
   assert.match(activePrompt, /verbose test log, JUnit XML/);
   assert.match(activePrompt, /breaks an existing unit\s+test/);
+  assert.match(
+    activePrompt,
+    /\*\*Pull request scope:\*\* inspect the diff, then search the broader repository/,
+  );
+  assert.match(
+    activePrompt,
+    /\*\*Repository scope:\*\* inspect the complete in-scope implementation,\s+configuration, tests, comments, examples, and documentation/,
+  );
+  assert.match(
+    activePrompt,
+    /In repository scope, block current test,\s+implementation, or documented-contract discrepancies/,
+  );
+  assert.match(activePrompt, /reviewed tests, implementation, and documented contract/);
+  assert.match(activePrompt, /Cross-reference every reviewed public behavior/);
+  assert.match(
+    activePrompt,
+    /In repository scope, report current discrepancies supported by\s+repository evidence without requiring change provenance/,
+  );
+  assert.match(activePrompt, /exact file and line evidence for the reviewed behavior/);
+  assert.match(activePrompt, /Quote the exact reviewed behavior or contract/);
+  assert.match(activePrompt, /Identify the discrepant code behavior/);
   assert.match(activePrompt, /Do not infer GitHub Actions, provider, or platform behavior/);
   assert.match(activePrompt, /Delegate standalone broken links, anchor defects/);
   assert.match(activePrompt, /navigation failures, and discoverability problems to Delamain/);
-  assert.match(activePrompt, /changed implementation or configuration\s+moves, removes, or renames a documented public entry point/);
+  assert.match(
+    activePrompt,
+    /implementation or configuration within\s+the active review scope moves, removes, or renames a documented public entry\s+point/,
+  );
   assert.match(activePrompt, /documentation-only link\s+or navigation defect/);
   assert.match(activePrompt, /Standalone broken links and navigation mechanics\s+remain Delamain's domain/);
   assert.match(workflow, /pull_request_target:/);
