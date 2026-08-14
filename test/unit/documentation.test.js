@@ -537,11 +537,27 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   assert.match(activePrompt, /Identify the discrepant code behavior/);
   assert.match(
     activePrompt,
-    /literal meaning contradicts the actual\s+behavior or creates a factual mismatch with documentation, comments, examples,\s+tests, or a public contract/,
+    /\*\*Direct identifier contradiction\.\*\* Report an identifier when its literal\s+claim is false for the named implementation behavior/,
   );
   assert.match(
     activePrompt,
-    /Cite both sides: the exact identifier and behavior,\s+and the exact repository statement or contract/,
+    /The identifier itself is the conflicting repository\s+statement; no separate documentation, comment, example, test, or public\s+contract is required/,
+  );
+  assert.match(
+    activePrompt,
+    /\*\*Cross-artifact synchronization mismatch\.\*\* Report an identifier when the\s+identifier and implementation behavior make a separate documentation\s+statement, comment, example, test, or public contract false, contradictory,\s+or misleading/,
+  );
+  assert.match(
+    activePrompt,
+    /Cite the exact identifier and behavior plus that exact\s+separate conflicting artifact/,
+  );
+  assert.match(
+    activePrompt,
+    /For either path, state the two incompatible factual claims in one sentence/,
+  );
+  assert.match(
+    activePrompt,
+    /Do\s+not report subjective awkwardness, preferred naming, or wording that is merely\s+less clear than an alternative/,
   );
   assert.match(
     activePrompt,
@@ -553,7 +569,15 @@ test("GLaDOS canonical prompt configures its documentation reviewer", async () =
   );
   assert.match(
     activePrompt,
-    /Report a hidden side effect only when it creates a GLaDOS-owned factual mismatch/,
+    /Report a hidden side effect only through the cross-artifact synchronization\s+mismatch path/,
+  );
+  assert.match(
+    activePrompt,
+    /For a direct identifier\s+contradiction, the identifier definition or use is that artifact and no\s+separate third artifact is required/,
+  );
+  assert.match(
+    activePrompt,
+    /For a documentation omission, cite the\s+contract that establishes the required fact and the exact documentation\s+location where that fact is missing/,
   );
   assert.doesNotMatch(activePrompt, /Flag ambiguous placeholders/);
   assert.doesNotMatch(activePrompt, /Ambiguity,\s+not brevity itself, is the anomaly/);

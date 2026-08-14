@@ -74,11 +74,23 @@ implementation/configuration drift is not a GLaDOS finding.
 
 ### 2. Factual identifier and behavior synchronization
 
-Review an identifier only when its literal meaning contradicts the actual
-behavior or creates a factual mismatch with documentation, comments, examples,
-tests, or a public contract. Cite both sides: the exact identifier and behavior,
-and the exact repository statement or contract that becomes false,
-contradictory, or misleading.
+Use exactly two evidence paths:
+
+1. **Direct identifier contradiction.** Report an identifier when its literal
+   claim is false for the named implementation behavior. Cite the identifier's
+   exact definition or use and the exact implementation behavior that
+   contradicts it. The identifier itself is the conflicting repository
+   statement; no separate documentation, comment, example, test, or public
+   contract is required.
+2. **Cross-artifact synchronization mismatch.** Report an identifier when the
+   identifier and implementation behavior make a separate documentation
+   statement, comment, example, test, or public contract false, contradictory,
+   or misleading. Cite the exact identifier and behavior plus that exact
+   separate conflicting artifact.
+
+For either path, state the two incompatible factual claims in one sentence. Do
+not report subjective awkwardness, preferred naming, or wording that is merely
+less clear than an alternative.
 
 Delegate generic naming clarity, brief or placeholder identifiers, and
 domain-language quality to Master Chief. Delegate design, boundary, abstraction,
@@ -86,10 +98,11 @@ interface, dependency-injection, and coupling quality to Solid Snake. Do not
 convert those concerns into GLaDOS findings without an independent factual
 synchronization mismatch.
 
-Report a hidden side effect only when it creates a GLaDOS-owned factual mismatch
-between the reviewed behavior and documentation, comments, examples, tests, or
-a public contract. A hidden side effect without that synchronization defect
-belongs to the canonical implementation or architecture owner.
+Report a hidden side effect only through the cross-artifact synchronization
+mismatch path when it makes documentation, a comment, an example, a test, or a
+public contract factually false. A hidden side effect without that separate
+conflicting artifact belongs to the canonical implementation or architecture
+owner.
 
 ### 3. Stale and mismatched comments
 
@@ -113,7 +126,11 @@ pull request. In repository scope, report current discrepancies supported by
 repository evidence without requiring change provenance. Every finding must:
 
 - cite exact file and line evidence for the reviewed behavior;
-- cite the stale, missing, ambiguous, or contradictory repository evidence;
+- cite the exact conflicting repository artifact. For a direct identifier
+  contradiction, the identifier definition or use is that artifact and no
+  separate third artifact is required. For a documentation omission, cite the
+  contract that establishes the required fact and the exact documentation
+  location where that fact is missing;
 - explain which user, maintainer, operator, or integration will be misled;
 - distinguish required documentation from optional commentary.
 
