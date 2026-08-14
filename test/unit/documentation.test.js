@@ -404,6 +404,36 @@ test("Gilfoyle canonical prompt configures the security reviewer", async () => {
     activePrompt,
     /Do not call\s+pull-request-only tools, inspect a diff, or require change provenance/,
   );
+  assert.match(
+    activePrompt,
+    /Same-repository action code referenced by an immutable full\s+40-character commit SHA is trusted executable code; the audited checkout is\s+untrusted data/,
+  );
+  assert.match(
+    activePrompt,
+    /Passing a\s+narrowly scoped provider credential to that pinned same-repository action is\s+not itself a vulnerability/,
+  );
+  for (const requiredEvidence of [
+    "referenced SHA is mutable or substitutable",
+    "untrusted code executes in the secret-bearing context",
+    "default-branch preflight is bypassable",
+    "secret reaches audited content or tool output",
+  ]) {
+    assert.match(activePrompt, new RegExp(requiredEvidence.replaceAll(" ", "\\s+")));
+  }
+  assert.match(
+    activePrompt,
+    /Do not report\s+hypothetical compromise of an immutable dependency without a concrete\s+substitution or execution path/,
+  );
+  assert.match(
+    activePrompt,
+    /default-branch preflight that completes before matrix expansion or\s+secret-bearing fan-out as a real trust control/,
+  );
+  assert.match(activePrompt, /Report an actual bypass/);
+  assert.match(
+    activePrompt,
+    /genuine\s+supply-chain substitution, prompt injection that crosses an executable trust\s+boundary, secret exposure, and pull-request-scope vulnerabilities/,
+  );
+  assert.doesNotMatch(activePrompt, /@[a-f0-9]{40}/);
   assert.match(activePrompt, /In pull request scope, corroborate each relevant result/);
   assert.match(activePrompt, /In repository scope, corroborate each result/);
   assert.match(
