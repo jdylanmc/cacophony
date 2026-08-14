@@ -18,9 +18,9 @@ import { ProviderUnavailableError } from "./providers/errors.js";
 import {
   createErrorReport,
   createInconclusiveReport,
-  renderMarkdown,
-  writeReports,
-} from "./reports/report.js";
+} from "./reports/model.js";
+import { renderMarkdown } from "./reports/renderer.js";
+import { writeReports } from "./reports/writer.js";
 import { runReview } from "./runner/review.js";
 import { createReviewTarget } from "./scopes/review-target.js";
 
@@ -115,8 +115,9 @@ async function main() {
   }
 
   const outputDirectory = config?.outputDirectory ?? ".cacophony/out";
-  const paths = await writeReports(report, workspace, outputDirectory);
-  await appendStepSummary(renderMarkdown(report));
+  const markdown = renderMarkdown(report);
+  const paths = await writeReports(report, markdown, workspace, outputDirectory);
+  await appendStepSummary(markdown);
   await setOutputs({
     verdict: report.verdict,
     "max-severity": report.maxSeverity,

@@ -1,4 +1,4 @@
-import { createCompletedReport, validateSubmission } from "../reports/report.js";
+import { createCompletedReport, validateSubmission } from "../reports/model.js";
 import {
   createRepositoryTools,
   readActionPrompt,
