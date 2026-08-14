@@ -264,8 +264,10 @@ jobs:
 
 The manual dispatch reads the repository's existing
 `CACOPHONY_AZURE_ENDPOINT` variable and `CACOPHONY_AZURE_API_KEY` secret.
-Repository audit mode is intended for trusted checked-out commits; it never
-executes repository code.
+Repository audit mode checks out the trusted default-branch commit and executes
+only the repository-local read-only agent-selection script before invoking the
+independently pinned Cacophony action. It does not execute code from an
+untrusted audited checkout or pull-request content.
 
 ## Action inputs
 
